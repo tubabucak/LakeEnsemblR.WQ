@@ -1,3 +1,5 @@
+#'@title Calculate DO exceedance
+
 #'@description
 #' Calculates the percentage time exceeded curve for O2 (similar approach to Flow Duration Curve)
 

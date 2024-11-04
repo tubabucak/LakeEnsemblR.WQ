@@ -11,18 +11,16 @@
 #' 
 #' @return A list of extractedf variables for each model and for each metric defined in output.yaml
 #' 
-#' @importFrom utils read.csv
+#' @importFrom utils read.csv 
 #' @importFrom ncdf4 nc_open nc_close
 #' @importFrom rLakeAnalyzer load.bathy
-#' @import extract_variable_list
-#' @import check_the_metrics
 #' @examples
 #' Example usage:
 #' # temp_diff_result <- cal_bot_surf_temp_dif(temp_glm)
 #' # print(temp_diff_result)
 #' 
-#' @export
 #' 
+#' @export
 cal_metrics <- function(metric_yaml_file, folder, dict_file, config_file, bathy_file) {
 
     metric_out <- list()

@@ -1,3 +1,5 @@
+#'@title Calculate Anoxic Days
+
 #'@description
 #' Calculates Number of Anoxic Days and Anoxic Factors (Nürnberg, 1995) for each year/season
 
@@ -7,9 +9,8 @@
 #' @param threshold, anoxic O2 threshold (mg L-1)
 #' @param duration, argument for calculating the anoxic factor and number of anoxic days. If duration = full, the number of all anoxic days will be calculated. If duration = longest, AF for the longest anoxic period will be returned.
 #' @return dataframe with number of anoxic days for each year and anoxic factor. Also returns the depth for each day where anoxic layer starts
-#' @importFrom rlakeAnalyzer ts.meta.depth
-#' @Import cal_hypo_depth (It calculates the hypolimnion depth (min, max, thickness, not ready yet)
-#' @Import cal_hypo_wq (Calculates the average hypolimnion value for the selected variable)
+#' @importFrom rLakeAnalyzer ts.meta.depths
+
 
 #' @export
 cal_anoxic_date <- function(oxy_data, bathy_file, threshold = 1, duration = "full"){

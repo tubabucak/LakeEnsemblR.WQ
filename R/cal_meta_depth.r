@@ -1,13 +1,13 @@
 #'@title Calculate Metalimnion Thickness
 
 #'@description
-# This function calculate the metalimnion thickness using temperature data
+#' This function calculate the metalimnion thickness using temperature data
 
 
 #' @name cal_meta_depth
 #' @param temp_data dataframe; The output of the model/observed output. It should include Datetime and depth specific values per each column.
 #' @return dataframe with Dateframe and metalimnion thickness
-#' @importFrom rlakeAnalyzer ts.meta.depths
+#' @importFrom rLakeAnalyzer ts.meta.depths
 #' @importFrom dplyr mutate_at vars
 #' 
 #' @examples

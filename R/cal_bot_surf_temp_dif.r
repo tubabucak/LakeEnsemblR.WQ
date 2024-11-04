@@ -1,8 +1,8 @@
 #'@title Calculate surface-bottom temperature difference
 
 #'@description
-# Calculate the temperature difference between bottom and surface of the lake.
-# Uses layer.temperature function from rlakeAnalyzer
+#' Calculate the temperature difference between bottom and surface of the lake.
+#' Uses layer.temperature function from rlakeAnalyzer
 
 #' @name cal_bot_surf_temp_dif 
 #' @param temp_data dataframe; The output of the model/observed output. It should include Datetime and depth specific values per each column.

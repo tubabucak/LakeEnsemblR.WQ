@@ -1,22 +1,22 @@
+#'@title Calculate Stratified Days
+
 #'@description
-# Calculate the starting date of spring/summer stratification,
-# Duration of stratification
-# Start date of mixing
+#' Calculate the starting date of spring/summer stratification,
+#' Duration of stratification
+#' Start date of mixing
 
 #' @name cal_strat_date
 #' @param temp_data dataframe; The output of the model/observed output. It should include Datetime and depth specific values per each column.
 #' @param hemisphere character; N for Northern Hemisphere, S for Southern hemisphere
 
 #' @return dataframe with starting date of stratification, start date of mixing and duration of stratification
-#' @importFrom rlakeAnalyzer ts.thermo.depth
+#' @importFrom rLakeAnalyzer ts.thermo.depth
 
 #' @import tidyverse
 #' @import lubridate
-#' 
-#' @export
 # Example use
 # strat_days <- cal_strat_date(temp_wet, hemisphere = "N")
-
+#' @export
 cal_strat_date <- function(temp_data, hemisphere = "N") {
   
   # Calculate the average temperature (ignoring the first column since its datetime column by default)

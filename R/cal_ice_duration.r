@@ -4,10 +4,9 @@
 
 #' @name cal_ice_duration
 #' @param ice_sum, dataframe; Includes datetime and ice thickness
-#' @param white_ice, dataframe; Includes datetime and white_ice thickness. Only for GLM, this is white_ice_thickness variable in GLM
 #' @return ice_duration_period: dataframe with number of ice days in a year & ice_thickness: for each simulated day.
 #' @importFrom lubridate year
-#' @ImportFrom lubridate year
+
 
 #' @export
 

@@ -1,3 +1,5 @@
+#'@title Get lake model outputs
+
 #'@description
 #' Get output data for each model (so far GLM-AED, SELMAPROTBAS-GOTM, WET-GOTM) that is specified in the output.yaml
 #'
