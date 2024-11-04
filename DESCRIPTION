@@ -11,7 +11,9 @@ Author: Authors@R: c(person("Tadhg", "Moore", role = c("aut","cre"),
     person("Johannes", "Feldbauer", role = "aut", 
     email = "johannes.feldbauer@tu-dresden.de"),
     person("Jorrit", "Mesman", role = "aut",
-    email = "jorrit.mesman@unige.ch"))
+    email = "jorrit.mesman@unige.ch")
+    person("Tuba", "Bucak", role = "aut",
+    email = tbo@ecos.au.dk))
 Maintainer: Jorrit Mesman <jorrit.mesman@unige.ch>
 Description: Run ensembles of lake models Water Quality 1D Lake Models.
 License: GPL-2.0
@@ -28,5 +30,5 @@ Suggests:
 Encoding: UTF-8
 LazyData: true
 LazyLoad: true
-RoxygenNote: 7.1.2
+RoxygenNote: 7.3.0
 VignetteBuilder: knitr
