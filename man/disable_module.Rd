@@ -16,6 +16,3 @@ disable_module(config_file, folder = ".", module)
 \description{
 Make sure that a certain module is not used in all models
 }
-\examples{
-
-}

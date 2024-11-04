@@ -14,6 +14,3 @@ set_up_configs(config_file, folder = ".")
 \description{
 Sets up the model-specific config files with the right groups
 }
-\examples{
-
-}

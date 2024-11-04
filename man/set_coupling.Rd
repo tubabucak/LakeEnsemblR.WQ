@@ -14,6 +14,3 @@ set_coupling(config_file, folder)
 \description{
 Sets any coupling settings that are needed to run a model
 }
-\examples{
-
-}

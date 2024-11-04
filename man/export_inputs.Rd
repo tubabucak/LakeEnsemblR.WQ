@@ -23,6 +23,3 @@ export_inputs(
 \description{
 Handles nutrient concentrations in inflows and other sources
 }
-\examples{
-
-}

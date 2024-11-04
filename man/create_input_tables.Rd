@@ -23,10 +23,7 @@ create_input_tables(
 \item{input}{character vector; for what parameters do you want to fill in values}
 }
 \description{
-Create csv files from the LakeEnsemblR dictionary file, where the user can enter values 
+Create csv files from the LakeEnsemblR dictionary file, where the user can enter values
 for selected parameters. Running the function with default arguments will print all
 empty input files, whereas adding the argument "all" will print all parameters.
-}
-\examples{
-
 }

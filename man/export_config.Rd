@@ -22,6 +22,3 @@ export_config(
 \description{
 Export settings from configuration file to model-specific configuration files
 }
-\examples{
-
-}

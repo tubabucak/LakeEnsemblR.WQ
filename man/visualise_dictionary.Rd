@@ -56,6 +56,3 @@ If yes, use folder and filename arguments}
 \description{
 Visualise the file structure of the dictionary
 }
-\examples{
-
-}

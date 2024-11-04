@@ -19,6 +19,3 @@ value to enter}
 \description{
 Inputs values into a PCLake config file
 }
-\examples{
-
-}

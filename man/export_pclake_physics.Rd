@@ -24,6 +24,3 @@ export_pclake_physics(
 A LakeEnsemblR::export_config function for the PCLake physics
 settings are based on the LakeEnsemblR config file
 }
-\examples{
-
-}

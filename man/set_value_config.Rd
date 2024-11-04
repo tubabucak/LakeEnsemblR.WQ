@@ -48,6 +48,3 @@ set_value_config(
 \description{
 Set value in model-specific config file based on dictionary path
 }
-\examples{
-
-}
