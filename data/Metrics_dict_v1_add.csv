@@ -1,0 +1,122 @@
+metric_name,metric_short_name,domain,module,level,variable_global_name,unit_global,variable_model_name,depth_01,model,unit_model,conversion_factor,function_name
+Surface_Mixed_Layer_Depth_meter,Surf_Mixed_Depth,Water,LER,Level1,Temp_degreeCelcius,degreeCelcius,temp,1,GLM,celcius,1,cal_epi_depth
+Surface_Mixed_Layer_Depth_meter,Surf_Mixed_Depth,Water,LER,Level1,Temp_degreeCelcius,degreeCelcius,temp,1,SELMAPROTBAS,celcius,1,cal_epi_depth
+Surface_Mixed_Layer_Depth_meter,Surf_Mixed_Depth,Water,LER,Level1,Temp_degreeCelcius,degreeCelcius,temp,1,WET,celcius,1,cal_epi_depth
+Bottom_Surface_Difference_degC,But_Surf_Dif,Water,LER,Level1,Temp_degreeCelcius,degreeCelcius,temp,1,GLM,celcius,1,cal_bot_surf_temp_dif
+Bottom_Surface_Difference_degC,But_Surf_Dif,Water,LER,Level1,Temp_degreeCelcius,degreeCelcius,temp,1,SELMAPROTBAS,celcius,1,cal_bot_surf_temp_dif
+Bottom_Surface_Difference_degC,But_Surf_Dif,Water,LER,Level1,Temp_degreeCelcius,degreeCelcius,temp,1,WET,celcius,1,cal_bot_surf_temp_dif
+Cyano_C_miligramsPerCubicMeter,Cyano_C,Water,Phytoplankton,Level1,Cyano_C_miligramsPerCubicMeter,miligramsPerCubicMeter,cyanobacteria_sDW,1,WET,gDW/m3,450,
+Cyano_C_miligramsPerCubicMeter,Cyano_C,Water,Phytoplankton,Level1,Cyano_C_miligramsPerCubicMeter,miligramsPerCubicMeter,PHY_cyano,1,GLM,mmol C/m3,12.01,
+Cyano_C_miligramsPerCubicMeter,Cyano_C,Water,Phytoplankton,Level1,Cyano_C_miligramsPerCubicMeter,miligramsPerCubicMeter,cyanobacteria_c,1,SELMAPROTBAS,mmol C/m3,12.01,
+Cyano_Chla_miligramsPerCubicMeter,Cyano_Chla,Water,Phytoplankton,Level1,Cyano_Chla_miligramsPerCubicMeter,miligramsPerCubicMeter,cyanobacteria_chla,1,SELMAPROTBAS,mg chl a/m3,1,
+Cyano_Chla_miligramsPerCubicMeter,Cyano_Chla,Water,Phytoplankton,Level1,Cyano_Chla_miligramsPerCubicMeter,miligramsPerCubicMeter,cyanobacteria_oChla,1,WET,mg/m3,1,
+Cyano_GPP_miligramsPerCubicMeterPerDay,Cyano_GPP,Water,Phytoplankton,Level3,Cyano_GPP_miligramsPerCubicMeterPerDay,miligramsPerCubicMeterPerDay,cyanobacteria_GPP,1,SELMAPROTBAS,mmol/m3/d,12.01,
+Cyano_NPP_miligramsPerCubicMeterPerDay,Cyano_NPP,Water,Phytoplankton,Level3,Cyano_NPP_miligramsPerCubicMeterPerDay,miligramsPerCubicMeterPerDay,cyanobacteria_NPP,1,SELMAPROTBAS,mmol/m3/d,12.01,
+Cyano_Respiration_C_miligramsPerCubicMeterPerDay,Cyano_Resp_C,Water,Phytoplankton,Level2,Cyano_Respiration_C_miligramsPerCubicMeterPerDay,miligramsPerCubicMeterPerDay,PHY_cyano_rsp_c,1,GLM,mmol C/m3/d,12.01,
+Cyano_Respiration_N_miligramsPerCubicMeterPerDay,Cyano_Resp_N,Water,Phytoplankton,Level2,Cyano_Respiration_N_miligramsPerCubicMeterPerDay,miligramsPerCubicMeterPerDay,PHY_cyano_rsp_n,1,GLM,mmol N/m3/d,14,
+Cyano_Respiration_P_miligramsPerCubicMeterPerDay,Cyano_Resp_P,Water,Phytoplankton,Level2,Cyano_Respiration_P_miligramsPerCubicMeterPerDay,miligramsPerCubicMeterPerDay,PHY_cyano_rsp_p,1,GLM,mmol P/m3/d,30.97,
+Diatom_C_miligramsPerCubicMeter,Diatom_C,Water,Phytoplankton,Level1,Diatom_C_miligramsPerCubicMeter,miligramsPerCubicMeter,diatoms_sDW,1,WET,gDW/m3,450,
+Diatom_C_miligramsPerCubicMeter,Diatom_C,Water,Phytoplankton,Level1,Diatom_C_miligramsPerCubicMeter,miligramsPerCubicMeter,PHY_diatom,1,GLM,mmol C/m3,12.01,
+Diatom_C_miligramsPerCubicMeter,Diatom_C,Water,Phytoplankton,Level1,Diatom_C_miligramsPerCubicMeter,miligramsPerCubicMeter,diatoms_c,1,SELMAPROTBAS,mmol C/m3,12.01,
+Diatom_Chla_miligramsPerCubicMeter,Diatom_Chla,Water,Phytoplankton,Level1,Diatom_Chla_miligramsPerCubicMeter,miligramsPerCubicMeter,diatoms_chla,1,SELMAPROTBAS,mg chl a/m3,1,
+Diatom_Chla_miligramsPerCubicMeter,Diatom_Chla,Water,Phytoplankton,Level1,Diatom_Chla_miligramsPerCubicMeter,miligramsPerCubicMeter,diatoms_oChla,1,WET,mg/m3,1,
+Diatom_GPP_miligramsPerCubicMeterPerDay,Diatom_GPP,Water,Phytoplankton,Level3,Diatom_GPP_miligramsPerCubicMeterPerDay,miligramsPerCubicMeterPerDay,diatoms_GPP,1,SELMAPROTBAS,mmol/m3/d,12.01,
+Diatom_NPP_miligramsPerCubicMeterPerDay,Diatom_NPP,Water,Phytoplankton,Level3,Diatom_NPP_miligramsPerCubicMeterPerDay,miligramsPerCubicMeterPerDay,diatoms_NPP,1,SELMAPROTBAS,mmol/m3/d,12.01,
+Diatom_Resp_C_miligramsPerCubicMeterPerDay,Diatom_Resp_C,Water,Phytoplankton,Level2,Diatom_Resp_C_miligramsPerCubicMeterPerDay,miligramsPerCubicMeterPerDay,PHY_diatom_rsp_c,1,GLM,mmol C/m3/d,12.01,
+Diatom_Resp_N_miligramsPerCubicMeterPerDay,Diatom_Resp_N,Water,Phytoplankton,Level2,Diatom_Resp_N_miligramsPerCubicMeterPerDay,miligramsPerCubicMeterPerDay,PHY_diatom_rsp_n,1,GLM,mmol N/m3/d,14,
+Diatom_Resp_P_miligramsPerCubicMeterPerDay,Diatom_Resp_P,Water,Phytoplankton,Level2,Diatom_Resp_P_miligramsPerCubicMeterPerDay,miligramsPerCubicMeterPerDay,PHY_diatom_rsp_p,1,GLM,mmol P/m3/d,30.97,
+DIC_gramsPerCubicMeter,DIC,Water,Carbon,Level1,DIC_gramsPerCubicMeter,gramsPerCubicMeter,CAR_dic,1,GLM,mmol C/m3,0.01201,
+DO_gramsPerCubicMeter,DO,Water,Oxygen,Level1,DO_gramsPerCubicMeter,gramsPerCubicMeter,abiotic_water_sO2W,1,WET,g/m3,1,
+DO_gramsPerCubicMeter,DO,Water,Oxygen,Level1,DO_gramsPerCubicMeter,gramsPerCubicMeter,selmaprotbas_DO_mg,1,SELMAPROTBAS,mg O2/m**3,0.001,
+DO_gramsPerCubicMeter,DO,Water,Oxygen,Level1,DO_gramsPerCubicMeter,gramsPerCubicMeter,OXY_oxy,1,GLM,mmol O2/m3,0.032,
+DO_saturation%,DO_Sat,Water,Oxygen,Level1,DO_saturation%,%,abiotic_water_pO2Sat,1,WET,pct,,
+DO_Temporal_Variability,DO_Temp_Var,Water,Oxygen,Level1,DO_gramsPerCubicMeter,gramsPerCubicMeter,abiotic_water_sO2W,1,WET,g/m3,1,cal_DO_exceedance
+DO_Temporal_Variability,DO_Temp_Var,Water,Oxygen,Level1,DO_gramsPerCubicMeter,gramsPerCubicMeter,selmaprotbas_DO_mg,1,SELMAPROTBAS,mg O2/m**3,0.001,cal_DO_exceedance
+DO_Temporal_Variability,DO_Temp_Var,Water,Oxygen,Level1,DO_gramsPerCubicMeter,gramsPerCubicMeter,OXY_oxy,1,GLM,mmol O2/m3,0.032,cal_DO_exceedance
+DOC_gramsPerCubicMeter,DOC,Water,Carbon,Level1,DOC_gramsPerCubicMeter,gramsPerCubicMeter,OGM_doc,1,GLM,mmol C/m3,0.01201,
+DOM_gramsPerCubicMeter,DOM,Water,Carbon,Level1,DOM_gramsPerCubicMeter,gramsPerCubicMeter,abiotic_water_sDDOMW,1,WET,g/m3,1,
+DON_gramsPerCubicMeter,DON,Water,Nitrogen,Level1,DON_gramsPerCubicMeter,gramsPerCubicMeter,abiotic_water_sNDOMW,1,WET,g/m3,1,
+DON_gramsPerCubicMeter,DON,Water,Nitrogen,Level1,DON_gramsPerCubicMeter,gramsPerCubicMeter,OGM_don,1,GLM,mmol N/m3,0.014,
+DOP_gramsPerCubicMeter,DOP,Water,Phosphorus,Level1,DOP_gramsPerCubicMeter,gramsPerCubicMeter,abiotic_water_sPDOMW,1,WET,g/m3,1,
+DOP_gramsPerCubicMeter,DOP,Water,Phosphorus,Level1,DOP_gramsPerCubicMeter,gramsPerCubicMeter,OGM_dop,1,GLM,mmol P/m3,0.03097,
+Duration_of_Stratification,Dur_Strat,Water,LER,Level1,Temp_degreeCelcius,degreeCelcius,temp,1,GLM,celcius,1,cal_strat_date
+Duration_of_Stratification,Dur_Strat,Water,LER,Level1,Temp_degreeCelcius,degreeCelcius,temp,1,SELMAPROTBAS,celcius,1,cal_strat_date
+Duration_of_Stratification,Dur_Strat,Water,LER,Level1,Temp_degreeCelcius,degreeCelcius,temp,1,WET,celcius,1,cal_strat_date
+Evaporation_metersPerSecond,Evap,Water,LER,Level2,Evaporation_metersPerSecond,metersPerSecond,evap,0,SELMAPROTBAS,m sec-1,1,
+Evaporation_metersPerSecond,Evap,Water,LER,Level2,Evaporation_metersPerSecond,metersPerSecond,evap,0,WET,m sec-1,1,
+Evaporation_metersPerSecond,Evap,Water,LER,Level2,Evaporation_metersPerSecond,metersPerSecond,evap_mass_flux,0,GLM,m sec-1,1,
+Green_C_miligramsPerCubicMeter,Green_C,Water,Phytoplankton,Level1,Green_C_miligramsPerCubicMeter,miligramsPerCubicMeter,greens_sDW,1,WET,gDW/m3,450,
+Green_C_miligramsPerCubicMeter,Green_C,Water,Phytoplankton,Level1,Green_C_miligramsPerCubicMeter,miligramsPerCubicMeter,PHY_green,1,GLM,mmol C/m3,12.01,
+Green_C_miligramsPerCubicMeter,Green_C,Water,Phytoplankton,Level1,Green_C_miligramsPerCubicMeter,miligramsPerCubicMeter,greens_c,1,SELMAPROTBAS,mmol C/m3,12.01,
+Green_Chla_mgPerCubicMeter,Green_Chla,Water,Phytoplankton,Level1,Green_Chla_mgPerCubicMeter,mgPerCubicMeter,greens_chla,1,SELMAPROTBAS,mg chl a/m3,1,
+Green_Chla_mgPerCubicMeter,Green_Chla,Water,Phytoplankton,Level1,Green_Chla_mgPerCubicMeter,mgPerCubicMeter,greens_oChla,1,WET,mg/m3,1,
+Green_GPP_miligramsPerCubicMeterPerDay,Green_GPP,Water,Phytoplankton,Level3,Green_GPP_miligramsPerCubicMeterPerDay,miligramsPerCubicMeterPerDay,greens_GPP,1,SELMAPROTBAS,mmol/m3/d,12.01,
+Green_NPP_miligramsPerCubicMeterPerDay,Green_NPP,Water,Phytoplankton,Level3,Green_NPP_miligramsPerCubicMeterPerDay,miligramsPerCubicMeterPerDay,greens_NPP,1,SELMAPROTBAS,mmol/m3/d,12.01,
+Green_Resp_C_miligramsPerCubicMeterPerDay,Green_Resp_C,Water,Phytoplankton,Level2,Green_Resp_C_miligramsPerCubicMeterPerDay,miligramsPerCubicMeterPerDay,PHY_green_rsp_c,1,GLM,mmol C/m3/d,12.01,
+Green_Resp_N_miligramsPerCubicMeterPerDay,Green_Resp_N,Water,Phytoplankton,Level2,Green_Resp_N_miligramsPerCubicMeterPerDay,miligramsPerCubicMeterPerDay,PHY_green_rsp_n,1,GLM,mmol N/m3/d,14,
+Green_Resp_P_miligramsPerCubicMeterPerDay,Green_Resp_P,Water,Phytoplankton,Level2,Green_Resp_P_miligramsPerCubicMeterPerDay,miligramsPerCubicMeterPerDay,PHY_green_rsp_p,1,GLM,mmol P/m3/d,30.97,
+Ice_Thickness_meter,Ice_Thick,Water,LER,Level1,Blue_Ice_meters,meters,Hice,0,SELMAPROTBAS,meters,1,cal_ice_duration
+Ice_Thickness_meter,Ice_Thick,Water,LER,Level1,Blue_Ice_meters,meters,Hice,0,WET,meters,1,cal_ice_duration
+Ice_Thickness_meter,Ice_Thick,Water,LER,Level1,Blue_Ice_meters,meters,"blue_ice_thickness, white_ice_thickness",0,GLM,meters,1,cal_ice_duration
+Lake_Level_meters,W_Level,Water,LER,Level1,Lake_Level_meters,meters,lake_level,0,GLM,meters,1,
+Lake_Level_meters,W_Level,Water,LER,Level1,Lake_Level_meters,meters,zeta,0,SELMAPROTBAS,meters,1,
+Lake_Level_meters,W_Level,Water,LER,Level1,Lake_Level_meters,meters,zeta,0,WET,meters,1,
+Metalimnion_Thickness_meter,Meta_Thick,Water,LER,Level1,Temp_degreeCelcius,degreeCelcius,temp,1,GLM,celcius,1,cal_meta_depth
+Metalimnion_Thickness_meter,Meta_Thick,Water,LER,Level1,Temp_degreeCelcius,degreeCelcius,temp,1,SELMAPROTBAS,celcius,1,cal_meta_depth
+Metalimnion_Thickness_meter,Meta_Thick,Water,LER,Level1,Temp_degreeCelcius,degreeCelcius,temp,1,WET,celcius,1,cal_meta_depth
+NH4_gramsPerCubicMeter,NH4,Water,Nitrogen,Level1,NH4_gramsPerCubicMeter,gramsPerCubicMeter,abiotic_water_sNH4W,1,WET,g/m3,1,
+NH4_gramsPerCubicMeter,NH4,Water,Nitrogen,Level1,NH4_gramsPerCubicMeter,gramsPerCubicMeter,selmaprotbas_Amm,1,SELMAPROTBAS,mg NH4N/m**3,0.001,
+NH4_gramsPerCubicMeter,NH4,Water,Nitrogen,Level1,NH4_gramsPerCubicMeter,gramsPerCubicMeter,NIT_amm,1,GLM,mmol N/m3,0.014,
+NO3_gramsPerCubicMeter,NO3,Water,Nitrogen,Level1,NO3_gramsPerCubicMeter,gramsPerCubicMeter,abiotic_water_sNO3W,1,WET,g/m3,1,
+NO3_gramsPerCubicMeter,NO3,Water,Nitrogen,Level1,NO3_gramsPerCubicMeter,gramsPerCubicMeter,selmaprotbas_Nit,1,SELMAPROTBAS,mg NO3N/m**3,0.001,
+NO3_gramsPerCubicMeter,NO3,Water,Nitrogen,Level1,NO3_gramsPerCubicMeter,gramsPerCubicMeter,NIT_nit,1,GLM,mmol N/m3,0.014,
+Number_Of_Anoxic_Day,Anoxic_Day,Water,Oxygen,Level1,DO_gramsPerCubicMeter,gramsPerCubicMeter,abiotic_water_sO2W,1,WET,g/m3,1,cal_anoxic_date
+Number_Of_Anoxic_Day,Anoxic_Day,Water,Oxygen,Level1,DO_gramsPerCubicMeter,gramsPerCubicMeter,selmaprotbas_DO_mg,1,SELMAPROTBAS,mg O2/m**3,0.001,cal_anoxic_date
+Number_Of_Anoxic_Day,Anoxic_Day,Water,Oxygen,Level1,DO_gramsPerCubicMeter,gramsPerCubicMeter,OXY_oxy,1,GLM,mmol O2/m3,0.032,cal_anoxic_date
+pH,pH,Water,Carbon,Level1,pH,,CAR_pH,1,GLM,,,
+Photosynthetic_DO_Production_mgPerL,Photo_DO_Pr,Water,Phytoplankton,Level2,DO_gramsPerCubicMeter,gramsPerCubicMeter,selmaprotbas_DO_mg,1,SELMAPROTBAS,mg O2/m**3,0.001,
+Photosynthetic_DO_Production_mgPerL,Photo_DO_Pr,Water,Phytoplankton,Level2,DO_gramsPerCubicMeter,gramsPerCubicMeter,OXY_oxy,1,GLM,mmol O2/m3,0.032,
+PO4_gramsPerCubicMeter,PO4,Water,Phosphorus,Level1,PO4_gramsPerCubicMeter,gramsPerCubicMeter,abiotic_water_sPO4W,1,WET,g/m3,1,
+PO4_gramsPerCubicMeter,PO4,Water,Phosphorus,Level1,PO4_gramsPerCubicMeter,gramsPerCubicMeter,selmaprotbas_Pho,1,SELMAPROTBAS,mg PO4P/m**3,0.001,
+PO4_gramsPerCubicMeter,PO4,Water,Phosphorus,Level1,PO4_gramsPerCubicMeter,gramsPerCubicMeter,PHS_frp,1,GLM,mmol P/m3,0.03097,
+POC_gramsPerCubicMeter,POC,Water,Carbon,Level1,POC_gramsPerCubicMeter,gramsPerCubicMeter,OGM_poc,1,GLM,mmol C/m3,0.01201,
+POM_gramsPerCubicMeter,POM,Water,Carbon,Level1,POM_gramsPerCubicMeter,gramsPerCubicMeter,abiotic_water_Sdpomw,1,WET,g/m3,1,
+PON_gramsPerCubicMeter,PON,Water,Nitrogen,Level1,PON_gramsPerCubicMeter,gramsPerCubicMeter,abiotic_water_sNPOMW,1,WET,g/m3,1,
+PON_gramsPerCubicMeter,PON,Water,Nitrogen,Level1,PON_gramsPerCubicMeter,gramsPerCubicMeter,OGM_pon,1,GLM,mmol N/m3,0.014,
+POP_gramsPerCubicMeter,POP,Water,Phosphorus,Level1,POP_gramsPerCubicMeter,gramsPerCubicMeter,abiotic_water_sPPOMW,1,WET,g/m3,1,
+POP_gramsPerCubicMeter,POP,Water,Phosphorus,Level1,POP_gramsPerCubicMeter,gramsPerCubicMeter,OGM_pop,1,GLM,mmol P/m3,0.03097,
+Salt_gramsPerKilograms,Salt,Water,LER,Level1,Salt_gramsPerKilograms,gramsPerKilograms,salt,1,SELMAPROTBAS,g/kg,1,
+Salt_gramsPerKilograms,Salt,Water,LER,Level1,Salt_gramsPerKilograms,gramsPerKilograms,salt,1,GLM,g/kg,1,
+Salt_gramsPerKilograms,Salt,Water,LER,Level1,Salt_gramsPerKilograms,gramsPerKilograms,salt,1,WET,g/kg,1,
+Silica_gramsPerCubicMeter,Silica,Water,Silica,Level1,Silica_gramsPerCubicMeter,gramsPerCubicMeter,abiotic_water_sSiO2W,1,WET,g/m3,1,
+Silica_gramsPerCubicMeter,Silica,Water,Silica,Level1,Silica_gramsPerCubicMeter,gramsPerCubicMeter,selmaprotbas_Si_mg,1,SELMAPROTBAS,mg Si/m**3,0.001,
+Silica_gramsPerCubicMeter,Silica,Water,Silica,Level1,Silica_gramsPerCubicMeter,gramsPerCubicMeter,SIL_rsi,1,GLM,mmol Si/m3,0.06008,
+Temp_degreeCelcius,Temp,Water,LER,Level1,Temp_degreeCelcius,degreeCelcius,temp,1,GLM,celcius,1,
+Temp_degreeCelcius,Temp,Water,LER,Level1,Temp_degreeCelcius,degreeCelcius,temp,1,SELMAPROTBAS,celcius,1,
+Temp_degreeCelcius,Temp,Water,LER,Level1,Temp_degreeCelcius,degreeCelcius,temp,1,WET,celcius,1,
+TN_gramsPerCubicMeter,TN,Water,Nitrogen,Level1,TN_gramsPerCubicMeter,gramsPerCubicMeter,total_nitrogen_calculator_result,1,SELMAPROTBAS,mmol m-3,0.014,
+TN_gramsPerCubicMeter,TN,Water,Nitrogen,Level1,TN_gramsPerCubicMeter,gramsPerCubicMeter,TOT_tn,1,GLM,mmol N/m3,0.014,
+TN_gramsPerCubicMeter,TN,Water,Nitrogen,Level1,TN_gramsPerCubicMeter,gramsPerCubicMeter,wet_totN_calculator_result,1,WET,g m-3,1,
+TOC_gramsPerCubicMeter,TOC,Water,Carbon,Level1,TOC_gramsPerCubicMeter,gramsPerCubicMeter,TOT_toc,1,GLM,mmol C/m3,0.01201,
+TOC_gramsPerCubicMeter,TOC,Water,Carbon,Level1,TOC_gramsPerCubicMeter,gramsPerCubicMeter,total_carbon_calculator_result,1,SELMAPROTBAS,mmol m-3,0.01201,
+Total_Chla_miligramsPerCubicMeter,TChla,Water,Phytoplankton,Level1,Total_Chla_miligramsPerCubicMeter,miligramsPerCubicMeter,total_chlorophyll_calculator_result,1,SELMAPROTBAS,mg/m^3,1,
+Total_Chla_miligramsPerCubicMeter,TChla,Water,Phytoplankton,Level1,Total_Chla_miligramsPerCubicMeter,miligramsPerCubicMeter,PHY_tchla,1,GLM,ug/L,1,
+Total_Chla_miligramsPerCubicMeter,TChla,Water,Phytoplankton,Level1,Total_Chla_miligramsPerCubicMeter,miligramsPerCubicMeter,wet_chla_calculator_result,1,WET,ug/L,1,
+Total_Suspended_Solids,TSS,Water,Carbon,Level1,Total_Suspended_Solids,,wet_totSusPar_calculator_result,1,,,,
+TP_gramsPerCubicMeter,TP,Water,Phosphorus,Level1,TP_gramsPerCubicMeter,gramsPerCubicMeter,"	
+total_phosphorus_calculator_result",1,SELMAPROTBAS,mmol m-3,0.03097,
+TP_gramsPerCubicMeter,TP,Water,Phosphorus,Level1,TP_gramsPerCubicMeter,gramsPerCubicMeter,TOT_tp,1,GLM,mmol P/m3,0.03097,
+TP_gramsPerCubicMeter,TP,Water,Phosphorus,Level1,TP_gramsPerCubicMeter,gramsPerCubicMeter,wet_totP_calculator_result,1,WET,g m-3,1,
+Zoop1_C_gramsPerCubicMeter,Zoop_C,Water,Zooplankton,Level1,Zoop1_C_gramsPerCubicMeter,gramsPerCubicMeter,zooplankton_sD,1,WET,gDW/m3,0.45,
+Zoop1_C_gramsPerCubicMeter,Zoop_C,Water,Zooplankton,Level1,Zoop1_C_gramsPerCubicMeter,gramsPerCubicMeter,zooplankton_c,1,SELMAPROTBAS,mmol C/m3,0.01201,
+Zoop1_C_gramsPerCubicMeter,Zoop_C,Water,Zooplankton,Level1,Zoop1_C_gramsPerCubicMeter,gramsPerCubicMeter,ZOO_zoo01,1,GLM,mmolC/m**3,0.01201,
+Zoop2_C_gramsPerCubicMeter,Zoop_C,Water,Zooplankton,Level1,Zoop2_C_gramsPerCubicMeter,gramsPerCubicMeter,ZOO_zoo02,1,GLM,mmolC/m**3,0.01201,
+Zoop3_C_gramsPerCubicMeter,Zoop_C,Water,Zooplankton,Level1,Zoop3_C_gramsPerCubicMeter,gramsPerCubicMeter,ZOO_zoo03,1,GLM,mmolC/m**3,0.01201,
+Zooplankton_grazing_miligramsCarbonPerCubicMeterPerDay,Zoop_Grz_C,Water,Zooplankton,Level3,Zooplankton_grazing_miligramsCPerCubicMeterPerDay,miligramsCPerCubicMeterPerDay,ZOO_grz,1,GLM,mmolC/m**3/d,12.01,
+Inflow_TN_gramsPerDay,Inf_TN,Inflow,Input,Level1,Inflow_TN_gramsPerDay,,,1,,,,
+Inflow_TP_gramsPerDay,Inf_TP,Inflow,Input,Level1,Inflow_TP_gramsPerDay,,,1,,,,
+Nitrif_gramsPerCubicMeterPerDay,Nitrif,Water,Nitrogen,Level2,Nitrif_gramsPerCubicMeterPerDay,gramsPerCubicMeterPerDay,NIT_nitrif,1,GLM,mmol N/m3/d,0.014,
+Nitrif_gramsPerCubicMeterPerDay,Nitrif,Water,Nitrogen,Level2,Nitrif_gramsPerCubicMeterPerDay,gramsPerCubicMeterPerDay,abiotic_water_wNNitrW,1,WET,g/m3/s,86400,
+Denitrif_gramsPerCubicMeterPerDay,Denitrif,Water,Nitrogen,Level2,Denitrif_gramsPerCubicMeterPerDay,gramsPerCubicMeterPerDay,NIT_denit,1,GLM,mmol N/m3/d,0.014,
+Denitrif_gramsPerCubicMeterPerDay,Denitrif,Water,Nitrogen,Level2,Denitrif_gramsPerCubicMeterPerDay,gramsPerCubicMeterPerDay,selmaprotbas_DNP,1,SELMAPROTBAS,mmol N/m3/d,0.014,
+Denitrif_gramsPerCubicMeterPerDay,Denitrif,Water,Nitrogen,Level2,Denitrif_gramsPerCubicMeterPerDay,gramsPerCubicMeterPerDay,abiotic_water_wNDenitW,1,WET,g/m3/s,86400,
