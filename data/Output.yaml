@@ -1,0 +1,93 @@
+folder: ""
+files:
+  bathy_file: "Bathymetry.bth"
+  metrics_dict: "Metrics_dict_v1_add.csv"
+  metric_yaml_file: "Output.yaml"
+  LER_config_file: "LakeEnsemblR.yaml"
+model_folders:
+  GLM: "GLM"
+  WET: "WET"
+  SELMAPROTBAS: "SELMAPROTBAS"
+Level1:
+   LER:
+      Temp_degreeCelcius:
+      Surface_Mixed_Layer_Depth_meter:
+      Bottom_Surface_Difference_degC:
+      Duration_of_Stratification:
+         hemisphere : "N"
+      Metalimnion_Thickness_meter:
+#   - Richardson_Number
+#   - Schmidt_Stability
+      Salt_gramsPerKilograms:
+      Ice_Thickness_meter:
+      Lake_Level_meters:  
+   Oxygen:
+      DO_gramsPerCubicMeter:
+      #DO_Frequency_Spectra:
+      DO_Temporal_Variability:
+         depth: 1.0
+      Number_Of_Anoxic_Day:
+         threshold: 1.0
+         duration: "full"
+   #Carbon:
+   #  DIC_gramsPerCubicMeter:
+   #  DOC_gramsPerCubicMeter:
+   # DOM_gramsPerCubicMeter:
+   #  POC_gramsPerCubicMeter:
+   #  POM_gramsPerCubicMeter:
+   #  pH:
+   #  Total_Suspended_Solids:
+   Nitrogen:
+     DON_gramsPerCubicMeter:
+     NH4_gramsPerCubicMeter:
+     NO3_gramsPerCubicMeter:
+     PON_gramsPerCubicMeter:
+     TN_gramsPerCubicMeter:
+   Phosphorus:
+     DOP_gramsPerCubicMeter:
+     PO4_gramsPerCubicMeter:
+     POP_gramsPerCubicMeter:
+     TP_gramsPerCubicMeter:
+   Silica:
+     Silica_gramsPerCubicMeter:
+   Phytoplankton:
+     Cyano_Chla_miligramsPerCubicMeter:
+     Cyano_C_miligramsPerCubicMeter:
+     Diatom_Chla_miligramsPerCubicMeter:
+     Diatom_C_miligramsPerCubicMeter:
+     Green_Chla_mgPerCubicMeter:
+     Green_C_miligramsPerCubicMeter:
+     Total_Chla_miligramsPerCubicMeter:
+   Zooplankton: 
+     Zoop1_C_gramsPerCubicMeter:
+   Inflows:
+    Inflow_TN_gramsPerDay:
+    Inflow_TP_gramsPerDay:
+Level2:
+   LER:
+     Evaporation_metersPerSecond:
+   Oxygen:
+     SOD_mgLPerCubicMeter:
+   Nitrogen:
+      Nitrif_gramsPerCubicMeterPerDay:
+      Denitrif_gramsPerCubicMeterPerDay:
+   Phytoplankton:
+      Cyano_Respiration_C_miligramsPerCubicMeterPerDay:
+      Cyano_Respiration_N_miligramsPerCubicMeterPerDay:
+      Cyano_Respiration_P_miligramsPerCubicMeterPerDay:
+      Diatom_Respiration_C_miligramsPerCubicMeterPerDay:
+      Diatom_Respiration_N_miligramsPerCubicMeterPerDay:
+      Diatom_Respiration_P_miligramsPerCubicMeterPerDay:
+      Green_Respiration_C_miligramsPerCubicMeterPerDay:
+      Green_Respiration_N_miligramsPerCubicMeterPerDay:
+      Green_Respiration_P_miligramsPerCubicMeterPerDay:
+Level3:
+   Phytoplankton:
+      Cyano_GPP_miligramsPerCubicMeterPerDay:
+      Cyano_NPP_miligramsPerCubicMeterPerDay:
+      Diatom_GPP_miligramsPerCubicMeterPerDay:
+      Diatom_NPP_miligramsPerCubicMeterPerDay:
+      Green_GPP_miligramsPerCubicMeterPerDay:
+      Green_NPP_miligramsPerCubicMeterPerDay:
+   Zooplankton:
+      Zooplankton_grazing_miligramsCarbonPerCubicMeterPerDay:

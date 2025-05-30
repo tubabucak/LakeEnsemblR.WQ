@@ -17,7 +17,3 @@ A dataframe with Datetime and epilimnion thickness.
 \description{
 Calculate the epilimnion thickness (in meter) from the temperature data
 }
-\examples{
-# Example usage:
-# epi_thickness <- cal_epi_depth(temp_glm)
-}

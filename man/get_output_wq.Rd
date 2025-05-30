@@ -10,12 +10,11 @@ get_output_wq(
   vars,
   obs_depths = NULL,
   depth_01 = 1,
-  conversion_factor = 1,
-  folder = "."
+  conversion_factor = 1
 )
 }
 \arguments{
-\item{config_file}{character:filepath; To LER config yaml file. Only used if model = 'GOTM'}
+\item{config_file}{character:filepath; to Output yaml.}
 
 \item{model}{character; Model for which scaling parameters will be applied. So far options include
 c('GLM', 'SELMAPROTBAS', 'WET')}
@@ -27,6 +26,8 @@ c('GLM', 'SELMAPROTBAS', 'WET')}
 \item{depth_01}{integer; Indicates if the variable has 'z' dimension. 0: The variable has no depth component, 1: variable has depth component}
 
 \item{conversion_factor}{numeric; unit conversion factors for common metric unit for each variable}
+
+\item{LER_config_file}{character:filepath; To LER config yaml file. Only used if model = 'GOTM'}
 
 \item{folder}{character: main filepath; where all the model files are stored.}
 }

@@ -35,7 +35,15 @@ Imports:
      data.tree,
      glmtools,
      plyr,
-     stringr
+     stringr, 
+     stats,
+     zoo,
+     utils,
+     readr,
+     MyLakeR,
+     tidyr,
+     purrr,
+     ggtext
 Suggests:knitr
 VignetteBuilder: knitr
 Encoding: UTF-8

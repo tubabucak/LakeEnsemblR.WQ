@@ -10,12 +10,10 @@
 #' 
 #' @return A dataframe with Datetime and epilimnion thickness.
 #' @importFrom rLakeAnalyzer ts.meta.depths
-#' @importFrom dplyr mutate_at
-#' @importFrom dplyr vars
+#' @importFrom rLakeAnalyzer get.offsets
+#' @importFrom dplyr mutate
 
-#' @examples
-#' # Example usage:
-#' # epi_thickness <- cal_epi_depth(temp_glm)
+
 #' @export
 
   cal_epi_depth <- function(temp_data, folder = '.') {

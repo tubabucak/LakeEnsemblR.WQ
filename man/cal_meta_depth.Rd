@@ -15,7 +15,3 @@ dataframe with Dateframe and metalimnion thickness
 \description{
 This function calculate the metalimnion thickness using temperature data
 }
-\examples{
-# Example usage:
-# meta_thickness <- cal_meta_depth(temp_glm)
-}

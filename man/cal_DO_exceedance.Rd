@@ -7,13 +7,15 @@
 cal_DO_exceedance(oxy_data, depth = 0)
 }
 \arguments{
-\item{oxy_data}{dataframe; The output of the model/observed output. It should include Datetime and depth specific values per each column.}
+\item{oxy_data}{{data.frame} A dataframe containing oxygen concentrations. 
+The first column should be `datetime`, and the remaining columns should represent 
+oxygen values at different depths.}
 
-\item{depth}{numeric; Specific depth that the data should be extracted. It should be the depths that are available in the oxy_data: Like 1.0, 1.5 etc}
+\item{depth}{{numeric} The depth at which to extract data. Must match a column name 
+in `oxy_data` (e.g., 1.0, 1.5, etc.).}
 }
 \value{
-dataframe with DO (mgL) and Probability of exceedance in the second column.
-Example usage cal_DO_exceedance(oxy_data, depth = 3)
+a data.frame
 }
 \description{
 Calculates the percentage time exceeded curve for O2 (similar approach to Flow Duration Curve)

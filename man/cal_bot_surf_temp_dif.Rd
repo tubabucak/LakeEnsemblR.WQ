@@ -7,17 +7,16 @@
 cal_bot_surf_temp_dif(temp_data)
 }
 \arguments{
-\item{temp_data}{dataframe; The output of the model/observed output. It should include Datetime and depth specific values per each column.}
+\item{temp_data}{{data.frame} A dataframe containing temperature profiles. 
+The first column should be `datetime`, and the remaining columns should 
+represent temperature at different depths.}
 }
 \value{
-dataframe with Dateframe and bottom-surface difference
+{data.frame} A dataframe with two columns:
+\item{datetime}{The datetime of each observation.}
+\item{temp_diff}{The difference between surface and bottom temperature (°C).}
 }
 \description{
 Calculate the temperature difference between bottom and surface of the lake.
 Uses layer.temperature function from rlakeAnalyzer
-}
-\examples{
-Example usage:
-# temp_diff_result <- cal_bot_surf_temp_dif(temp_glm)
-# print(temp_diff_result)
 }

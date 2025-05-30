@@ -4,23 +4,18 @@
 #' The aim is to plot observed vs predicted and calculate statistical measures for each model. So far we have GLM, WET and SELMAPROTBAS
 
 #' @name compare_plot
-#' @param data_glm, dataframe; Timeseries output of GLM model for a certain variable where each depth should be in different columns (starting with "Depth_0", "Depth_0.5" etc) and the first column should be datetime
-#' @param data_wet, dataframe; Timeseries output of WET model for a certain variable where each depth should be in different columns (starting with "Depth_0", "Depth_0.5" etc) and the first column should be datetime
-#' @param data_selma, dataframe; Timeseries output of SELMAPROTBAS model for a certain variable where each depth should be in different columns (starting with "Depth_0", "Depth_0.5" etc) and the first column should be datetime
-#' @param data_OBS, dataframe; Timeseries output of OBSERVED data for a certain variable where each depth should be in different columns (starting with "Depth_0", "Depth_0.5" etc) and the first column should be datetime
-#' @param depth, numeric; Certain depth to be compared
-
-#' @param y_title, character; Name of the variable to be shown in the plot
-#'
+#' @param data_glm dataframe. Timeseries output of GLM model ...
+#' @param data_wet dataframe. Timeseries output of WET model ...
+#' @param data_selma dataframe. Timeseries output of SELMAPROTBAS model ...
+#' @param data_obs dataframe. Timeseries output of OBSERVED data ...
+#' @param depth numeric. Certain depth to be compared.
+#' @param y_title character. Name of the variable to be shown in the plot.
 #' @return A list with comparison plot with statistical metrics. order: plot, stats_glm, stats_wet, stats_selma
 #'
 #' @importFrom ggplot2 ggplot
 #' @importFrom dplyr filter select rename mutate bind_rows
-#' @examples
-#' Example usage:
-#' cal_stats(Observed, Predicted)
-
-
+#' @importFrom tidyr spread
+#' @importFrom ggplot2 aes geom_line geom_point labs theme element_blank
 #' @export
 
 

@@ -39,5 +39,3 @@ ice_duration_period <- data.frame(unique_years, ice_duration_day)
 
 
 }
-
-

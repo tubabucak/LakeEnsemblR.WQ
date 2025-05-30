@@ -7,25 +7,21 @@
 compare_plot(data_glm, data_wet, data_selma, data_obs, depth, y_title)
 }
 \arguments{
-\item{data_glm, }{dataframe; Timeseries output of GLM model for a certain variable where each depth should be in different columns (starting with "Depth_0", "Depth_0.5" etc) and the first column should be datetime}
+\item{data_glm}{dataframe. Timeseries output of GLM model ...}
 
-\item{data_wet, }{dataframe; Timeseries output of WET model for a certain variable where each depth should be in different columns (starting with "Depth_0", "Depth_0.5" etc) and the first column should be datetime}
+\item{data_wet}{dataframe. Timeseries output of WET model ...}
 
-\item{data_selma, }{dataframe; Timeseries output of SELMAPROTBAS model for a certain variable where each depth should be in different columns (starting with "Depth_0", "Depth_0.5" etc) and the first column should be datetime}
+\item{data_selma}{dataframe. Timeseries output of SELMAPROTBAS model ...}
 
-\item{depth, }{numeric; Certain depth to be compared}
+\item{data_obs}{dataframe. Timeseries output of OBSERVED data ...}
 
-\item{y_title, }{character; Name of the variable to be shown in the plot}
+\item{depth}{numeric. Certain depth to be compared.}
 
-\item{data_OBS, }{dataframe; Timeseries output of OBSERVED data for a certain variable where each depth should be in different columns (starting with "Depth_0", "Depth_0.5" etc) and the first column should be datetime}
+\item{y_title}{character. Name of the variable to be shown in the plot.}
 }
 \value{
 A list with comparison plot with statistical metrics. order: plot, stats_glm, stats_wet, stats_selma
 }
 \description{
 The aim is to plot observed vs predicted and calculate statistical measures for each model. So far we have GLM, WET and SELMAPROTBAS
-}
-\examples{
-Example usage:
-cal_stats(Observed, Predicted)
 }

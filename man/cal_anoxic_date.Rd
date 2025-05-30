@@ -7,16 +7,19 @@
 cal_anoxic_date(oxy_data, bathy_file, threshold = 1, duration = "full")
 }
 \arguments{
-\item{oxy_data, }{dataframe; The output of the model/observed output. It should include Datetime and depth specific values per each column.}
+\item{oxy_data}{{data.frame} The output of the model/observed output. It should include Datetime and depth-specific values per column.}
 
-\item{bathy_file, }{dataframe; The file includes depth and area relationship}
+\item{bathy_file}{{data.frame} The file includes depth and area relationship}
 
-\item{threshold, }{anoxic O2 threshold (mg L-1)}
+\item{threshold}{{numeric} Anoxic O2 threshold (mg L-1). Default is 1 mg/L.}
 
-\item{duration, }{argument for calculating the anoxic factor and number of anoxic days. If duration = full, the number of all anoxic days will be calculated. If duration = longest, AF for the longest anoxic period will be returned.}
+\item{duration}{{character} Argument for calculating the anoxic factor and number of anoxic days. Use "full" for all anoxic days or "longest" for only the longest anoxic period.}
 }
 \value{
-dataframe with number of anoxic days for each year and anoxic factor. Also returns the depth for each day where anoxic layer starts
+A list with three dataframes:
+\item{AF_yearly}{A dataframe with the yearly anoxic factor values.}
+\item{num_anoxic_days}{A dataframe with the number of anoxic days per year.}
+\item{anoxic_depths}{A dataframe with the anoxic depth recorded for each day.}
 }
 \description{
 Calculates Number of Anoxic Days and Anoxic Factors (Nürnberg, 1995) for each year/season

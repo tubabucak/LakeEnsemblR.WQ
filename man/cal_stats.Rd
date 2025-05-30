@@ -2,22 +2,39 @@
 % Please edit documentation in R/cal_stats.r
 \name{cal_stats}
 \alias{cal_stats}
-\title{Calculate statistical metrics}
+\title{Calculate Model Performance Statistics}
 \usage{
 cal_stats(observed, predicted)
 }
 \arguments{
-\item{observed:}{dataframe or numeric vector of observed outputs}
+\item{observed}{Numeric vector of observed values (e.g., observed DO concentrations in mg/L).}
 
-\item{predicted:}{dataframe or numeric vector of oprecited outputs}
+\item{predicted}{Numeric vector of predicted values (e.g., modeled DO concentrations in mg/L).}
 }
 \value{
-A list with statistical metrics.
+A list containing:
+\item{residual}{Residuals (observed - predicted)}
+\item{NSE}{Nash-Sutcliffe Efficiency}
+\item{RMSE}{Root Mean Squared Error}
+\item{NRMSE}{Normalized RMSE}
+\item{PBIAS}{Percent Bias}
+\item{lnlikelihood}{Log-likelihood}
+\item{KGE}{Kling-Gupta Efficiency}
 }
 \description{
-The aim is calculate statistiscal measures like residual, NSE, RMSE, PBIAS, lnlikelihood, KGE
+Computes statistical performance metrics to evaluate model predictions against observations.
 }
-\examples{
-Example usage:
-cal_stats(Observed, Predicted)
+\details{
+The function first removes any NA values and then calculates the following metrics:
+\itemize{
+  \item \strong{NSE}: Nash-Sutcliffe Efficiency
+  \item \strong{RMSE}: Root Mean Squared Error
+  \item \strong{NRMSE}: Normalized Root Mean Squared Error (normalized by range of observed values)
+  \item \strong{PBIAS}: Percent Bias
+  \item \strong{lnlikelihood}: Log-likelihood assuming normal distribution
+  \item \strong{KGE}: Kling-Gupta Efficiency (from \code{hydroGOF::KGE})
+  \item \strong{residual}: Vector of observed - predicted residuals
+}
+
+For very small observed or predicted values (< 1e-3), a minimum threshold is applied to avoid division by near-zero values in the PBIAS calculation.
 }

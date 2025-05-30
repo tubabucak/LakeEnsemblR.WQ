@@ -10,9 +10,7 @@
 #' @importFrom rLakeAnalyzer ts.meta.depths
 #' @importFrom dplyr mutate_at vars
 #' 
-#' @examples
-#' # Example usage:
-#' # meta_thickness <- cal_meta_depth(temp_glm)
+
 #' @export
   cal_meta_depth <- function(temp_data) {
     

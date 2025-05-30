@@ -4,12 +4,10 @@
 \alias{check_the_metrics}
 \title{Check and Extract Selected Metrics from output.YAML}
 \usage{
-check_the_metrics(metric_yaml_file, folder, dict_file)
+check_the_metrics(metric_yaml_file, dict_file)
 }
 \arguments{
 \item{metric_yaml_file}{Character: Name of the YAML file containing the list of metrics.}
-
-\item{folder}{Character: The main filepath where the YAML file is located.}
 
 \item{dict_file}{Character: Full path of the metric dictionary}
 }

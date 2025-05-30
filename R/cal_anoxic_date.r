@@ -4,17 +4,20 @@
 #' Calculates Number of Anoxic Days and Anoxic Factors (Nürnberg, 1995) for each year/season
 
 #' @name cal_anoxic_date
-#' @param bathy_file, dataframe; The file includes depth and area relationship
-#' @param oxy_data, dataframe; The output of the model/observed output. It should include Datetime and depth specific values per each column.
-#' @param threshold, anoxic O2 threshold (mg L-1)
-#' @param duration, argument for calculating the anoxic factor and number of anoxic days. If duration = full, the number of all anoxic days will be calculated. If duration = longest, AF for the longest anoxic period will be returned.
-#' @return dataframe with number of anoxic days for each year and anoxic factor. Also returns the depth for each day where anoxic layer starts
+#' @param bathy_file {data.frame} The file includes depth and area relationship
+#' @param oxy_data {data.frame} The output of the model/observed output. It should include Datetime and depth-specific values per column.
+#' @param threshold {numeric} Anoxic O2 threshold (mg L-1). Default is 1 mg/L.
+#' @param duration {character} Argument for calculating the anoxic factor and number of anoxic days. Use "full" for all anoxic days or "longest" for only the longest anoxic period.
+#' @return A list with three dataframes:
+#' \item{AF_yearly}{A dataframe with the yearly anoxic factor values.}
+#' \item{num_anoxic_days}{A dataframe with the number of anoxic days per year.}
+#' \item{anoxic_depths}{A dataframe with the anoxic depth recorded for each day.}
 #' @importFrom rLakeAnalyzer ts.meta.depths
-
-
+#' @importFrom lubridate year
+#' @importFrom dplyr filter
 #' @export
 cal_anoxic_date <- function(oxy_data, bathy_file, threshold = 1, duration = "full"){
-
+  duration <- match.arg(duration)
   bathy_file$depths <- as.numeric(bathy_file$depths)
   bathy_file$areas <- as.numeric(bathy_file$areas)
 # Create an empty vector to store the results

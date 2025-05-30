@@ -14,8 +14,7 @@
 
 #' @import tidyverse
 #' @import lubridate
-# Example use
-# strat_days <- cal_strat_date(temp_wet, hemisphere = "N")
+
 #' @export
 cal_strat_date <- function(temp_data, hemisphere = "N") {
   
