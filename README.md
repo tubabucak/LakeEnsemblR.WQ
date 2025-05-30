@@ -1,6 +1,6 @@
 ## LakeEnsemblR.WQ: Calculate and Export Lake Ecosystem Metrics
 
-This version of the package focuses on harmonizing and post-processing lake model outputs from **GLM-AED2**, **GOTM-WET**, and **GOTM-SELMAPROTBAS**. Using raw model outputs, the package calculates system metrics (as outlined in Hipsey et al. 2021) and returns them in a structured list format.
+This version of the package focuses on harmonizing and post-processing lake model outputs from **GLM-AED2**, **GOTM-WET**, and **GOTM-SELMAPROTBAS**. Using raw model outputs, the package calculates system metrics (as outlined in Hipsey et al. 2021) and returns them in a structured list format. Model running & calibration functions will be added soon.
 
 The `output.yaml` file should specify:
 
@@ -63,27 +63,6 @@ plot(result$Temp_degreeCelcius$GLM$datetime,
 ```
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# LakeEnsemblR.WQ
-R Package to facilitate running ensembles of water quality models
 
 
 # How do I contribute new code back to the LakeEnsemblR.WQ project?
