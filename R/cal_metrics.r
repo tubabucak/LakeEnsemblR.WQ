@@ -260,6 +260,7 @@ if ("TP_gramsPerCubicMeter" %in% names(metric_out) &
 
             # Store the ratio in the output list
             metric_out[["TN_TP_ratio"]][[model]] <- TN_TP_ratio
+            
     
   }
   
