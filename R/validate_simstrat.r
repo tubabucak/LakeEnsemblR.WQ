@@ -1,32 +1,32 @@
-#'@title Validate a Simstrat-AED2 model simulation folder
-
-#'@description
-#' The function checks that the Simstrat configuration and key input files referenced inside the simstrat.par are present
-#' in the simulation folder. It also checks that the output directory exists,
-#' and attempts to create it if missing.
-
+#' @title Validate a Simstrat-AED2 model simulation folder
+#'
+#' @description
+#' The function checks that the Simstrat configuration and key input files referenced
+#' inside the simstrat.par are present in the simulation folder. It also checks that
+#' the output directory exists, and attempts to create it if missing.
+#'
 #' If any required file is missing, the function stops with an informative
 #' error message describing which file(s) could not be found.
-#' @name  validate_simstrat
-#' @param sim_folder Character. Path to the Simstrat-AED2 simulation folder containing the namelist and input files.
-#' @param par_file Character. Name of the Simstrat-AED2 configuration file inside \code{sim_folder}. Default is \code{"simstrat.par"}.
-#' @param verbose Logical. If \code{TRUE}, progress messages are printed using \code{message()}. Default is \code{TRUE}.
+#'
+#' @name validate_simstrat
+#' @param sim_folder Character. Path to the Simstrat-AED2 simulation folder containing
+#'   the namelist and input files.
+#' @param par_file Character. Name of the Simstrat-AED2 configuration file inside
+#'   \code{sim_folder}. Default is \code{"simstrat.par"}.
+#' @param verbose Logical. If \code{TRUE}, progress messages are printed using
+#'   \code{message()}. Default is \code{TRUE}.
+#' @param check_time_coverage Logical. If \code{TRUE}, checks that time series inputs
+#'   cover the simulation end time. Default is \code{TRUE}.
 #'
 #' @return Invisibly returns \code{TRUE} if validation succeeds. Otherwise, the
 #'   function throws an error.
 #'
 #' @examples
 #' \dontrun{
-#' # Validate a prepared Simstrat-AED2 run directory
-#' validate_gotm_wet(sim_folder = "models/simstrat_aed2", par_file = "simstrat.par")
+#' validate_simstrat(sim_folder = "models/simstrat_aed2", par_file = "simstrat.par")
+#' }
 #'
-
-
-#' Validate GOTM-WET configuration
 #' @export
-#' 
-#' 
-
 validate_simstrat <- function(sim_folder = ".",
                               par_file = "simstrat.par",
                               verbose = TRUE,
@@ -35,7 +35,8 @@ validate_simstrat <- function(sim_folder = ".",
   msg <- function(...) if (isTRUE(verbose)) message(...)
 
   if (!requireNamespace("jsonlite", quietly = TRUE)) {
-    stop("Package 'jsonlite' is required. Install it with install.packages('jsonlite').", call. = FALSE)
+    stop("Package 'jsonlite' is required. Install it with install.packages('jsonlite').",
+         call. = FALSE)
   }
 
   par_path <- file.path(sim_folder, par_file)
@@ -52,16 +53,37 @@ validate_simstrat <- function(sim_folder = ".",
     # collapse to one string
     s <- paste(txt, collapse = "\n")
 
-    # quote unquoted keys:   key : value   -> "key" : value
-    # (skip if already quoted)
+    # quote unquoted keys: key : value -> "key" : value  (skip if already quoted)
     s <- gsub('([\\{,]\\s*)([A-Za-z0-9_ /\\-]+)\\s*:', '\\1"\\2":', s, perl = TRUE)
 
     # remove trailing commas before } or ]
     s <- gsub(",\\s*([\\}\\]])", "\\1", s, perl = TRUE)
 
-    # parse JSON
     jsonlite::fromJSON(s, simplifyVector = FALSE)
   }
+
+extract_time_values <- function(fp, n_head = 5000, n_tail = 5000) {
+  # Head chunk
+  head_lines <- readLines(fp, n = n_head, warn = FALSE)
+
+  # Tail chunk (read last N lines without loading everything into memory at once)
+  con <- file(fp, open = "r")
+  on.exit(close(con), add = TRUE)
+  all_lines <- readLines(con, warn = FALSE)
+  tail_lines <- utils::tail(all_lines, n_tail)
+
+  lines <- c(head_lines, tail_lines)
+
+  # Keep only lines starting with a number (incl. negative/decimal)
+  lines <- lines[grepl("^\\s*-?\\d+(\\.\\d+)?", lines)]
+  if (length(lines) == 0) return(numeric(0))
+
+  # Extract the first numeric token from each line
+  tvals <- suppressWarnings(as.numeric(sub("^\\s*([-]?\\d+(?:\\.\\d+)?).*", "\\1", lines)))
+  tvals[is.finite(tvals)]
+}
+
+
 
   cfg <- tryCatch(
     read_simstrat_par(par_path),
@@ -74,11 +96,10 @@ validate_simstrat <- function(sim_folder = ".",
   if (is.null(cfg$Input)) stop("Missing 'Input' section in ", par_file, call. = FALSE)
   if (is.null(cfg$Simulation)) stop("Missing 'Simulation' section in ", par_file, call. = FALSE)
 
-  # ---- check input files exist (only those that are character paths) ----
+  # ---- check input files exist (only those that look like file paths) ----
   input_files <- cfg$Input
   input_paths <- Filter(function(x) is.character(x) && length(x) == 1 && nzchar(x), input_files)
 
-  # Grid is numeric in your config; ignore non-character
   if (length(input_paths) > 0) {
     for (nm in names(input_paths)) {
       f <- file.path(sim_folder, input_paths[[nm]])
@@ -110,50 +131,52 @@ validate_simstrat <- function(sim_folder = ".",
     msg("✔ AED2 config OK: ", aed2_file)
   }
 
-  # ---- optional: time coverage checks (relative time column) ----
-  if (isTRUE(check_time_coverage)) {
-    start_d <- cfg$Simulation[["Start d"]]
-    end_d   <- cfg$Simulation[["End d"]]
 
-    check_time_file <- function(label, rel_path) {
-      if (is.null(rel_path) || !nzchar(rel_path)) return(invisible(TRUE))
-      fp <- file.path(sim_folder, rel_path)
+  # ---- time coverage checks ----
+if (isTRUE(check_time_coverage)) {
+  start_d <- cfg$Simulation[["Start d"]]
+  end_d   <- cfg$Simulation[["End d"]]
 
-      # try to read first column as numeric time
-      x <- tryCatch(
-        suppressWarnings(read.table(fp, header = FALSE, nrows = 200, stringsAsFactors = FALSE)),
-        error = function(e) NULL
-      )
-      if (is.null(x) || ncol(x) < 1) {
-        msg("ℹ Skipping time coverage check (could not read): ", label)
-        return(invisible(TRUE))
-      }
+  check_time_file <- function(label, rel_path) {
+    if (is.null(rel_path) || !nzchar(rel_path)) return(invisible(TRUE))
+    fp <- file.path(sim_folder, rel_path)
 
-      tvals <- suppressWarnings(as.numeric(x[[1]]))
-      tvals <- tvals[is.finite(tvals)]
-      if (length(tvals) == 0) {
-        msg("ℹ Skipping time coverage check (time column not numeric): ", label)
-        return(invisible(TRUE))
-      }
-
-      tmin <- min(tvals); tmax <- max(tvals)
-      if (!is.null(start_d) && is.numeric(start_d) && tmin > start_d) {
-        msg("⚠ ", label, " starts after simulation start (min t=", tmin, " > Start d=", start_d, ")")
-      }
-      if (!is.null(end_d) && is.numeric(end_d) && tmax < end_d) {
-        stop(label, " does not cover simulation end (max t=", tmax, " < End d=", end_d, ")", call. = FALSE)
-      }
-
-      msg("✔ Time coverage OK for ", label, " (", tmin, " .. ", tmax, ")")
-      invisible(TRUE)
+    tvals <- extract_time_values(fp)
+    if (length(tvals) == 0) {
+      msg("ℹ Skipping time coverage check (no numeric time values found): ", label)
+      return(invisible(TRUE))
     }
 
-    # common time-series inputs
-    if (is.character(cfg$Input$Forcing))  check_time_file("Forcing", cfg$Input$Forcing)
-    if (is.character(cfg$Input$Inflow))   check_time_file("Inflow",  cfg$Input$Inflow)
-    if (is.character(cfg$Input$Outflow))  check_time_file("Outflow", cfg$Input$Outflow)
+    # Simstrat convention: negative times may exist (data before day 0)
+    t_nonneg <- tvals[tvals >= 0]
+    if (length(t_nonneg) == 0) {
+      stop(label, " has no non-negative time values (>=0): ", fp, call. = FALSE)
+    }
+
+    tmin_used <- min(t_nonneg)
+    tmax_used <- max(t_nonneg)
+
+    if (!is.null(start_d) && is.numeric(start_d) && is.finite(start_d) && tmin_used > start_d) {
+      msg("⚠ ", label, " starts after simulation start (min t=", tmin_used, " > Start d=", start_d, ")")
+    }
+
+    if (!is.null(end_d) && is.numeric(end_d) && is.finite(end_d) && tmax_used < end_d) {
+      stop(label, " does not cover simulation end (max t=", tmax_used, " < End d=", end_d, ")", call. = FALSE)
+    }
+
+    msg("✔ Time coverage OK for ", label,
+        " (used: ", tmin_used, " .. ", tmax_used,
+        "; raw min=", min(tvals), "; raw max=", max(tvals), ")")
+    invisible(TRUE)
   }
 
-  msg("Simstrat validation completed successfully")
-  invisible(TRUE)
+  if (is.character(cfg$Input$Forcing)) check_time_file("Forcing", cfg$Input$Forcing)
+  if (is.character(cfg$Input$Inflow))  check_time_file("Inflow",  cfg$Input$Inflow)
+  if (is.character(cfg$Input$Outflow)) check_time_file("Outflow", cfg$Input$Outflow)
 }
+
+msg("Simstrat validation completed successfully")
+invisible(TRUE)
+}
+
+
