@@ -1,6 +1,4 @@
 
-
-
 #' Extract active AED2 modules from an \code{aed2.nml} file
 #'
 #' This helper reads an AED2 namelist file (typically \code{aed2.nml})
@@ -32,7 +30,7 @@ get_active_aed2_modules <- function(aed2_file) {
   }
   
   # find the end of this namelist (first '/' after start)
-  end <- which(lines == "/")
+  end <- grep("^\\s*/\\s*$", lines)
   end <- end[end > start][1]
   
   block <- paste(lines[start:end], collapse = " ")
@@ -111,129 +109,199 @@ get_phyto_names <- function(phyto_pars_file, sanitize = TRUE) {
   safe
 }
 
-#' Generate empty Simstrat–AED2 inflow files for active modules
+#' Format a Simstrat-style AED2 inflow file (character vector)
 #'
-#' This function creates template inflow files (\code{.dat}) for
-#' Simstrat–AED2 based on the AED2 configuration and phytoplankton
-#' parameter files. It is intended as a helper for automatically
-#' generating "empty" (typically zero) inflow time series for those
-#' AED2 state variables that require inflow forcing when the module is
-#' activated.
+#' This helper creates the contents of a Simstrat inflow file for a single
+#' AED2 variable, given a time axis and simple inflow geometry (deep vs
+#' surface inflows). It mirrors the structure of \code{format_flow_simstrat()}
+#' used for Q/T/S inflows, but is applied to AED2 tracers.
 #'
-#' The function:
-#' \enumerate{
-#'   \item Parses the AED2 namelist (\code{aed2_file}) via
-#'     [get_active_aed2_modules()] to determine which modules are active.
-#'   \item Filters [aed2_inflow_map] to retain only inflow variables
-#'     associated with the active modules.
-#'   \item For \code{aed2_phytoplankton}, replaces the \code{"XX"}
-#'     placeholder in inflow variable names (e.g. \code{"PHY_XX_inflow"})
-#'     with the phytoplankton group names extracted from
-#'     \code{phyto_pars_file} via [get_phyto_names()].
-#'   \item Writes one \code{.dat} file per inflow variable in
-#'     \code{out_dir}, with a header of the form
-#'     \code{"Time [d]\\t<var> [millimolesPerMeterCubed]"} and a
-#'    simple template time series defined by \code{times} and
-#'     \code{default_value}.
-#' }
+#' @param varname Character; AED2 inflow variable name, e.g. \code{"PHS_frp_inflow"}.
+#' @param levels Numeric vector; inflow depths (m), one per branch.
+#' @param surf_flow Logical vector; same length as \code{levels}, TRUE for
+#'   surface inflows, FALSE for deep inflows.
+#' @param sim_par Character; path to \code{simstrat.par}-style JSON config.
+#' @param times Numeric vector of times [days] for the template time series.
+#'   If \code{NULL}, \code{Simulation$"Start d"} and \code{Simulation$"End d"}
+#'   are used with a daily step.
+#' @param default_value Numeric; default value to assign at all depths and times
+#'   (e.g. 0 for most tracers, 8 for \code{CAR_pH_inflow}).
+#' @param unit Character; unit string to include in the header, e.g.
+#'   \code{"millimolesPerMeterCubed"} or \code{"pH"}.
 #'
-#' These template inflow files can then either be left as zero
-#' (representing no inflow) or filled with modelled / observed inflow
-#' time series in a separate step. - to be decided later-
+#' @return A character vector of lines to be written to a \code{.dat} file.
+#' @keywords internal
 #'
-#' @param aed2_file Character string; path to \code{aed2.nml}.
-#' @param phyto_pars_file Character string; path to
-#'   \code{aed2_phyto_pars.nml}. Required if \code{aed2_phytoplankton}
-#'   is active in \code{aed2_file}.
-#' @param out_dir Character string; directory in which to write inflow
-#'   \code{.dat} files. The directory is created if it does not exist.
-#' @param inflow_map A data frame mapping AED2 modules to inflow
-#'   variable base names; defaults to [aed2_inflow_map].
-#' @param times Numeric vector of time values (in days) to use for the
-#'   template time series.
-#' @param default_value Numeric; default value to assign to all time
-#'   points in the template time series (typically \code{0} for "no
-#'   inflow").
+#' @seealso [generate_simstrat_aed2_inflows()]
+
+
+format_aed_inflow_simstrat <- function(varname,
+                                       levels,
+                                       surf_flow,
+                                       sim_par = "simstrat.par",
+                                       times = NULL,
+                                       default_value = 0,
+                                       unit = "millimolesPerMeterCubed") {
+  inflow_mode <- get_json_value(sim_par, "ModelConfig", "InflowMode")
+  
+  # If we only want an "off" file, mimic inflow_mode 0
+  if (is.null(times)) {
+    start_sim <- get_json_value(sim_par, "Simulation", "Start d")
+    end_sim   <- get_json_value(sim_par, "Simulation", "End d")
+    times     <- seq(start_sim, end_sim, by = 1)
+  }
+  
+  # ---- header ----
+  line1 <- sprintf("Time [d]\t%s [%s]", varname, unit)
+  
+  if (inflow_mode == 0L) {
+    line2 <- "1"
+    line3 <- "-1\t0.00"
+    start_sim <- get_json_value(sim_par, "Simulation", "Start d")
+    end_sim   <- get_json_value(sim_par, "Simulation", "End d")
+    
+    line4 <- paste0(start_sim, "\t", 0.000)
+    line5 <- paste0(end_sim, "\t", 0.000)
+    
+    return(c(line1, line2, line3, line4, line5))
+  }
+  
+  # ---- geometry for InflowMode = 1 ----
+  num_deep_flows <- length(levels) - sum(surf_flow)
+  num_surf_flows <- sum(surf_flow)
+  
+  line2 <- paste0(num_deep_flows * 3, "\t", ifelse(num_surf_flows == 0L, 0, 2))
+  
+  line3 <- "-1"
+  for (i in levels[!surf_flow]) {
+    line3 <- paste(line3, i - 1, i, i + 1, sep = "\t")
+  }
+  if (any(surf_flow)) {
+    line3 <- paste(line3, "-1.00\t0.00", sep = "\t")
+  }
+  
+  # ---- values ----
+  # For now, just zeros everywhere
+  n_branches <- num_deep_flows * 3 + ifelse(num_surf_flows == 0L, 0, 2)
+  # But for AED, you might also want 1 value per depth, not *3* — this part
+  # would need to match exactly how Simstrat expects AED2 tracers per mode.
+  
+  # Here I'll keep it conceptually simple: 1 value per column in geometry
+  # i.e. n_cols = length(depth entries), but you'll need to confirm with docs.
+  
+  vals_per_time <- rep(default_value, times = n_branches)
+  lines <- character(length(times))
+  
+  for (k in seq_along(times)) {
+    lines[k] <- paste(c(times[k], vals_per_time), collapse = "\t")
+  }
+  
+  c(line1, line2, line3, lines)
+}
+
+
+
+
+#' Generate Simstrat–AED2 inflow files for active modules
 #'
-#' @return Invisibly returns a character vector with the inflow
-#'   variable names for which files were created (without \code{.dat}
-#'   extension).
+#' Creates template Simstrat inflow \code{.dat} files for all AED2 variables
+#' associated with the active modules in \code{aed2_file}. Phytoplankton
+#' variables are expanded based on group names in \code{aed2_phyto_pars.nml}.
 #'
-#' @examples
-#' \dontrun{
-#' generate_simstrat_aed2_inflows(
-#'   aed2_file       = "aed2.nml",
-#'   phyto_pars_file = "aed2_phyto_pars.nml",
-#'   out_dir         = "Simstrat_inflows",
-#'   times           = 0:7,
-#'   default_value   = 0
-#' )
-#' }
+#' By default, all inflows are treated as surface inflows at 0 m, and all
+#' variables are initialised with \code{default_value}, except
+#' \code{CAR_pH_inflow}, which is initialised to 8 with unit \code{"pH"}.
 #'
-#' @seealso [get_active_aed2_modules()],
-#'   [get_phyto_names()]
+#' @param aed2_file Character; path to \code{aed2.nml}.
+#' @param phyto_pars_file Character; path to \code{aed2_phyto_pars.nml}.
+#'   Required if \code{aed2_phytoplankton} is active.
+#' @param sim_par Character; path to \code{simstrat.par}-style JSON config.
+#' @param out_dir Character; directory to which inflow \code{.dat} files
+#'   will be written.
+#' @param inflow_map Data frame mapping AED2 modules to inflow variable base
+#'   names; defaults to [aed2_inflow_map].
+#' @param levels Numeric vector; inflow depths (m). If \code{NULL} together
+#'   with \code{surf_flow}, a single surface inflow at 0 m is assumed.
+#' @param surf_flow Logical vector; TRUE for surface inflows, FALSE for deep
+#'   inflows. Must be the same length as \code{levels}.
+#' @param default_value Numeric; default initial inflow value (0 for most
+#'   tracers).
+#' @param unit Character; default unit string to use for non-pH variables.
+#'
+#' @return Invisibly returns the character vector of inflow variable names
+#'   for which files were written (without \code{.dat} extension).
 #' @export
 generate_simstrat_aed2_inflows <- function(aed2_file,
                                            phyto_pars_file = NULL,
+                                           sim_par,
                                            out_dir,
-                                           inflow_map ,
-                                           times = 0:7,
-                                           default_value = 0) {
+                                           levels = NULL,
+                                           surf_flow = NULL,
+                                           default_value = 0,
+                                           unit = "millimolesPerMeterCubed") {
   
   
-inflow_map <- data.frame(
-  module = c(
-    "aed2_carbon","aed2_carbon","aed2_carbon","aed2_carbon",
-    "aed2_noncohesive",
-    "aed2_nitrogen","aed2_nitrogen","aed2_nitrogen","aed2_nitrogen",
-    "aed2_organic_matter","aed2_organic_matter",
-    "aed2_phosphorus","aed2_phosphorus","aed2_phosphorus",
-    "aed2_oxygen",
-    "aed2_silica",
-    "aed2_phytoplankton","aed2_phytoplankton","aed2_phytoplankton"
-  ),
-  inflow_var = c(
-    "CAR_ch4_bub_inflow",
-    "CAR_ch4_inflow",
-    "CAR_dic_inflow",
-    "CAR_pH_inflow",
-    "NCS_ss1_inflow",
-    "NIT_amm_inflow",
-    "NIT_nit_inflow",
-    "OGM_pon_inflow",
-    "OGM_don_inflow",
-    "OGM_doc_inflow",
-    "OGM_poc_inflow",
-    "OGM_dop_inflow",
-    "OGM_pop_inflow",
-    "PHS_frp_inflow",
-    "OXY_oxy_inflow",
-    "SIL_rsi_inflow",
-    "PHY_XX_inflow",
-    "PHY_XX_IN_inflow",
-    "PHY_XX_IP_inflow"
-  ),
-  stringsAsFactors = FALSE
-)
+  
+  inflow_map <- data.frame(
+    module = c(
+      "aed2_carbon","aed2_carbon","aed2_carbon","aed2_carbon",
+      "aed2_noncohesive",
+      "aed2_nitrogen","aed2_nitrogen","aed2_nitrogen","aed2_nitrogen",
+      "aed2_organic_matter","aed2_organic_matter",
+      "aed2_phosphorus","aed2_phosphorus","aed2_phosphorus",
+      "aed2_oxygen",
+      "aed2_silica",
+      "aed2_phytoplankton","aed2_phytoplankton","aed2_phytoplankton"
+    ),
+    inflow_var = c(
+      "CAR_ch4_bub_inflow",
+      "CAR_ch4_inflow",
+      "CAR_dic_inflow",
+      "CAR_pH_inflow",
+      "NCS_ss1_inflow",
+      "NIT_amm_inflow",
+      "NIT_nit_inflow",
+      "OGM_pon_inflow",
+      "OGM_don_inflow",
+      "OGM_doc_inflow",
+      "OGM_poc_inflow",
+      "OGM_dop_inflow",
+      "OGM_pop_inflow",
+      "PHS_frp_inflow",
+      "OXY_oxy_inflow",
+      "SIL_rsi_inflow",
+      "PHY_XX_inflow",
+      "PHY_XX_IN_inflow",
+      "PHY_XX_IP_inflow"
+    ),
+    stringsAsFactors = FALSE
+  )
+  
   
   if (!dir.exists(out_dir)) dir.create(out_dir, recursive = TRUE)
   
-  active_modules <- get_active_aed2_modules(aed2_file)
+  # ---- 1) Time axis from simstrat.par ----
+  start_sim <- get_json_value(sim_par, "Simulation", "Start d")
+  end_sim   <- get_json_value(sim_par, "Simulation", "End d")
+  times     <- seq(start_sim, end_sim, by = 1)
   
-  # keep only rows for active modules
+  # ---- 2) Default geometry: all surface inflow at 0 m ----
+  if (is.null(levels) || is.null(surf_flow)) {
+    levels    <- 0      # one surface branch
+    surf_flow <- TRUE
+  }
+  
+  # ---- 3) Determine inflow_vars as you already do (active modules + phyto names) ----
+  active_modules <- get_active_aed2_modules(aed2_file)
   map_active <- inflow_map[inflow_map$module %in% active_modules, , drop = FALSE]
   
-  # split phyto vs other modules
   phyto_rows <- map_active$module == "aed2_phytoplankton"
   map_phyto  <- map_active[phyto_rows, , drop = FALSE]
   map_other  <- map_active[!phyto_rows, , drop = FALSE]
   
   inflow_vars <- character(0)
-  
-  ## ---- non-phyto inflows ----
   inflow_vars <- c(inflow_vars, map_other$inflow_var)
   
-  ## ---- phyto inflows based on p_name ----
   if (nrow(map_phyto) > 0) {
     if (is.null(phyto_pars_file)) {
       stop("aed2_phytoplankton is active, but 'phyto_pars_file' was not provided.")
@@ -246,7 +314,6 @@ inflow_map <- data.frame(
     } else {
       for (tmpl in map_phyto$inflow_var) {
         for (nm in phyto_names) {
-          # e.g. "PHY_XX_inflow" -> "PHY_diatoms_inflow"
           inflow_vars <- c(
             inflow_vars,
             gsub("XX", nm, tmpl, fixed = TRUE)
@@ -258,33 +325,34 @@ inflow_map <- data.frame(
   
   inflow_vars <- unique(inflow_vars)
   
-  ## ---- template time series ----
-  template <- data.frame(
-    Time = times,
-    value = rep(default_value, length(times))
-  )
-  
-  ## ---- write .dat files ----
+  # Write one .dat file per AED inflow variable
   for (varname in inflow_vars) {
-    file_path <- file.path(out_dir, paste0(varname, ".dat"))
+    out_file <- file.path(out_dir, paste0(varname, ".dat"))
     
-    header <- sprintf("Time [d]\t%s [millimolesPerMeterCubed]", varname)
+    # --- HERE is the special rule for pH ---
+    var_default <- if (identical(varname, "CAR_pH_inflow")) 8 else default_value
+    var_unit    <- if (identical(varname, "CAR_pH_inflow")) "pH" else unit
+    # ---------------------------------------
     
-    con <- file(file_path, open = "w")
-    writeLines(header, con)
-    utils::write.table(
-      template,
-      con,
-      sep = "\t",
-      quote = FALSE,
-      row.names = FALSE,
-      col.names = FALSE
+    lines <- format_aed_inflow_simstrat(
+      varname       = varname,
+      levels        = levels,
+      surf_flow     = surf_flow,
+      sim_par       = sim_par,
+      times         = times,
+      default_value = var_default,
+      unit          = var_unit
     )
-    close(con)
+    
+    writeLines(lines, out_file)
   }
   
   invisible(inflow_vars)
 }
-
+  
+  
+  
+  
+  
 
 
