@@ -89,8 +89,7 @@ get_phyto_names <- function(phyto_pars_file, sanitize = TRUE) {
   line <- lines[idx[1]]
   
   # Keep the part after '='
-  rhs <- sub(".*=", "", line)
-  # Remove trailing '/' or commas at the end
+  rhs <- sub(".*=", "", line)  # Remove trailing '/' or commas at the end
   rhs <- sub("/.*$", "", rhs)
   
   # Remove single quotes and split on commas
@@ -238,7 +237,7 @@ generate_simstrat_aed2_inflows <- function(aed2_file,
                                            levels = NULL,
                                            surf_flow = NULL,
                                            default_value = 0,
-                                           unit = "millimolesPerMeterCubed") {
+                                           unit = "millimolesPerMeterCubed", overwrite= FALSE) {
   
   
   
@@ -251,7 +250,8 @@ generate_simstrat_aed2_inflows <- function(aed2_file,
       "aed2_phosphorus","aed2_phosphorus","aed2_phosphorus",
       "aed2_oxygen",
       "aed2_silica",
-      "aed2_phytoplankton","aed2_phytoplankton","aed2_phytoplankton"
+      "aed2_phytoplankton","aed2_phytoplankton","aed2_phytoplankton",
+      "aed2_zooplankton"
     ),
     inflow_var = c(
       "CAR_ch4_bub_inflow",
@@ -272,7 +272,8 @@ generate_simstrat_aed2_inflows <- function(aed2_file,
       "SIL_rsi_inflow",
       "PHY_XX_inflow",
       "PHY_XX_IN_inflow",
-      "PHY_XX_IP_inflow"
+      "PHY_XX_IP_inflow",
+      "ZOO_"
     ),
     stringsAsFactors = FALSE
   )
@@ -334,6 +335,8 @@ generate_simstrat_aed2_inflows <- function(aed2_file,
     var_unit    <- if (identical(varname, "CAR_pH_inflow")) "pH" else unit
     # ---------------------------------------
     
+    # Do not overwrite if file exists 
+    if (!overwrite && file.exists(out_file)) next
     lines <- format_aed_inflow_simstrat(
       varname       = varname,
       levels        = levels,
