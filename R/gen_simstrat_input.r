@@ -180,14 +180,9 @@ format_aed_inflow_simstrat <- function(varname,
   }
   
   # ---- values ----
-  # For now, just zeros everywhere
+  # For now, just zeros
   n_branches <- num_deep_flows * 3 + ifelse(num_surf_flows == 0L, 0, 2)
-  # But for AED, you might also want 1 value per depth, not *3* — this part
-  # would need to match exactly how Simstrat expects AED2 tracers per mode.
-  
-  # Here I'll keep it conceptually simple: 1 value per column in geometry
-  # i.e. n_cols = length(depth entries), but you'll need to confirm with docs.
-  
+ 
   vals_per_time <- rep(default_value, times = n_branches)
   lines <- character(length(times))
   
@@ -292,7 +287,7 @@ generate_simstrat_aed2_inflows <- function(aed2_file,
     surf_flow <- TRUE
   }
   
-  # ---- 3) Determine inflow_vars as you already do (active modules + phyto names) ----
+  # ---- 3) Determine inflow_vars (active modules + phyto names) ----
   active_modules <- get_active_aed2_modules(aed2_file)
   map_active <- inflow_map[inflow_map$module %in% active_modules, , drop = FALSE]
   
@@ -330,7 +325,7 @@ generate_simstrat_aed2_inflows <- function(aed2_file,
   for (varname in inflow_vars) {
     out_file <- file.path(out_dir, paste0(varname, ".dat"))
     
-    # --- HERE is the special rule for pH ---
+    # ---  special rule for pH for now it is 8 but lets see  ---
     var_default <- if (identical(varname, "CAR_pH_inflow")) 8 else default_value
     var_unit    <- if (identical(varname, "CAR_pH_inflow")) "pH" else unit
     # ---------------------------------------
