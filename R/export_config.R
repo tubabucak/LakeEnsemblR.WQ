@@ -12,7 +12,7 @@
 #'
 #'@export
 
-export_config <- function(config_file, folder = ".", verbose = FALSE,
+export_config_wq <- function(config_file, folder = ".", verbose = FALSE,
                           convert_from_lakeensemblr = TRUE,
                           ler_config_file = "LakeEnsemblR.yaml"){
   
