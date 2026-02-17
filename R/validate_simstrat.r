@@ -11,7 +11,7 @@
 #' @name validate_simstrat
 #' @param sim_folder Character. Path to the Simstrat-AED2 simulation folder containing
 #'   the namelist and input files.
-#' @param par_file Character. Name of the Simstrat-AED2 configuration file inside
+#' @param file Character. Name of the Simstrat-AED2 configuration file inside
 #'   \code{sim_folder}. Default is \code{"simstrat.par"}.
 #' @param verbose Logical. If \code{TRUE}, progress messages are printed using
 #'   \code{message()}. Default is \code{TRUE}.
@@ -23,12 +23,12 @@
 #'
 #' @examples
 #' \dontrun{
-#' validate_simstrat(sim_folder = "models/simstrat_aed2", par_file = "simstrat.par")
+#' validate_simstrat(sim_folder = "models/simstrat_aed2", file = "simstrat.par")
 #' }
 #'
 #' @export
 validate_simstrat <- function(sim_folder = ".",
-                              par_file = "simstrat.par",
+                              file = "simstrat.par",
                               verbose = TRUE,
                               check_time_coverage = TRUE) {
 
@@ -39,9 +39,9 @@ validate_simstrat <- function(sim_folder = ".",
          call. = FALSE)
   }
 
-  par_path <- file.path(sim_folder, par_file)
+  par_path <- file.path(sim_folder, file)
   if (!file.exists(par_path)) stop("Missing Simstrat parameter file: ", par_path, call. = FALSE)
-  msg("✔ Found Simstrat parameter file: ", par_file)
+  msg("✔ Found Simstrat parameter file: ", file)
 
   # ---- helper: read .par (JSON-like) into R list ----
   read_simstrat_par <- function(path) {
@@ -88,13 +88,13 @@ extract_time_values <- function(fp, n_head = 5000, n_tail = 5000) {
   cfg <- tryCatch(
     read_simstrat_par(par_path),
     error = function(e) {
-      stop("Failed to parse ", par_file, " as JSON-like config: ", conditionMessage(e), call. = FALSE)
+      stop("Failed to parse ", file, " as JSON-like config: ", conditionMessage(e), call. = FALSE)
     }
   )
 
   # ---- required sections ----
-  if (is.null(cfg$Input)) stop("Missing 'Input' section in ", par_file, call. = FALSE)
-  if (is.null(cfg$Simulation)) stop("Missing 'Simulation' section in ", par_file, call. = FALSE)
+  if (is.null(cfg$Input)) stop("Missing 'Input' section in ", file, call. = FALSE)
+  if (is.null(cfg$Simulation)) stop("Missing 'Simulation' section in ", file, call. = FALSE)
 
   # ---- check input files exist (only those that look like file paths) ----
   input_files <- cfg$Input
