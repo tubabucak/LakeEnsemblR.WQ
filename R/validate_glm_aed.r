@@ -10,7 +10,7 @@
 #' error message describing which file(s) could not be found.
 #' @name  validate_glm_aed 
 #' @param sim_folder Character. Path to the GLM simulation folder containing the namelist and input files.
-#' @param nml_file Character. Name of the GLM namelist file inside \code{sim_folder}. Default is \code{"glm3.nml"}.
+#' @param file Character. Name of the GLM namelist file inside \code{sim_folder}. Default is \code{"glm3.nml"}.
 #' @param verbose Logical. If \code{TRUE}, progress messages are printed using \code{message()}. Default is \code{TRUE}.
 #'
 #' @return Invisibly returns \code{TRUE} if validation succeeds. Otherwise, the
@@ -19,29 +19,27 @@
 #' @examples
 #' \dontrun{
 #' # Validate a prepared GLM run directory
-#' validate_glm(sim_folder = "runs/lake_001", nml_file = "glm3.nml")
+#' validate_glm_aed(sim_folder = "runs/lake_001", file = "glm3.nml")
 #'
 #' # Quiet mode
-#' validate_glm(sim_folder = "runs/lake_001", verbose = FALSE)
+#' validate_glm_aed(sim_folder = "runs/lake_001", verbose = FALSE)
 #' }
-#'
 
-#' Validate GLM-AED configuration
+
 #' @export
-#' 
-#' 
 
-validate_glm_aed <- function(sim_folder = ".", nml_file = "glm3.nml", verbose = TRUE) {
+
+validate_glm_aed <- function(sim_folder = ".", file = "glm3.nml", verbose = TRUE) {
   
   msg <- function(...) if (isTRUE(verbose)) message(...)
   
   msg("Validating GLM run folder: ", normalizePath(sim_folder, winslash = "/"))
   
-  nml_path <- file.path(sim_folder, nml_file)
+  nml_path <- file.path(sim_folder, file)
   if (!file.exists(nml_path)) {
     stop("Missing nml file: ", nml_path, call. = FALSE)
   }
-  msg("✔ Found nml file: ", nml_file)
+  msg("✔ Found nml file: ", file)
   
   txt <- readLines(nml_path, warn = FALSE)
   
