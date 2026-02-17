@@ -61,7 +61,7 @@ depth <- suppressWarnings(get_nml_value(
 
         glm_var_out <- tryCatch({
           glmtools::get_var(
-            file = file.path(cfg$model_folders$GLM, "Output.nc"),
+            file = file.path(cfg$model_folders$GLM, "output.nc"),
             var_name = variable_model_name,
             reference = "surface",
             z_out = depths
@@ -82,7 +82,7 @@ depth <- suppressWarnings(get_nml_value(
     if (depth_01 == 0) {
       for (variable_model_name in vars) {
         glm_var_out <- glmtools::get_var(
-          file = file.path(cfg$model_folders$GLM, "Output.nc"),
+          file = file.path(cfg$model_folders$GLM,  "output.nc"),
           var_name = variable_model_name
         )
         glm_var_out[, -1] <- glm_var_out[, -1] * conversion_factor
@@ -105,9 +105,9 @@ depth <- suppressWarnings(get_nml_value(
       
       for (variable_model_name in vars) {  # Loop through each variable in vars
         
-        var_out <- get_vari(ncdf = file.path(cfg$model_folders$SELMAPROTBAS,  "Output.nc"), var = variable_model_name,
+        var_out <- get_vari(ncdf = file.path(cfg$model_folders$SELMAPROTBAS,"output.nc"), var = variable_model_name,
                             print = FALSE)
-        z <- gotmtools::get_vari(ncdf = file.path(cfg$model_folders$SELMAPROTBAS,  "Output.nc"), var = "z",
+        z <- gotmtools::get_vari(ncdf = file.path(cfg$model_folders$SELMAPROTBAS, "output.nc"), var = "z",
                                  print = FALSE)
         
         z[, 2:ncol(z)] <- t(apply(z[, 2:ncol(z)], 1, 
@@ -154,7 +154,7 @@ depth <- suppressWarnings(get_nml_value(
 
     if (depth_01 == 0){
       for (variable_model_name in vars) {  # Loop through each variable in vars
-      selma_var_out <- get_vari(ncdf = file.path(cfg$model_folders$SELMAPROTBAS, "Output.nc"), var = variable_model_name,
+      selma_var_out <- get_vari(ncdf = file.path(cfg$model_folders$SELMAPROTBAS,  "output.nc"), var = variable_model_name,
                           print = FALSE)
       # ice_frazil <- get_vari(ncdf = file.path(folder, "GOTM", "output", "output.nc"),
       #                        var = "Hfrazil", print = FALSE)
@@ -184,10 +184,10 @@ depth <- suppressWarnings(get_nml_value(
       
       for (variable_model_name in vars) {  # Loop through each variable in vars
         
-        var_out <- get_vari(ncdf = file.path(cfg$model_folders$WET, "Output.nc"), var = variable_model_name,
+        var_out <- get_vari(ncdf = file.path(cfg$model_folders$WET, "output.nc"), var = variable_model_name,
                             print = FALSE)
        
-        z <- gotmtools::get_vari(ncdf = file.path(cfg$model_folders$WET, "Output.nc"), var = "z",
+        z <- gotmtools::get_vari(ncdf = file.path(cfg$model_folders$WET,  "output.nc"), var = "z",
                                  print = FALSE)
 
         z[, 2:ncol(z)] <- t(apply(z[, 2:ncol(z)], 1, 
@@ -236,7 +236,7 @@ depth <- suppressWarnings(get_nml_value(
      }
      if (depth_01 == 0){
       for (variable_model_name in vars) { 
-       wet_var_out <- get_vari(ncdf = file.path(cfg$model_folders$WET,  "Output.nc"), var = variable_model_name,
+       wet_var_out <- get_vari(ncdf = file.path(cfg$model_folders$WET, "output.nc"), var = variable_model_name,
                                print = FALSE)
        
        wet_var_out[,-1] <- wet_var_out[,-1]* conversion_factor
