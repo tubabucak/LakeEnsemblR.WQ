@@ -9,7 +9,7 @@
 #' error message describing which file(s) could not be found.
 #' @name  validate_gotm_wet
 #' @param sim_folder Character. Path to the GOTM-WET simulation folder containing the namelist and input files.
-#' @param nml_file Character. Name of the GOTM-WET namelist file inside \code{sim_folder}. Default is \code{"gotm.nml"}.
+#' @param file Character. Name of the GOTM-WET namelist file inside \code{sim_folder}. Default is \code{"gotm.nml"}.
 #' @param verbose Logical. If \code{TRUE}, progress messages are printed using \code{message()}. Default is \code{TRUE}.
 #'
 #' @return Invisibly returns \code{TRUE} if validation succeeds. Otherwise, the
@@ -18,7 +18,7 @@
 #' @examples
 #' \dontrun{
 #' # Validate a prepared GOTM-WET run directory
-#' validate_gotm_wet(sim_folder = "models/gotm_wet", nml_file = "gotm.yaml")
+#' validate_gotm_wet(sim_folder = "models/gotm_wet", file = "gotm.yaml")
 #'
 
 
@@ -26,7 +26,7 @@
 #' @export
 #' 
 #' 
-validate_gotm_wet <- function(sim_folder = ".", yaml_file = "gotm.yaml", verbose = TRUE) {
+validate_gotm_wet <- function(sim_folder = ".", file = "gotm.yaml", verbose = TRUE) {
 
   msg <- function(...) if (isTRUE(verbose)) message(...)
 
@@ -37,11 +37,11 @@ validate_gotm_wet <- function(sim_folder = ".", yaml_file = "gotm.yaml", verbose
 
   msg("Validating GOTM run folder: ", normalizePath(sim_folder, winslash = "/"))
 
-  ypath <- file.path(sim_folder, yaml_file)
+  ypath <- file.path(sim_folder, file)
   if (!file.exists(ypath)) {
     stop("Missing GOTM yaml file: ", ypath, call. = FALSE)
   }
-  msg("✔ Found GOTM yaml file: ", yaml_file)
+  msg("✔ Found GOTM yaml file: ", file)
 
   cfg <- yaml::read_yaml(ypath)
 
