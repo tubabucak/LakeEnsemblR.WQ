@@ -46,7 +46,7 @@ extract_variable_list <- function(extracted_metric_dict, config_file, model_filt
         conversion_factor <- extracted_metric_dict$conversion_factor[i]
         
         # Determine the file path based on the model
-        nc_file <- file.path(cfg$model_folders[[model_name]], "Output", "Output.nc")
+        nc_file <- file.path(cfg$model_folders[[model_name]],  "output.nc")
 
         # cfg_dir <- dirname(config_file)
         # model_dir <- file.path(cfg_dir, cfg$model_folders[[model_name]])
