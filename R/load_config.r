@@ -26,7 +26,7 @@
 #'
 #' @examples
 #' \dontrun{
-#' config <- load_config_strict("path/to/config.yaml")
+#' config <- load_config("path/to/config.yaml")
 #' print(config$metrics_dict_file)
 #' }
 #' @import yaml
