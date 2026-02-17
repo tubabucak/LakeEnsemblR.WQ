@@ -135,7 +135,8 @@ set_coupling <- function(config_file, folder){
                            POM_DW_in_water = "abiotic_water/sDPOMW",
                            POM_N_in_water = "abiotic_water/sNPOMW",
                            POM_P_in_water = "abiotic_water/sPPOMW",
-                           bPorS = "abiotic_sediment/bPorS")
+                           bPorS = "abiotic_sediment/bPorS",
+                           bot_pel_conv = "abiotic_sediment/bot_pel_conv")
         }else if(wet_model == "wet/macrophytes"){
           coupling <- list(ammonium_pool_water = "abiotic_water/sNH4W",
                            nitrate_pool_water = "abiotic_water/sNO3W",
@@ -197,7 +198,8 @@ set_coupling <- function(config_file, folder){
                            DOM_N_pool_water = "abiotic_water/sNDOMW",
                            DOM_P_pool_water = "abiotic_water/sPDOMW",
                            SiO2_pool_water = "abiotic_water/sSiO2W",
-                           oxygen_pool_water = "abiotic_water/sO2W")
+                           oxygen_pool_water = "abiotic_water/sO2W",
+                           prey_model1= "diatoms")
           
           # Prey not yet implemented
         }else if(wet_model == "wet/zoobenthos"){
