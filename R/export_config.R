@@ -115,4 +115,18 @@ export_config_wq <- function(config_file, folder = ".", verbose = FALSE,
   }
   
   set_coupling(config_file, folder = folder)
+
+# --- FINAL STEP: normalize YAML booleans (FABM configs) to yes/no to true/false ---
+lst_config2 <- configr::read.config(file.path(folder, config_file))
+
+# Which model config files are YAML?
+cfgs <- lst_config2[["config_files"]]
+yaml_models <- names(cfgs)[grepl("\\.ya?ml$", cfgs, ignore.case = TRUE)]
+
+for (m in yaml_models) {
+  p <- file.path(folder, cfgs[[m]])
+  if (file.exists(p)) 
+  normalize_yaml_bools(p)
+  apply_selma_default_comments(p)
+}
 }

@@ -21,23 +21,30 @@
 # folder = "."
 
 set_up_configs <- function(config_file, folder = "."){
-  
   coerce_default <- function(x) {
-    x <- trimws(as.character(x))
+  # keep NA as NA
+  if (length(x) == 0 || is.null(x)) return(NA)
 
-    if (is.na(x) || x == "") return(NA)
+  # if it already is logical/numeric, return it unchanged
+  if (is.logical(x) || is.numeric(x)) return(x)
 
-    # Logical
-    if (tolower(x) == "true")  return(TRUE)
-    if (tolower(x) == "false") return(FALSE)
+  x_chr <- trimws(as.character(x))
+  if (is.na(x_chr) || x_chr == "") return(NA)
 
-    # Numeric
-    num <- suppressWarnings(as.numeric(x))
-    if (!is.na(num)) return(num)
+  # Logical: accept common variants
+  xl <- tolower(x_chr)
+  if (xl %in% c("true", "t", "yes", "y"))  return(TRUE)
+  if (xl %in% c("false", "f", "no", "n"))  return(FALSE)
 
-    # Otherwise character
-    x
-  }
+  # Numeric
+  num <- suppressWarnings(as.numeric(x_chr))
+  if (!is.na(num)) return(num)
+
+  # Otherwise character
+  x_chr
+}
+
+
   # Read config file as a list
   lst_config <- read.config(file.path(folder, config_file)) 
   
@@ -62,31 +69,68 @@ set_up_configs <- function(config_file, folder = "."){
       }
       
       # Phyto- & zooplankton
-      for(j in c("phytoplankton", "zooplankton")){
-        if(lst_config[[j]][["use"]]){
-          
-          dict_biology <- dict[dict$module == j,]
-          groups <- names(lst_config[[j]][["groups"]])
-          
-          for(k in groups){
-            lst[["instances"]][[k]] <- list(model = paste0("selmaprotbas/", j),
-                                            parameters = list(),
-                                            initialization = list(),
-                                            coupling = list())
-            for(l in seq_len(nrow(dict_biology))){
-              path <- strsplit(as.character(dict_biology[l, "path"]), "/")[[1]]
-              path[path == "{group_name}"] <- k
-              lst[["instances"]][[path[1]]][[path[2]]][[path[3]]] <- coerce_default(dict_biology[l, "default"])
-            }
-          }
+for (j in c("phytoplankton", "zooplankton")) {
+  if (isTRUE(lst_config[[j]][["use"]])) {
+
+    dict_biology <- dict[dict$module == j, , drop = FALSE]
+    groups <- names(lst_config[[j]][["groups"]])
+
+    for (k in groups) {
+
+      lst[["instances"]][[k]] <- list(
+        model = paste0("selmaprotbas/", j),
+        parameters = list(),
+        initialization = list(),
+        coupling = list()
+      )
+
+      # Only for zooplankton: determine nprey from master config prey list (fallback = 1)
+      nprey <- 1L
+      if (j == "zooplankton") {
+        prey_paths <- lst_config[["zooplankton"]][["groups"]][[k]][["prey"]]
+        if (!is.null(prey_paths) && length(prey_paths) > 0) {
+          nprey <- length(prey_paths)
         }
       }
+
+      for (l in seq_len(nrow(dict_biology))) {
+
+        path <- strsplit(as.character(dict_biology[l, "path"]), "/")[[1]]
+        path[path == "{group_name}"] <- k
+        def <- coerce_default(dict_biology[l, "default"])
+
+        # Expand prey-indexed parameters like pref{prey_num}, prey_rfn{prey_num}, ...
+        if (j == "zooplankton" && any(grepl("\\{prey_num\\}", path))) {
+
+          for (pnum in seq_len(nprey)) {
+            path_p <- gsub("\\{prey_num\\}", pnum, path)
+            lst[["instances"]][[path_p[1]]][[path_p[2]]][[path_p[3]]] <- def
+          }
+
+        } else {
+
+          lst[["instances"]][[path[1]]][[path[2]]][[path[3]]] <- def
+        }
+      }
+
+      # Ensure nprey is consistent (overrides dictionary default if needed)
+      if (j == "zooplankton") {
+        lst[["instances"]][[k]][["parameters"]][["nprey"]] <- nprey
+      }
+    }
+  }
+}
+
       
       filename <- lst_config[["config_files"]][[models_coupled[i]]]
       if(!dir.exists(file.path(folder, dirname(filename)))) {
         dir.create(file.path(folder, dirname(filename)))
       }
+      
       write.config(lst, file.path(folder, filename), write.type = "yaml")
+ 
+
+        
     }
     
     if(models_coupled[i] == "GOTM-WET"){

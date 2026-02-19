@@ -503,3 +503,43 @@ add_selma_prey_to_scaffold <- function(wq_config, lst_config, zoo_instance = "zo
 
   wq_config
 }
+
+
+normalize_yaml_bools <- function(filepath) {
+  x <- readLines(filepath, warn = FALSE)
+
+  # mapping scalars: key: yes/no/on/off (quoted or unquoted)
+  x <- gsub('(^\\s*[^#]+?:\\s*)"(yes|no|on|off)"(\\s*(#.*)?$)', '\\1\\2\\3', x, ignore.case = TRUE)
+  x <- gsub("(^\\s*[^#]+?:\\s*)(yes|on)(\\s*(#.*)?$)", "\\1true\\3", x, ignore.case = TRUE)
+  x <- gsub("(^\\s*[^#]+?:\\s*)(no|off)(\\s*(#.*)?$)",  "\\1false\\3", x, ignore.case = TRUE)
+
+  # sequence scalars: - yes/no/on/off (quoted or unquoted)
+  x <- gsub('(^\\s*-\\s*)"(yes|no|on|off)"(\\s*(#.*)?$)', '\\1\\2\\3', x, ignore.case = TRUE)
+  x <- gsub("(^\\s*-\\s*)(yes|on)(\\s*(#.*)?$)", "\\1true\\3", x, ignore.case = TRUE)
+  x <- gsub("(^\\s*-\\s*)(no|off)(\\s*(#.*)?$)",  "\\1false\\3", x, ignore.case = TRUE)
+
+  writeLines(x, filepath, useBytes = TRUE)
+  invisible(TRUE)
+}
+
+
+comment_out_yaml_parameter <- function(filepath, param_names) {
+  lines <- readLines(filepath, warn = FALSE)
+
+  for (p in param_names) {
+    # match lines like:   alpha_light: 0.1
+    pattern <- paste0("^([[:space:]]*)(", p, ":[[:space:]].*)$")
+    lines <- gsub(pattern, "\\1# \\2", lines)
+  }
+
+  writeLines(lines, filepath, useBytes = TRUE)
+  invisible(TRUE)
+}
+
+
+apply_selma_default_comments <- function(filepath) {
+
+  # Comment these parameters globally in SELMA phyto instances
+  comment_out_yaml_parameter(filepath, c("tll", "imin", "tau_crit"))
+
+}
