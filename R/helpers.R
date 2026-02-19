@@ -445,3 +445,61 @@ set_pclake_r <- function(file, par_list,
   
   return(file)
 }
+add_selma_prey_to_scaffold <- function(wq_config, lst_config, zoo_instance = "zooplankton") {
+
+  # ---- Find SELMA zooplankton instance key ------
+  zoo_inst_keys <- names(Filter(
+    function(inst) identical(inst[["model"]], "selmaprotbas/zooplankton"),
+    wq_config[["instances"]]
+  ))
+  if (length(zoo_inst_keys) == 0) return(wq_config)
+
+  zoo_key <- if (!is.null(zoo_instance) && zoo_instance %in% zoo_inst_keys) {
+    zoo_instance
+  } else {
+    zoo_inst_keys[1]
+  }
+
+  # ---- Get prey list from master config  ----
+  zoo_groups <- lst_config[["zooplankton"]][["groups"]]
+  if (is.null(zoo_groups) || length(zoo_groups) == 0) return(wq_config)
+
+  # Try to use a group with same name as the SELMA instance key, otherwise first group
+  if (!is.null(zoo_groups[[zoo_key]][["prey"]])) {
+    prey_paths <- zoo_groups[[zoo_key]][["prey"]]
+  } else if (!is.null(zoo_groups[[zoo_instance]][["prey"]])) {
+    prey_paths <- zoo_groups[[zoo_instance]][["prey"]]
+  } else {
+    prey_paths <- zoo_groups[[1]][["prey"]]
+  }
+
+  if (is.null(prey_paths) || length(prey_paths) == 0) return(wq_config)
+
+  prey_groups <- tolower(sub("^.*/", "", prey_paths))  # "phytoplankton/diatoms" -> "diatoms"
+
+  # ---- Resolve to phyto instance keys that exist in SELMA config ----
+  phy_inst_keys <- names(Filter(
+    function(inst) identical(inst[["model"]], "selmaprotbas/phytoplankton"),
+    wq_config[["instances"]]
+  ))
+
+  resolved <- phy_inst_keys[tolower(phy_inst_keys) %in% prey_groups]
+  if (length(resolved) == 0) return(wq_config)
+
+  # ---- Ensure coupling exists and write prey1..preyN as '<instance>/c' ----
+  if (is.null(wq_config[["instances"]][[zoo_key]][["coupling"]])) {
+    wq_config[["instances"]][[zoo_key]][["coupling"]] <- list()
+  }
+
+  for (k in seq_along(resolved)) {
+    wq_config[["instances"]][[zoo_key]][["coupling"]][[paste0("prey", k)]] <- paste0(resolved[k], "/c")
+  }
+
+  # ---- Keep nprey consistent ----
+  if (is.null(wq_config[["instances"]][[zoo_key]][["parameters"]])) {
+    wq_config[["instances"]][[zoo_key]][["parameters"]] <- list()
+  }
+  wq_config[["instances"]][[zoo_key]][["parameters"]][["nprey"]] <- length(resolved)
+
+  wq_config
+}
