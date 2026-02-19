@@ -323,7 +323,12 @@ generate_simstrat_aed2_inflows <- function(aed2_file,
   
   # Write one .dat file per AED inflow variable
   for (varname in inflow_vars) {
-    out_file <- file.path(out_dir, paste0(varname, ".dat"))
+      out_file <- if (identical(varname, "ZOO_")) {
+    file.path(out_dir, varname)         # no extension
+  } else {
+    file.path(out_dir, paste0(varname, ".dat"))
+  }
+
     
     # ---  special rule for pH for now it is 8 but lets see  ---
     var_default <- if (identical(varname, "CAR_pH_inflow")) 8 else default_value
