@@ -54,7 +54,12 @@ set_coupling <- function(config_file, folder){
             }
           }
         }else if(selmaprotbas_model == "selmaprotbas/zooplankton"){
-          coupling <- list(aa = "selmaprotbas/aa",
+
+# Start from whatever coupling already exists in the SELMA fabm.yaml
+  existing_coupling <- wq_config[["instances"]][[j]][["coupling"]]
+  if (is.null(existing_coupling)) existing_coupling <- list()
+
+          base_coupling <- list(aa = "selmaprotbas/aa",
                            o2 = "selmaprotbas/o2",
                            po = "selmaprotbas/po",
                            si = "selmaprotbas/si",
@@ -63,9 +68,8 @@ set_coupling <- function(config_file, folder){
                            dd_n = "selmaprotbas/dd_n",
                            dd_si = "selmaprotbas/dd_si")
           
-          # Coupling to prey. Not implemented yet. Should be
-          # specified in the input. Default predation on all phytoplankton?
-          # Also setting prey nutrient ratios
+        # keep prey1.. etc from existing, but ensure base keys are set
+  coupling <- modifyList(existing_coupling, base_coupling)
         }
         
         if(exists("coupling")){
@@ -74,7 +78,9 @@ set_coupling <- function(config_file, folder){
         }
         
       }
-      
+   
+wq_config <- add_selma_prey_to_scaffold(wq_config, lst_config, zoo_instance = "zooplankton")
+
       write.config(wq_config,
                    file.path(folder,
                              lst_config[["config_files"]][[models_coupled[i]]]),
