@@ -207,7 +207,8 @@ wq_config <- add_selma_prey_to_scaffold(wq_config, lst_config, zoo_instance = "z
                            oxygen_pool_water = "abiotic_water/sO2W",
                            prey_model1= "diatoms")
           
-          # Prey not yet implemented
+
+
         }else if(wet_model == "wet/zoobenthos"){
           coupling <- list(POM_DW_pool_sediment = "abiotic_sediment/sDPOMS",
                            POM_P_pool_sediment = "abiotic_sediment/sPPOMS",
@@ -241,7 +242,7 @@ wq_config <- add_selma_prey_to_scaffold(wq_config, lst_config, zoo_instance = "z
           rm(coupling)
         }
       }
-      
+      wq_config <- add_wet_prey_to_scaffold(wq_config, lst_config, zoo_instance = "zooplankton")
       write.config(wq_config,
                    file.path(folder,
                              lst_config[["config_files"]][[models_coupled[i]]]),
