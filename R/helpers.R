@@ -553,14 +553,14 @@ add_wet_prey_to_scaffold <- function(wq_config, lst_config, zoo_instance = "zoop
   }
 
   for (k in seq_along(resolved)) {
-    wq_config[["instances"]][[zoo_key]][["coupling"]][[paste0("prey_model", k)]] <- paste0(resolved[k], "/c")
+    wq_config[["instances"]][[zoo_key]][["coupling"]][[paste0("prey_model", k)]] <- paste0(resolved[k])
   }
 
   # ---- Keep nprey consistent ----
   if (is.null(wq_config[["instances"]][[zoo_key]][["parameters"]])) {
     wq_config[["instances"]][[zoo_key]][["parameters"]] <- list()
   }
-  wq_config[["instances"]][[zoo_key]][["parameters"]][["nprey"]] <- length(resolved)
+  wq_config[["instances"]][[zoo_key]][["parameters"]][["nPrey"]] <- length(resolved)
 
   wq_config
 }

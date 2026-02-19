@@ -182,11 +182,32 @@ for (j in c("phytoplankton", "zooplankton")) {
                                             parameters = list(),
                                             initialization = list(),
                                             coupling = list())
-            for(l in seq_len(nrow(dict_biology))){
-              path <- strsplit(as.character(dict_biology[l, "path"]), "/")[[1]]
-              path[path == "{group_name}"] <- k
-              lst[["instances"]][[path[1]]][[path[2]]][[path[3]]] <- coerce_default(dict_biology[l, "default"])
-            }
+     # For WET zooplankton: adjusting based on number of preys
+nPrey <- 1L
+if (j == "zooplankton") {
+  prey_paths <- lst_config[["zooplankton"]][["groups"]][[k]][["prey"]]
+  if (!is.null(prey_paths) && length(prey_paths) > 0) {
+    nPrey <- length(prey_paths)
+  }
+}
+
+for (l in seq_len(nrow(dict_biology))) {
+  path <- strsplit(as.character(dict_biology[l, "path"]), "/")[[1]]
+  path[path == "{group_name}"] <- k
+  def <- coerce_default(dict_biology[l, "default"])
+
+  # Expand any dictionary path containing {prey_num} for zooplankton
+  if (j == "zooplankton" && any(grepl("\\{prey_num\\}", path))) {
+
+    for (pnum in seq_len(nPrey)) {
+      path_p <- gsub("\\{prey_num\\}", pnum, path)
+      lst[["instances"]][[path_p[1]]][[path_p[2]]][[path_p[3]]] <- def
+    }
+
+  } else {
+    lst[["instances"]][[path[1]]][[path[2]]][[path[3]]] <- def
+  }
+}
           }
         }
       }
