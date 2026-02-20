@@ -146,7 +146,7 @@ convert_ler_to_lerwq <- function(ler_config_file = "LakeEnsemblR.yaml",
         
         # If not yet present, add wq_setup section to the glm nml file
         if(!("wq_setup" %in% names(nml))){
-          nml[["wq_setup"]] <- list(wq_lib = "aed2",
+          nml[["wq_setup"]] <- list(wq_lib = "aed",
                                     wq_nml_file = "aed2.nml")
         }
         nml[["wq_setup"]][["ode_method"]] <- ode_num
