@@ -617,18 +617,18 @@ wq_config <- add_selma_prey_to_scaffold(wq_config, lst_config, zoo_instance = "z
           wq_config[[j]]["si_uptake_target_variable"] <- "SIL_rsi"
           wq_config[[j]]["do_uptake_target_variable"] <- "OXY_oxy"
           wq_config[[j]]["c_uptake_target_variable"] <- "CAR_dic"
-          wq_config[[j]]["dbase"] <- "aed2_phyto_pars.nml"
+          wq_config[[j]]["dbase"] <- "aed2_phyto_pars.nml"}
           # Check here why there are two phytoplankton
-        }else if (j == "aed2_totals") {
+    #     }else if (j == "aed2_totals") {
 
-      wq_config[[j]][["TN_vars"]]  <- c("'NIT_nit'","'NIT_amm'","'OGM_don'","'OGM_pon'")
-      wq_config[[j]][["TP_vars"]]  <- c("'PHS_frp'","'OGM_dop'","'OGM_pop'")
-      wq_config[[j]][["TOC_vars"]] <- c("'OGM_doc'","'OGM_poc'")
+    #   wq_config[[j]][["TN_vars"]]  <- c("'NIT_nit'","'NIT_amm'","'OGM_don'","'OGM_pon'")
+    #   wq_config[[j]][["TP_vars"]]  <- c("'PHS_frp'","'OGM_dop'","'OGM_pop'")
+    #   wq_config[[j]][["TOC_vars"]] <- c("'OGM_doc'","'OGM_poc'")
 
-      wq_config[[j]][["TN_varscale"]]  <- c(1, 1, 1, 1)
-      wq_config[[j]][["TP_varscale"]]  <- c(1, 1, 1)
-      wq_config[[j]][["TOC_varscale"]] <- c(1, 1)
-    }
+    #   wq_config[[j]][["TN_varscale"]]  <- c(1, 1, 1, 1)
+    #   wq_config[[j]][["TP_varscale"]]  <- c(1, 1, 1)
+    #   wq_config[[j]][["TOC_varscale"]] <- c(1, 1)
+    # }
   } # <-- closes for(j ...)
         # else if(j == "aed2_phytoplankton"){
         #   wq_config[[j]]["dbase"] <- "aed2_phyto_pars.nml"
