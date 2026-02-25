@@ -41,6 +41,7 @@ extract_variable_list <- function(extracted_metric_dict, config_file, model_filt
         # Extract metric details
         metric_name <- extracted_metric_dict$metric_name[i]
         model_name <- extracted_metric_dict$model[i]
+        metric_instance <- extracted_metric_dict$metric_instance[i]
         variable_model_name <- extracted_metric_dict$variable_model_name[i]
         depth_01 <- extracted_metric_dict$depth_01[i]
         conversion_factor <- extracted_metric_dict$conversion_factor[i]
@@ -84,7 +85,7 @@ extract_variable_list <- function(extracted_metric_dict, config_file, model_filt
                 
                 if (!is.null(nc)) {
                     metric_data <- tryCatch({
-                        get_output_wq(config_file = cfg$metric_yaml_file, model = model_name, vars = var_name, depth_01 = depth_01, conversion_factor = conversion_factor)
+                        get_output_wq(config_file = config_file, model = model_name, vars = var_name, depth_01 = depth_01, conversion_factor = conversion_factor)
                     }, error = function(e) {
                         cat("Error extracting data for variable:", var_name, "\n")
                         print(e)  # Print the full error message
@@ -103,11 +104,9 @@ extract_variable_list <- function(extracted_metric_dict, config_file, model_filt
             
             # Store the cached or extracted data in the output list under the metric name
             if (!is.null(metric_data)) {
-                if (length(variable_list) == 1) {
-                    extracted_data[[paste0(metric_name, "_", model_name)]] <- metric_data
-                } else if (length(variable_list) > 1) {
-                    extracted_data[[paste0(metric_name, "_", model_name, "_", var_name)]] <- metric_data
-                }
+               if (!is.null(metric_data)) {
+    extracted_data[[paste0(metric_instance, "_", model_name)]] <- metric_data
+}
             }
         }
     }
