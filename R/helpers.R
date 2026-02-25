@@ -605,3 +605,58 @@ apply_selma_default_comments <- function(filepath) {
   comment_out_yaml_parameter(filepath, c("tll", "imin", "tau_crit"))
 
 }
+
+# Dynamic phytoplankton input
+expand_templates <- function(sel_metric, wq_config_file) {
+
+  cfg <- yaml::read_yaml(wq_config_file)
+
+  # get phyto groups
+  phyto_groups <- character()
+  if (!is.null(cfg$phytoplankton$groups)) {
+    phyto_groups <- names(cfg$phytoplankton$groups)
+  }
+
+  # get zoo count (for GLM-style zoo)
+  zoo_n <- NA_integer_
+  if (!is.null(cfg$zooplankton$groups)) {
+    zoo_n <- length(cfg$zooplankton$groups)
+  }
+
+  out <- list()
+
+  for (i in seq_len(nrow(sel_metric))) {
+
+    row <- sel_metric[i, , drop = FALSE]
+    varname <- row$variable_model_name
+
+    # ---- expand {group} ----
+    if (grepl("\\{group\\}", varname)) {
+
+      for (g in phyto_groups) {
+        rr <- row
+        rr$variable_model_name <- gsub("\\{group\\}", g, varname)
+        out[[length(out) + 1]] <- rr
+      }
+      next
+    }
+
+    # ---- expand zoo index ----
+    if (grepl("\\{idx:02d\\}", varname) && !is.na(zoo_n)) {
+
+      for (k in seq_len(zoo_n)) {
+        rr <- row
+        rr$variable_model_name <- gsub("\\{idx:02d\\}",
+                                       sprintf("%02d", k),
+                                       varname)
+        out[[length(out) + 1]] <- rr
+      }
+      next
+    }
+
+    # ---- static row ----
+    out[[length(out) + 1]] <- row
+  }
+
+  dplyr::bind_rows(out)
+}
