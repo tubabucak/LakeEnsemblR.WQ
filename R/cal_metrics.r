@@ -19,7 +19,7 @@
 #' 
 
 
-cal_metrics <- function(metric_yaml_file, model_filter = "all") {
+cal_metrics <- function(metric_yaml_file, model_filter = "all", wq_config_file) {
 if (!identical(model_filter, "all") && !is.character(model_filter)) {
     stop("model_filter must be either 'all' or a character vector of model names.")
   }
@@ -27,17 +27,52 @@ if (!identical(model_filter, "all") && !is.character(model_filter)) {
 
     bathy_file <- cfg$bathy_file
     config_file <- cfg$LER_config_file
-    dict_file <- cfg$metrics_dict
+    dict_file <- cfg$metrics_dict_file
 
     metric_out <- list()
     
   #  bathy_file <- file.path(folder, bathy_file)
 
     # Extract the information from metric dictionary regarding output.yaml
+
     sel_metric <- check_the_metrics(metric_yaml_file, dict_file)
 
+# 1️⃣ Expand templates FIRST
+sel_metric <- expand_templates(sel_metric, wq_config_file)
 
+# 2️⃣ THEN remove duplicates
+sel_metric <- sel_metric %>%
+  distinct(metric_name, model, variable_model_name, .keep_all = TRUE)
 
+# 3️⃣ THEN create metric_instance
+sel_metric$metric_instance <- paste(
+  sel_metric$metric_name,
+  sel_metric$variable_model_name,
+  sep = "_"
+)
+
+sel_metric$metric_mod <- paste(
+  sel_metric$metric_instance,
+  sel_metric$model,
+  sep = "_"
+)
+#     sel_metric <- check_the_metrics(metric_yaml_file, dict_file)
+    
+# # dynamic phyto zoop
+
+#  sel_metric <- sel_metric %>%
+#   dplyr::distinct(
+#     metric_name,
+#     model,
+#     variable_model_name,
+#     .keep_all = TRUE
+#   )
+#  sel_metric$metric_instance <- paste(
+#   sel_metric$metric_name,
+#   sel_metric$variable_model_name,
+#   sep = "_"
+# )
+# sel_metric$metric_mod <- paste(sel_metric$metric_instance, sel_metric$model, sep = "_")
 
 # Force model_filter to be a vector unless it's "all"
 if (!identical(model_filter, "all")) {
@@ -58,7 +93,8 @@ if (!identical(model_filter, "all")) {
 
     # Extract all the variables and harmonize the units
     ext_data <- extract_variable_list(sel_metric, metric_yaml_file)
-    selected_keys <- paste(sel_metric$metric_name, sel_metric$model, sep = "_")
+   # selected_keys <- paste(sel_metric$metric_name, sel_metric$model, sep = "_")
+   selected_keys <- paste(sel_metric$metric_instance, sel_metric$model, sep = "_")
     ext_data <- ext_data[names(ext_data) %in% selected_keys]  
 
     # Check if both blue_ice_thickness and white_ice_thickness exist in ext_data
@@ -85,9 +121,10 @@ if (!identical(model_filter, "all")) {
 }
 
 # Merge Metric name with lake model to match the extracted dataframe
-    sel_metric$metric_mod <- paste(sel_metric$metric_name, sel_metric$model, sep= "_") 
+   # sel_metric$metric_mod <- paste(sel_metric$metric_name, sel_metric$model, sep= "_") 
 
-    
+    sel_metric$metric_mod <- paste(sel_metric$metric_instance, sel_metric$model, sep= "_")
+
     var_list <- names(ext_data)
 
     for (i in 1:length(var_list)) {
@@ -97,8 +134,15 @@ if (!identical(model_filter, "all")) {
         sel_metric_sub <- sel_metric %>%
                           filter(metric_mod == var_list[i])
         
-        metric_name <- sel_metric_sub$metric_name
-        model_name <- sel_metric_sub$model
+        if (nrow(sel_metric_sub) != 1) {
+  stop(
+    "metric_mod not unique: ", var_list[i],
+    " → rows found: ", nrow(sel_metric_sub)
+  )
+}
+
+metric_name <- sel_metric_sub$metric_name[1]
+model_name  <- sel_metric_sub$model[1]
 
         # Initialize the metric list if it doesn't exist
         if (!metric_name %in% names(metric_out)) {
@@ -113,7 +157,14 @@ if (!identical(model_filter, "all")) {
 
         # Check if function_name is empty
         if (sel_metric_sub$function_name == "") {
-            metric_out[[metric_name]][[model_name]] <- var_x_df
+           # metric_out[[metric_name]][[model_name]] <- var_x_df
+           metric_instance <- sel_metric_sub$metric_instance
+
+if (!model_name %in% names(metric_out[[metric_name]])) {
+  metric_out[[metric_name]][[model_name]] <- list()
+}
+
+metric_out[[metric_name]][[model_name]][[metric_instance]] <- var_x_df
         } else {
             # Extract the metric function
             met_fun <- get(sel_metric_sub$function_name)
@@ -134,7 +185,14 @@ if (!identical(model_filter, "all")) {
             }
             
             # Store the calculated metric in the output list
-            metric_out[[metric_name]][[model_name]] <- metric_i
+           # metric_out[[metric_name]][[model_name]] <- metric_i
+           metric_instance <- sel_metric_sub$metric_instance
+
+if (!model_name %in% names(metric_out[[metric_name]])) {
+  metric_out[[metric_name]][[model_name]] <- list()
+}
+
+metric_out[[metric_name]][[model_name]][[metric_instance]] <- metric_i
         }
 
 
@@ -151,7 +209,7 @@ if ("DIC_gramsPerCubicMeter" %in% names(metric_out) &
   for ( model in DIC_mod_names){
     
     DIC<- metric_out[["DIC_gramsPerCubicMeter"]][[model]]
-    DOC<- metric_out[["DIC_gramsPerCubicMeter"]][[model]]
+    DOC<- metric_out[["DOC_gramsPerCubicMeter"]][[model]]
     
     # Check if Date columns are the same in both dataframes (for safety)
     if (!all(DIC$datetime == DOC$datetime)) {
@@ -239,8 +297,8 @@ if ("TP_gramsPerCubicMeter" %in% names(metric_out) &
   
   for ( model in TP_mod_names){
     
-    TP<- metric_out[["TP_gramsPerCubicMeter"]][[model]]
-    TN<- metric_out[["TN_gramsPerCubicMeter"]][[model]]
+    TP<- metric_out[["TP_gramsPerCubicMeter"]][[model]][[1]]
+    TN<- metric_out[["TN_gramsPerCubicMeter"]][[model]][[1]]
     
     # Debugging prints
             print(paste("Processing TP and TN for model:", model))
