@@ -37,14 +37,14 @@ if (!identical(model_filter, "all") && !is.character(model_filter)) {
 
     sel_metric <- check_the_metrics(metric_yaml_file, dict_file)
 
-# 1️⃣ Expand templates FIRST
+
 sel_metric <- expand_templates(sel_metric, wq_config_file)
 
-# 2️⃣ THEN remove duplicates
+# remove duplicates
 sel_metric <- sel_metric %>%
   distinct(metric_name, model, variable_model_name, .keep_all = TRUE)
 
-# 3️⃣ THEN create metric_instance
+# create metric_instance
 sel_metric$metric_instance <- paste(
   sel_metric$metric_name,
   sel_metric$variable_model_name,
