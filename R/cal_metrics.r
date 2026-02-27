@@ -263,8 +263,8 @@ if ("TP_gramsPerCubicMeter" %in% names(metric_out) &
   
   for ( model in TP_mod_names){
     
-    TP<- metric_out[["TP_gramsPerCubicMeter"]][[model]]
-    TChla<- metric_out[["Total_Chla_miligramsPerCubicMeter"]][[model]]
+    TP<- metric_out[["TP_gramsPerCubicMeter"]][[model]][[1]]
+    TChla<- metric_out[["Total_Chla_miligramsPerCubicMeter"]][[model]][[1]]
     
     # Debugging prints
             print(paste("Processing TP and Chla for model:", model))
