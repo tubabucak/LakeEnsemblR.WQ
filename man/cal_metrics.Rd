@@ -4,7 +4,7 @@
 \alias{cal_metrics}
 \title{Calculate the Metrics}
 \usage{
-cal_metrics(metric_yaml_file, model_filter = "all")
+cal_metrics(metric_yaml_file, model_filter = "all", wq_config_file)
 }
 \arguments{
 \item{metric_yaml_file}{Character: Name of the YAML file containing the list of metrics.}

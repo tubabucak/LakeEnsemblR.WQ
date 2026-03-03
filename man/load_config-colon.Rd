@@ -34,7 +34,7 @@ missing, the function will stop with a descriptive error message.
 }
 \examples{
 \dontrun{
-config <- load_config_strict("path/to/config.yaml")
+config <- load_config("path/to/config.yaml")
 print(config$metrics_dict_file)
 }
 }
