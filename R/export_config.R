@@ -1,20 +1,38 @@
-#'Export settings in LakeEnsemblR_WQ configuration file
+#' Export settings to model-specific configuration files for LER.WQ
 #'
-#'Export settings from configuration file to model-specific configuration files
+#' Takes the high-level settings from a LakeEnsemblR_WQ configuration file and 
+#' distributes them into the model-specific configuration files (e.g., FABM, AED) 
+#' It handles module activation, parameter mapping, and 
+#' ensures YAML boolean consistency. If Simstrat 
+#' is used with AED2, it also generates the necessary inflow \code{.dat} files.
 #'
-#'@param config_file character; name of LakeEnsemblR_WQ config file
-#'@param folder path; location of config_file
-#'@param verbose boolean; print changed parameters on screen
+#' @param config_file character; name of the LakeEnsemblR_WQ master configuration file (e.g., "LakeEnsemblR_WQ.yaml").
+#' @param folder character; path to the directory containing the configuration files. Defaults to the current working directory (".").
+#' @param verbose logical; if TRUE, prints detailed information about changed parameters to the console.
+#' @param convert_from_lakeensemblr logical; if TRUE, runs a conversion step to sync settings from the physical LakeEnsemblR configuration before exporting WQ settings.
+#' @param ler_config_file character; name of the base LakeEnsemblR (physical) config file.
+#' @param overwrite logical; if TRUE, overwrites existing inflow files. Defaults to FALSE.
+#' @details 
+#' The function automates the setup of water quality modules. For Simstrat-AED2 
+#' setups, it automatically calls \code{generate_simstrat_aed2_inflows} to 
+#' create template boundary condition files for all active AED2 modules, 
+#' including expanded phytoplankton groups.
+
 #'
-#'@examples
+#' @examples
+#' \dontrun{
+#' export_config_wq(config_file = "LakeEnsemblR_WQ.yaml", 
+#'                  folder = "/Model_setup", 
+#'                  verbose = TRUE)
+#' }
 #'
-#'@importFrom configr read.config
-#'
-#'@export
+#' @importFrom configr read.config
+#' @export
 
 export_config_wq <- function(config_file, folder = ".", verbose = FALSE,
                           convert_from_lakeensemblr = TRUE,
-                          ler_config_file = "LakeEnsemblR.yaml"){
+                          ler_config_file = "LakeEnsemblR.yaml",
+                          overwrite = FALSE){
   
   if(convert_from_lakeensemblr){
     # LakeEnsemblR::export_config has been run beforehand
@@ -67,21 +85,6 @@ export_config_wq <- function(config_file, folder = ".", verbose = FALSE,
       # Read the file(s)
       for(j in seq_len(length(input_file_paths))){
         input_file <- read.csv(input_file_paths[j], stringsAsFactors = FALSE)
-        # 
-        # sapply(seq_len(nrow(input_file)), function (x){
-        #   set_value_config(config_file = config_file,
-        #                    module = i,
-        #                    group_name = names(input_file_paths)[j],
-        #                    group_position = j,
-        #                    domain = input_file[x, "domain"],
-        #                    process = input_file[x, "process"],
-        #                    subprocess = input_file[x, "subprocess"],
-        #                    model_coupled = input_file[x, "model_coupled"],
-        #                    parameter = input_file[x, "parameter"],
-        #                    value = input_file[x, "value"],
-        #                    folder = folder,
-        #                    verbose = verbose)
-        # })
         
         for (x in seq_len(nrow(input_file))){
           set_value_config(config_file = config_file,
@@ -96,18 +99,6 @@ export_config_wq <- function(config_file, folder = ".", verbose = FALSE,
                            value = input_file[x, "value"],
                            folder = folder,
                            verbose = verbose)
-          # config_file = config_file
-          # module = i
-          # group_name = names(input_file_paths)[j]
-          # group_position = j
-          # domain = input_file[x, "domain"]
-          # process = input_file[x, "process"]
-          # subprocess = input_file[x, "subprocess"]
-          # model_coupled = input_file[x, "model_coupled"]
-          # parameter = input_file[x, "parameter"]
-          # value = input_file[x, "value"]
-          # folder = folder
-          # verbose = verbose
         }
         
       }
@@ -116,6 +107,27 @@ export_config_wq <- function(config_file, folder = ".", verbose = FALSE,
   
   set_coupling(config_file, folder = folder)
 
+# --- SIMSTRAT-AED2 INFLOW GENERATION ---
+  # If Simstrat is a target model, we likely need these files
+  if("Simstrat-AED2" %in% lst_config[["models"]]) {
+    if(verbose) message("Generating Simstrat-AED2 inflow files...")
+    
+    # Define paths based on standard LER naming/folder conventions
+    aed2_nml <- file.path(folder, "Simstrat-AED2/aed2.nml")
+    phyto_nml <- file.path(folder, "Simstrat-AED2/aed2_phyto_pars.nml")
+    sim_json <- file.path(folder, "Simstrat-AED2/simstrat.par") # Or the relevant .json config
+    
+    # Check if files exist before trying to generate inflows
+    if(file.exists(aed2_nml) && file.exists(sim_json)) {
+       generate_simstrat_aed2_inflows(
+         aed2_file = aed2_nml,
+         phyto_pars_file = if(file.exists(phyto_nml)) phyto_nml else NULL,
+         sim_par = sim_json,
+         out_dir = file.path(folder, "Simstrat-AED2"),
+         overwrite = overwrite
+       )
+    }
+  }
 # --- FINAL STEP: normalize YAML booleans (FABM configs) to yes/no to true/false ---
 lst_config2 <- configr::read.config(file.path(folder, config_file))
 
