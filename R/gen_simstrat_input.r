@@ -238,15 +238,15 @@ generate_simstrat_aed2_inflows <- function(aed2_file,
   
   inflow_map <- data.frame(
     module = c(
-      "aed_carbon","aed_carbon","aed_carbon","aed_carbon",
-      "aed_noncohesive",
-      "aed_nitrogen","aed_nitrogen","aed_nitrogen","aed_nitrogen",
-      "aed_organic_matter","aed_organic_matter",
-      "aed_phosphorus","aed_phosphorus","aed_phosphorus",
-      "aed_oxygen",
-      "aed_silica",
-      "aed_phytoplankton","aed_phytoplankton","aed_phytoplankton",
-      "aed_zooplankton"
+      "aed2_carbon","aed2_carbon","aed2_carbon","aed2_carbon",
+      "aed2_noncohesive",
+      "aed2_nitrogen","aed2_nitrogen","aed2_nitrogen","aed2_nitrogen",
+      "aed2_organic_matter","aed2_organic_matter",
+      "aed2_phosphorus","aed2_phosphorus","aed2_phosphorus",
+      "aed2_oxygen",
+      "aed2_silica",
+      "aed2_phytoplankton","aed2_phytoplankton","aed2_phytoplankton",
+      "aed2_zooplankton"
     ),
     inflow_var = c(
       "CAR_ch4_bub_inflow",
