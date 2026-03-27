@@ -423,103 +423,179 @@ wq_config <- add_selma_prey_to_scaffold(wq_config, lst_config, zoo_instance = "z
         wet_model <- wq_config[["instances"]][[j]][["model"]]
         
         if(wet_model == "wet/abiotic_sediment"){
-          coupling <- list(oxygen_pool_water = "abiotic_water/sO2W",
-                           water_column_NH4 = "abiotic_water/sNH4W" ,
-                           water_column_NO3 = "abiotic_water/sNO3W",
-                           water_column_PO4 = "abiotic_water/sPO4W",
-                           water_column_DDOM = "abiotic_water/sDDOMW",
-                           water_column_NDOM = "abiotic_water/sNDOMW",
-                           water_column_PDOM = "abiotic_water/sPDOMW",
-                           water_column_SiO2 = "abiotic_water/sSiO2W")
+          coupling <- list(oxygen_pool_water = "abiotic_water/sO2W")
         }else if(wet_model == "wet/burial"){
-          coupling <- list(ammonium_pool_in_sediment = "abiotic_sediment/sNH4S",
-                           nitrate_pool_in_sediment = "abiotic_sediment/sNO3S",
-                           phosphate_pool_in_sediment = "abiotic_sediment/sPO4S",
-                           adsorbed_phosphorus_in_sediment = "abiotic_sediment/sPAIMS",
+          coupling <- list(NH4_pool_in_sediment = "abiotic_sediment/sNH4S",
+                           NO3_pool_in_sediment = "abiotic_sediment/sNO3S",
+                           PO4_pool_in_sediment = "abiotic_sediment/sPO4S",
+                           PAIM_in_sediment = "abiotic_sediment/sPAIMS",
                            inorg_pool_in_sediment = "abiotic_sediment/sDIMS",
-                           POM_DW_in_sediment = "abiotic_sediment/sDPOMS",
-                           POM_N_in_sediment = "abiotic_sediment/sNPOMS",
-                           POM_P_in_sediment = "abiotic_sediment/sPPOMS",
                            particulate_Si_in_sediment = "abiotic_sediment/sSiPaS",
-                           humus_DW_in_sediment = "abiotic_sediment/sDHumS",
-                           humus_N_in_sediment = "abiotic_sediment/sNHumS",
-                           humus_P_in_sediment = "abiotic_sediment/sPHumS",
-                           POM_abiotic_update = "abiotic_sediment/tDAbioPOMS",
-                           POM_resus_sed = "resus_sed/tDAbioPOMS",
-                           humus_abiotic_update = "abiotic_sediment/tDAbioHumS",
-                           IM_abiotic_update = "resus_sed/tDAbioIMS",
+                           humus_DW_in_deep_sediment = "humus/sDS",
+                           humus_N_in_deep_sediment = "humus/sNS",
+                           humus_P_in_deep_sediment = "humus/sPS",
+                           humus_C_in_deep_sediment = "humus/sCS",
                            bPorS = "abiotic_sediment/bPorS",
-                           cDepthS = "abiotic_sediment/cDepthS")
-        }else if(wet_model == "wet/resus_sed"){
-          coupling <- list(inorg_pool_in_sediment = "abiotic_sediment/sDIMS",
-                           POM_DW_in_sediment = "abiotic_sediment/sDPOMS",
-                           POM_N_in_sediment = "abiotic_sediment/sNPOMS",
-                           POM_P_in_sediment = "abiotic_sediment/sPPOMS",
+                           cDepthS = "abiotic_sediment/cDepthS",
+                           bot_pel_conv = "bot_pel_interface/bot_pel_conv",
+                           DOM_group1 = "DOM",
+                           POM_group1 = "POM",
+                           POM_group2 = "humus",
+                          
+                           IM_abiotic_update = "sediment_exchange/tDAbioIMS",             # IM abiotic update (g/m2/s)
+                           POM_sediment_update1 = "POM/tDPOMS",                   # done auto by POM_group coupling
+                           POM_sediment_update2 = "humus/tDPOMS",                 # done auto by POM_group coupling
+                           POM_exchange_update1 = "sediment_exchange/tDExchPOMS_1" # POM
+)
+
+        } else if(wet_model == "wet/om_pool") {
+          if(j == "POM"){
+
+
+            coupling <- list(
+                            oxygen_pool_water  = "abiotic_water/sO2W",
+                            NO3_pool_water     = "abiotic_water/sNO3W",
+                            bot_pel_conv       = "bot_pel_interface/bot_pel_conv",
+
+        # DOM transformation
+                            DW_transformation_water      = "DOM/sDW",
+                            N_transformation_water       = "DOM/sNW",
+                            P_transformation_water       = "DOM/sPW",
+                            C_transformation_water       = "DOM/sCW",
+
+                            DW_transformation_sediment   = "DOM/sDS",
+                            N_transformation_sediment    = "DOM/sNS",
+                            P_transformation_sediment    = "DOM/sPS",
+                            C_transformation_sediment    = "DOM/sCS"
+    )
+}
+
+ if(j == "DOM"){
+
+    coupling <- list(
+      oxygen_pool_water  = "abiotic_water/sO2W",
+      NO3_pool_water     = "abiotic_water/sNO3W",
+      bot_pel_conv       = "bot_pel_interface/bot_pel_conv",
+      # DOM transformation
+      DW_transformation_water      = "DOM/sDW",
+      N_transformation_water       = "abiotic_water/sNH4W",
+      P_transformation_water       = "abiotic_water/sPO4W",
+      C_transformation_water       = "DOM/sCW",
+
+      DW_transformation_sediment   = "DOM/sDS",
+      N_transformation_sediment    = "abiotic_sediment/sNH4S",
+      P_transformation_sediment    = "abiotic_sediment/sPO4S",
+      C_transformation_sediment    = "DOM/sCS"
+    )
+}
+if(j == "humus"){
+
+    coupling <- list(
+      oxygen_pool_water  = "abiotic_water/sO2W",
+      NO3_pool_water     = "abiotic_water/sNO3W",
+      bot_pel_conv       = "bot_pel_interface/bot_pel_conv",
+      # DOM transformation
+      DW_transformation_water      = "DOM/sDW",
+      N_transformation_water       = "abiotic_water/sNH4W",
+      P_transformation_water       = "abiotic_water/sPO4W",
+      C_transformation_water       = "DOM/sCW",
+
+      DW_transformation_sediment   = "DOM/sDS",
+      N_transformation_sediment    = "DOM/sNS",
+      P_transformation_sediment    = "DOM/sPS",
+      C_transformation_sediment    = "DOM/sCS"
+    )
+}}
+
+        else if(wet_model == "wet/sediment_exchange"){
+          coupling <- list(
+            
+            
+                           pom_model1 = "POM",
+                           dom_model1 = "DOM",
+                           inorg_pool_in_sediment = "abiotic_sediment/sDIMS",
                            PO4_in_sediment = "abiotic_sediment/sPO4S",
-                           adsorbed_phosphorus_in_sediment = "abiotic_sediment/sPAIMS",
+                           PAIM_in_sediment = "abiotic_sediment/sPAIMS",
                            NH4_in_sediment = "abiotic_sediment/sNH4S",
                            NO3_in_sediment = "abiotic_sediment/sNO3S",
+                           dissolved_Si_in_sediment =  "abiotic_sediment/sSiO2S",
                            particulate_Si_in_sediment = "abiotic_sediment/sSiPaS",
+                           bPorS = "abiotic_sediment/bPorS",
+                           bPorCorS = "abiotic_sediment/bPorCorS",
+                           cDepthS = "abiotic_sediment/cDepthS",
+                           fDepthDifS = "abiotic_sediment/fDepthDifS",
+
+                           # Water column pools
                            particulate_Si_in_water = "abiotic_water/sSiPaW",
+                           SiO2_in_water = "abiotic_water/sSiO2W",
                            NH4_in_water = "abiotic_water/sNH4W",
                            NO3_in_water = "abiotic_water/sNO3W",
                            PO4_in_water = "abiotic_water/sPO4W",
                            inorg_pool_in_water = "abiotic_water/sDIMW",
-                           adsorbed_phosphorus_in_water = "abiotic_water/sPAIMW",
-                           POM_DW_in_water = "abiotic_water/sDPOMW",
-                           POM_N_in_water = "abiotic_water/sNPOMW",
-                           POM_P_in_water = "abiotic_water/sPPOMW",
-                           bPorS = "abiotic_sediment/bPorS",
-                           bot_pel_conv = "abiotic_sediment/bot_pel_conv")
+                           PAIM_in_water = "abiotic_water/sPAIMW",
+
+                          # Interface and conversion
+                           bot_pel_conv = "bot_pel_interface/bot_pel_conv")
+
         }else if(wet_model == "wet/macrophytes"){
           coupling <- list(ammonium_pool_water = "abiotic_water/sNH4W",
                            nitrate_pool_water = "abiotic_water/sNO3W",
                            phosphate_pool_water = "abiotic_water/sPO4W",
                            oxygen_pool_water = "abiotic_water/sO2W",
-                           POM_DW_pool_water = "abiotic_water/sDPOMW",
-                           POM_N_pool_water = "abiotic_water/sPPOMW",
-                           POM_P_pool_water = "abiotic_water/sNPOMW",
+                          # Sediment nutrients
                            ammonium_pool_sediment = "abiotic_sediment/sNH4S",
                            nitrate_pool_sediment = "abiotic_sediment/sNO3S",
                            phosphate_pool_sediment = "abiotic_sediment/sPO4S",
-                           POM_DW_pool_sediment = "abiotic_sediment/sDPOMS",
-                           POM_N_pool_sediment = "abiotic_sediment/sNPOMS",
-                           POM_P_pool_sediment = "abiotic_sediment/sPPOMS",
-                           DOM_DW_pool_water = "abiotic_water/sDDOMW",
-                           DOM_N_pool_water = "abiotic_water/sNDOMW",
-                           DOM_P_pool_water = "abiotic_water/sPDOMW",
-                           DOM_DW_pool_sediment = "abiotic_sediment/sDDOMS",
-                           DOM_N_pool_sediment = "abiotic_sediment/sNDOMS",
-                           DOM_P_pool_sediment = "abiotic_sediment/sPDOMS",
+                           # Sediment properties
                            oxic_layer_fraction = "abiotic_sediment/afOxySed",
                            bPorS = "abiotic_sediment/bPorS",
-                           cDepthS = "abiotic_sediment/cDepthS")
+                           cDepthS = "abiotic_sediment/cDepthS",
+                          # POM pool 
+                           POM_DW_pool_water       = "POM/sDW",
+                           POM_N_pool_water        = "POM/sNW",
+                           POM_P_pool_water        = "POM/sPW",
+                          # DOM pool
+                           DOM_DW_pool_water       = "DOM/sDW",
+                           DOM_N_pool_water        = "DOM/sNW",
+                           DOM_P_pool_water        = "DOM/sPW",
+                          # DOM sediment pool
+                          DOM_DW_pool_sediment    = "DOM/sDS",
+                          DOM_N_pool_sediment     = "DOM/sNS",
+                          DOM_P_pool_sediment     = "DOM/sPS")
         }else if(wet_model == "wet/phytoplankton"){
           coupling <- list(PO4_pool_water = "abiotic_water/sPO4W",
                            NH4_pool_water = "abiotic_water/sNH4W",
                            NO3_pool_water = "abiotic_water/sNO3W",
                            oxygen_pool_water = "abiotic_water/sO2W",
-                           POM_DW_pool_water = "abiotic_water/sDPOMW",
-                           POM_N_pool_water = "abiotic_water/sPPOMW",
-                           POM_P_pool_water = "abiotic_water/sNPOMW",
-                           DOM_DW_pool_water = "abiotic_water/sDDOMW",
-                           DOM_N_pool_water = "abiotic_water/sNDOMW",
-                           DOM_P_pool_water = "abiotic_water/sPDOMW",
+                           SiPa_pool_water = "abiotic_water/sSiPaW",
+                           SiO2_pool_water = "abiotic_water/sSiO2W",
+                           # Sediment nutrients
                            PO4_pool_sediment = "abiotic_sediment/sPO4S",
                            NO3_pool_sediment = "abiotic_sediment/sNO3S",
                            NH4_pool_sediment = "abiotic_sediment/sNH4S",
-                           POM_DW_pool_sediment = "abiotic_sediment/sDPOMS",
-                           POM_N_pool_sediment = "abiotic_sediment/sNPOMS",
-                           POM_P_pool_sediment = "abiotic_sediment/sPPOMS",
-                           DOM_DW_pool_sediment = "abiotic_sediment/sDDOMS",
-                           DOM_N_pool_sediment = "abiotic_sediment/sNDOMS",
-                           DOM_P_pool_sediment = "abiotic_sediment/sPDOMS",
-                           SiPa_pool_water = "abiotic_water/sSiPaW",
-                           SiO2_pool_water = "abiotic_water/sSiO2W",
                            SiPa_pool_sediment = "abiotic_sediment/sSiPaS",
                            SiO2_pool_sediment = "abiotic_sediment/sSiO2S",
-                           base_resuspension_rate = "resus_sed/tDResusDead",
-                           aFunTauTmSet = "resus_sed/aFunTauTmSet")
+
+                           # POM pool water
+                           POM_DW_pool_water   = "POM/sDW",
+                           POM_N_pool_water    = "POM/sNW",
+                           POM_P_pool_water    = "POM/sPW",
+                          # POM pool sediment
+                           POM_DW_pool_sediment = "POM/sDS",
+                           POM_N_pool_sediment  = "POM/sNS",
+                           POM_P_pool_sediment  = "POM/sPS",
+                          # DOM pool water
+                           DOM_DW_pool_water   = "DOM/sDW",
+                           DOM_N_pool_water    = "DOM/sNW",
+                           DOM_P_pool_water    = "DOM/sPW",
+                          # DOM pool sediment
+                           DOM_DW_pool_sediment = "DOM/sDS",
+                           DOM_N_pool_sediment  = "DOM/sNS",
+                           DOM_P_pool_sediment  = "DOM/sPS",
+                           
+                           base_resuspension_rate = "sediment_exchange/tDResusDead",
+                           aFunTauTmSet= "sediment_exchange/aFunTauTmSet")
+
         }else if(wet_model == "wet/zooplankton"){
           coupling <- list(POM_DW_pool_water = "abiotic_water/sDPOMW",
                            POM_N_pool_water = "abiotic_water/sPPOMW",
