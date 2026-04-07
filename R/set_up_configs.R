@@ -542,12 +542,25 @@ for (j in c("phytoplankton", "zooplankton")) {
                                              model = "wet/burial",
                                              parameters = list(),
                                              coupling = list())
-      lst[["instances"]][["resus_sed"]] <- list(long_name = "resuspension_sedimentation",
-                                                model = "wet/resus_sed",
+      lst[["instances"]][["sediment_exchange"]] <- list(long_name = "sediment_exchange",
+                                                model = "wet/sediment_exchange",
                                                 parameters = list(),
                                                 coupling = list())
-      
-      
+      lst[["instances"]][["POM"]] <- list(long_name = "pom",
+                                                model = "wet/om_pool",
+                                                parameters = list(),
+                                                coupling = list())                                               
+      lst[["instances"]][["DOM"]] <- list(long_name = "dom",
+                                                model = "wet/om_pool",
+                                                parameters = list(),
+                                                coupling = list())        
+      lst[["instances"]][["humus"]] <- list(long_name = "humus",
+                                                model = "wet/om_pool",
+                                                parameters = list(),
+                                                coupling = list())   
+      lst[["instances"]][["bot_pel_interface"]] <- list(long_name = "bot_pel_interface",
+                                                model = "wet/bot_pel_interface",
+                                                parameters = list())     
       
       dict_biogeochem <- dict[!(dict$module %in% c("phytoplankton", "zooplankton",
                                                    "fish", "macrophytes", "zoobenthos")),]
