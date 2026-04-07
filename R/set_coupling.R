@@ -550,18 +550,34 @@ if(j == "humus"){
                            oxic_layer_fraction = "abiotic_sediment/afOxySed",
                            bPorS = "abiotic_sediment/bPorS",
                            cDepthS = "abiotic_sediment/cDepthS",
+                           bot_pel_conv = "bot_pel_interface/bot_pel_conv",
                           # POM pool 
                            POM_DW_pool_water       = "POM/sDW",
                            POM_N_pool_water        = "POM/sNW",
                            POM_P_pool_water        = "POM/sPW",
+                           POM_C_pool_water    = "POM/sCW",
+                           
                           # DOM pool
                            DOM_DW_pool_water       = "DOM/sDW",
                            DOM_N_pool_water        = "DOM/sNW",
                            DOM_P_pool_water        = "DOM/sPW",
+                           DOM_C_pool_water        = "DOM/sCW", 
+
                           # DOM sediment pool
                           DOM_DW_pool_sediment    = "DOM/sDS",
                           DOM_N_pool_sediment     = "DOM/sNS",
-                          DOM_P_pool_sediment     = "DOM/sPS")
+                          DOM_P_pool_sediment     = "DOM/sPS",
+                          DOM_C_pool_sediment =  "DOM/sCS",
+                          # POM pool sediment
+                           POM_DW_pool_sediment = "POM/sDS",
+                           POM_N_pool_sediment  = "POM/sNS",
+                           POM_P_pool_sediment  = "POM/sPS",
+                           POM_C_pool_sediment     = "POM/sCS",
+                           POM_N_pool_sediment_PV = "POM/sNS_PV",
+                           POM_DW_pool_sediment_PV = "POM/sDS_PV", 
+                           POM_P_pool_sediment_PV = "POM/sPS_PV", 
+                           POM_C_pool_sediment_PV = "POM/sCS_PV",
+                          )
         }else if(wet_model == "wet/phytoplankton"){
           coupling <- list(PO4_pool_water = "abiotic_water/sPO4W",
                            NH4_pool_water = "abiotic_water/sNH4W",
@@ -571,7 +587,7 @@ if(j == "humus"){
                            SiO2_pool_water = "abiotic_water/sSiO2W",
                            # Sediment nutrients
                            PO4_pool_sediment = "abiotic_sediment/sPO4S",
-                           NO3_pool_sediment = "abiotic_sediment/sNO3S",
+                          # NO3_pool_sediment = "abiotic_sediment/sNO3S",
                            NH4_pool_sediment = "abiotic_sediment/sNH4S",
                            SiPa_pool_sediment = "abiotic_sediment/sSiPaS",
                            SiO2_pool_sediment = "abiotic_sediment/sSiO2S",
@@ -580,19 +596,27 @@ if(j == "humus"){
                            POM_DW_pool_water   = "POM/sDW",
                            POM_N_pool_water    = "POM/sNW",
                            POM_P_pool_water    = "POM/sPW",
+                           POM_C_pool_water    = "POM/sCW",
                           # POM pool sediment
                            POM_DW_pool_sediment = "POM/sDS",
                            POM_N_pool_sediment  = "POM/sNS",
                            POM_P_pool_sediment  = "POM/sPS",
+                           POM_C_pool_sediment     = "POM/sCS",
+                           POM_N_pool_sediment_PV = "POM/sNS_PV",
+                           POM_DW_pool_sediment_PV = "POM/sDS_PV",  
+                           POM_P_pool_sediment_PV = "POM/sPS_PV", 
+                           POM_C_pool_sediment_PV = "POM/sCS_PV",
                           # DOM pool water
                            DOM_DW_pool_water   = "DOM/sDW",
                            DOM_N_pool_water    = "DOM/sNW",
                            DOM_P_pool_water    = "DOM/sPW",
+                           DOM_C_pool_water    = "DOM/sCW", 
                           # DOM pool sediment
                            DOM_DW_pool_sediment = "DOM/sDS",
                            DOM_N_pool_sediment  = "DOM/sNS",
                            DOM_P_pool_sediment  = "DOM/sPS",
-                           
+                           DOM_C_pool_sediment =  "DOM/sCS",
+                           bot_pel_conv = "bot_pel_interface/bot_pel_conv",
                            base_resuspension_rate = "sediment_exchange/tDResusDead",
                            aFunTauTmSet= "sediment_exchange/aFunTauTmSet")
 
@@ -619,7 +643,7 @@ if(j == "humus"){
                            POM_N_pool_sediment = "abiotic_sediment/sNPOMS",
                            SiPa_pool_sediment = "abiotic_sediment/sSiPaS",
                            NH4_pool_sediment = "abiotic_sediment/sNH4S",
-                           NO3_pool_sediment = "abiotic_sediment/sNO3S",
+                          # NO3_pool_sediment = "abiotic_sediment/sNO3S",
                            PO4_pool_sediment = "abiotic_sediment/sPO4S",
                            DOM_DW_pool_sediment = "abiotic_sediment/sDDOMS",
                            DOM_N_pool_sediment = "abiotic_sediment/sNDOMS",
