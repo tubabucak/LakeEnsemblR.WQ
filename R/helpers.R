@@ -602,7 +602,7 @@ comment_out_yaml_parameter <- function(filepath, param_names) {
 apply_selma_default_comments <- function(filepath) {
 
   # Comment these parameters globally in SELMA phyto instances
-  comment_out_yaml_parameter(filepath, c("tll", "imin", "tau_crit"))
+  comment_out_yaml_parameter(filepath, c("tll", "imin", "tau_crit", "beta", "alpha"))
 
 }
 
