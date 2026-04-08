@@ -747,6 +747,29 @@ if(j == "humus"){
                                         file.path(paste0(sub("\\.nml.*", "", loc),'_phyto_pars.nml'))))
       }
       
+      if(lst_config[["zooplankton"]][["use"]]){
+        loc <- file.path(folder,
+                         lst_config[["config_files"]][[models_coupled[i]]])
+        zoop_config <- read_nml(file.path(paste0(sub("\\.nml.*", "", loc),'_zoop_pars.nml')))
+        zoo_groups <- names(lst_config[["zooplankton"]][["groups"]])
+        for(g in zoo_groups){
+          zoop_config[["zoop_params"]][["zoop_param%zoop_name"]] <- g
+          prey_list <- lst_config[["zooplankton"]][["groups"]][[g]][["prey"]]
+          prey_names <- sapply(prey_list, function(x) {
+            name <- sub(".*/", "", x)
+            if(grepl("^phytoplankton/", x)) name <- paste0("PHY_", name)
+            name
+          })
+          num_prey <- length(prey_names)
+          zoop_config[["zoop_params"]][["zoop_param%num_prey"]] <- num_prey
+          for(p in 1:num_prey){
+            zoop_config[["zoop_params"]][[paste0("zoop_param%prey(", p, ")%zoop_prey")]] <- prey_names[p]
+          }
+        }
+        write_nml(zoop_config, file.path(folder,
+                                        file.path(paste0(sub("\\.nml.*", "", loc),'_zoop_pars.nml'))))
+      }
+      
 
     
     # MyLake and PCLake don't require coupling, because they do not work with
