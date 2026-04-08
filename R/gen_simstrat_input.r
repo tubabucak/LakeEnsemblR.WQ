@@ -108,6 +108,36 @@ get_phyto_names <- function(phyto_pars_file, sanitize = TRUE) {
   safe
 }
 
+#' Extract zooplankton group name from \code{aed2_zoop_pars.nml}
+#'
+#' This helper reads the AED2 zooplankton parameter file and extracts the
+#' zooplankton name from the \code{zoop_param%zoop_name} line.
+#'
+#' @param zoop_pars_file Character string; path to \code{aed2_zoop_pars.nml}.
+#' @param sanitize Logical; if \code{TRUE}, return file-name-safe names.
+#' @return A character vector of zooplankton names.
+#' @keywords internal
+get_zoop_names <- function(zoop_pars_file, sanitize = TRUE) {
+  lines <- readLines(zoop_pars_file)
+  
+  idx <- grep("zoop_param%zoop_name", lines)
+  if (length(idx) == 0) {
+    stop("Could not find 'zoop_param%zoop_name' in ", zoop_pars_file)
+  }
+  
+  line <- lines[idx[1]]
+  rhs <- sub(".*=", "", line)
+  rhs <- sub("/.*$", "", rhs)
+  rhs <- gsub("'", "", rhs)
+  name <- trimws(rhs)
+  
+  if (!sanitize) return(name)
+  safe <- tolower(name)
+  safe <- gsub("[^0-9A-Za-z]+", "_", safe)
+  safe <- gsub("^_+|_+$", "", safe)
+  safe
+}
+
 #' Format a Simstrat-style AED2 inflow file (character vector)
 #'
 #' This helper creates the contents of a Simstrat inflow file for a single
@@ -246,7 +276,7 @@ generate_simstrat_aed2_inflows <- function(aed2_file,
       "aed2_oxygen",
       "aed2_silica",
       "aed2_phytoplankton","aed2_phytoplankton","aed2_phytoplankton",
-      "aed2_zooplankton"
+      "aed2_zooplankton", "aed2_zooplankton"
     ),
     inflow_var = c(
       "CAR_ch4_bub_inflow",
@@ -268,7 +298,8 @@ generate_simstrat_aed2_inflows <- function(aed2_file,
       "PHY_XX_inflow",
       "PHY_XX_IN_inflow",
       "PHY_XX_IP_inflow",
-      "ZOO_"
+      "ZOO_",
+      "ZOO_XX_inflow"
     ),
     stringsAsFactors = FALSE
   )
@@ -292,8 +323,10 @@ generate_simstrat_aed2_inflows <- function(aed2_file,
   map_active <- inflow_map[inflow_map$module %in% active_modules, , drop = FALSE]
   
   phyto_rows <- map_active$module == "aed2_phytoplankton"
+  zoop_rows  <- map_active$module == "aed2_zooplankton"
   map_phyto  <- map_active[phyto_rows, , drop = FALSE]
-  map_other  <- map_active[!phyto_rows, , drop = FALSE]
+  map_zoop   <- map_active[zoop_rows, , drop = FALSE]
+  map_other  <- map_active[!(phyto_rows | zoop_rows), , drop = FALSE]
   
   inflow_vars <- character(0)
   inflow_vars <- c(inflow_vars, map_other$inflow_var)
@@ -316,6 +349,18 @@ generate_simstrat_aed2_inflows <- function(aed2_file,
           )
         }
       }
+    }
+  }
+  
+  if ("aed2_zooplankton" %in% active_modules) {
+    zoop_pars_file <- file.path(dirname(aed2_file), "aed2_zoop_pars.nml")
+    if (!file.exists(zoop_pars_file)) {
+      stop("aed2_zooplankton is active, but zooplankton parameter file is missing: ", zoop_pars_file)
+    }
+    zoop_names <- get_zoop_names(zoop_pars_file, sanitize = TRUE)
+    inflow_vars <- c(inflow_vars, "ZOO_")
+    if (length(zoop_names) > 0) {
+      inflow_vars <- c(inflow_vars, sprintf("ZOO_%s_inflow", zoop_names))
     }
   }
   
