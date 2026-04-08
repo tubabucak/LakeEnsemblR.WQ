@@ -621,21 +621,23 @@ if(j == "humus"){
                            aFunTauTmSet= "sediment_exchange/aFunTauTmSet")
 
         }else if(wet_model == "wet/zooplankton"){
-          coupling <- list(POM_DW_pool_water = "abiotic_water/sDPOMW",
-                           POM_N_pool_water = "abiotic_water/sPPOMW",
-                           POM_P_pool_water = "abiotic_water/sNPOMW",
+          coupling <- list(POM_DW_pool_water   = "POM/sDW",
+                           POM_N_pool_water    = "POM/sNW",
+                           POM_P_pool_water    = "POM/sPW",
+                           POM_C_pool_water    = "POM/sCW",
+
                            SiPa_pool_water = "abiotic_water/sSiPaW",
                            NH4_pool_water = "abiotic_water/sNH4W",
-                           NO3_pool_water = "abiotic_water/sNO3W",
                            PO4_pool_water = "abiotic_water/sPO4W",
-                           DOM_DW_pool_water = "abiotic_water/sDDOMW",
-                           DOM_N_pool_water = "abiotic_water/sNDOMW",
-                           DOM_P_pool_water = "abiotic_water/sPDOMW",
-                           SiO2_pool_water = "abiotic_water/sSiO2W",
-                           oxygen_pool_water = "abiotic_water/sO2W",
-                           prey_model1= "diatoms")
-          
 
+                           DOM_DW_pool_water   = "DOM/sDW",
+                           DOM_N_pool_water    = "DOM/sNW",
+                           DOM_P_pool_water    = "DOM/sPW",
+                           DOM_C_pool_water    = "DOM/sCW", 
+
+                           SiO2_pool_water = "abiotic_water/sSiO2W",
+                           oxygen_pool_water = "abiotic_water/sO2W")
+          
 
         }else if(wet_model == "wet/zoobenthos"){
           coupling <- list(POM_DW_pool_sediment = "abiotic_sediment/sDPOMS",
