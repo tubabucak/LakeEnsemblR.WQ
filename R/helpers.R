@@ -492,7 +492,7 @@ add_selma_prey_to_scaffold <- function(wq_config, lst_config, zoo_instance = "zo
   }
 
   for (k in seq_along(resolved)) {
-    wq_config[["instances"]][[zoo_key]][["coupling"]][[paste0("prey", k)]] <- paste0(resolved[k], "/c")
+    wq_config[["instances"]][[zoo_key]][["coupling"]][[paste0("prey", k)]] <- resolved[k]
   }
 
   # ---- Keep nprey consistent ----
