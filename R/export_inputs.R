@@ -19,6 +19,26 @@
 export_inputs <- function(config_file, folder = ".",
                           ler_config_file = "LakeEnsemblR.yaml",
                           verbose = FALSE){
+
+  resolve_inflow_series <- function(df, base_name, inflow_index, num_inflows, context) {
+    candidates <- paste0(base_name, "_", inflow_index)
+    if (num_inflows == 1L) {
+      candidates <- c(candidates, base_name)
+    }
+
+    for (candidate in candidates) {
+      if (candidate %in% names(df)) {
+        return(df[[candidate]])
+      }
+    }
+
+    stop(
+      "Could not resolve ", context,
+      " for inflow ", inflow_index,
+      ". Tried column(s): ", paste(candidates, collapse = ", "),
+      "."
+    )
+  }
   
   # Fix time zone
   original_tz <- Sys.getenv("TZ")
@@ -263,8 +283,14 @@ export_inputs <- function(config_file, folder = ".",
         for(k in seq_len(num_inflows)){
           inflow_ls[[paste0("inflow_", k)]] <-
             data.frame(datetime = as.POSIXct(df_inflow_sim$datetime),
-                       Flow_metersCubedPerSecond = inflow_tmp[[paste0("Flow_metersCubedPerSecond_", k)]],
-                       Salinity_practicalSalinityUnits = df_inflow_sim[[paste0(j, "_", k)]])
+                       Flow_metersCubedPerSecond = resolve_inflow_series(
+                         inflow_tmp, "Flow_metersCubedPerSecond", k, num_inflows,
+                         "scaled inflow discharge"
+                       ),
+                       Salinity_practicalSalinityUnits = resolve_inflow_series(
+                         df_inflow_sim, j, k, num_inflows,
+                         paste0("Simstrat nutrient column '", j, "'")
+                       ))
         }
         
         # Unit conversion
@@ -360,9 +386,18 @@ export_inputs <- function(config_file, folder = ".",
       for(j in seq_len(num_inflows)){
         inflow_ls[[paste0("inflow_", j)]] <-
           data.frame(datetime = as.POSIXct(df_inflow_ml$datetime),
-                     Flow_metersCubedPerSecond = inflow_tmp[[paste0("Flow_metersCubedPerSecond_", j)]],
-                     Water_Temperature_celsius = df_inflow_ml[[paste0("DOP_", j)]],
-                     Salinity_practicalSalinityUnits = df_inflow_ml[[paste0("TP_", j)]])
+                     Flow_metersCubedPerSecond = resolve_inflow_series(
+                       inflow_tmp, "Flow_metersCubedPerSecond", j, num_inflows,
+                       "scaled inflow discharge"
+                     ),
+                     Water_Temperature_celsius = resolve_inflow_series(
+                       df_inflow_ml, "DOP", j, num_inflows,
+                       "MyLake DOP inflow column"
+                     ),
+                     Salinity_practicalSalinityUnits = resolve_inflow_series(
+                       df_inflow_ml, "TP", j, num_inflows,
+                       "MyLake TP inflow column"
+                     ))
       }
       
       mylake_inflow <- format_inflow(inflow = inflow_ls, model = "MyLake",
@@ -424,8 +459,13 @@ export_inputs <- function(config_file, folder = ".",
         # then sum and write
         df_loads <- data.frame(datetime = df_inflow_pcl$datetime)
         for(k in seq_len(num_inflows)){
-          df_loads[[paste0("load_", k)]] <- inflow_tmp[[paste0("Flow_metersCubedPerSecond_", k)]] *
-            df_inflow_pcl[[paste0(j, "_", k)]] * 86400 / surf_area
+          df_loads[[paste0("load_", k)]] <- resolve_inflow_series(
+            inflow_tmp, "Flow_metersCubedPerSecond", k, num_inflows,
+            "scaled inflow discharge"
+          ) * resolve_inflow_series(
+            df_inflow_pcl, j, k, num_inflows,
+            paste0("PCLake nutrient column '", j, "'")
+          ) * 86400 / surf_area
         }
         df_load_pcl <- data.frame(dTime = df_loads$datetime,
                                   dValue = rowSums(df_loads[, -1,
