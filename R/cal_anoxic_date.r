@@ -20,6 +20,10 @@ cal_anoxic_date <- function(oxy_data, bathy_file, threshold = 1, duration = "ful
   duration <- match.arg(duration)
   bathy_file$depths <- as.numeric(bathy_file$depths)
   bathy_file$areas <- as.numeric(bathy_file$areas)
+  
+  # Get min and max depths
+  min_depth <- min(bathy_file$depths)
+  max_depth <- max(bathy_file$depths)
 # Create an empty vector to store the results
   anoxic_depths <- rep(NA, nrow(oxy_data))
   area_anoxic <- rep(0, nrow(oxy_data))
@@ -43,27 +47,37 @@ for (i in 1:nrow(oxy_data)) {
     first_depth <- names(row_values)[below_threshold[1]]
     first_depth <- as.numeric(gsub("[^0-9.]", "", first_depth))
 
-    if( first_depth %in% bathy_file$depths){
-      area <- bathy_file$areas[which(bathy_file$depths == first_depth)]
-      anoxic_depths[[i]] <- first_depth
-      area_anoxic[[i]]<- area
-    }
-    else {
-      # Apply piecewise linear interpolation to estimate the area for specific depth
-      lower_depth <- max(bathy_file$depths[bathy_file$depths < first_depth], na.rm = TRUE)
-      upper_depth <- min(bathy_file$depths[bathy_file$depths > first_depth], na.rm = TRUE)
+    if (is.na(first_depth)) {
+      anoxic_depths[i] <- NA
+      area_anoxic[i] <- 0
+    } else {
+      if (first_depth <= min_depth) {
+        anoxic_depths[i] <- min_depth
+        area_anoxic[i] <- bathy_file$areas[1]
+      } else if (first_depth >= max_depth) {
+        anoxic_depths[i] <- max_depth
+        area_anoxic[i] <- bathy_file$areas[length(bathy_file$areas)]
+      } else if (first_depth %in% bathy_file$depths) {
+        idx <- which(bathy_file$depths == first_depth)
+        area_anoxic[i] <- bathy_file$areas[idx]
+        anoxic_depths[i] <- first_depth
+      } else {
+        # Apply piecewise linear interpolation to estimate the area for specific depth
+        lower_depth <- max(bathy_file$depths[bathy_file$depths < first_depth])
+        upper_depth <- min(bathy_file$depths[bathy_file$depths > first_depth])
 
-      # Get the corresponding areas for the specific date
-      lower_area <- bathy_file$areas[which(bathy_file$depths == lower_depth)]
-      upper_area <- bathy_file$areas[which(bathy_file$depths == upper_depth)]
-      interpolated_area <- lower_area + (upper_area - lower_area) * ((first_depth - lower_depth) / (upper_depth - lower_depth))
-      anoxic_depths[[i]] <- first_depth
-      area_anoxic[[i]]<- interpolated_area
+        # Get the corresponding areas for the specific date
+        lower_area <- bathy_file$areas[bathy_file$depths == lower_depth]
+        upper_area <- bathy_file$areas[bathy_file$depths == upper_depth]
+        interpolated_area <- lower_area + (upper_area - lower_area) * ((first_depth - lower_depth) / (upper_depth - lower_depth))
+        anoxic_depths[i] <- first_depth
+        area_anoxic[i] <- interpolated_area
+      }
     }
   } 
   else {
-    anoxic_depths[[i]] <- NA  
-    area_anoxic[[i]]<- 0
+    anoxic_depths[i] <- NA  
+    area_anoxic[i] <- 0
   }
 }
 
