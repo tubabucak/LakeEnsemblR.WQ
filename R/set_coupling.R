@@ -351,6 +351,13 @@ set_coupling <- function(config_file, folder){
   wq_models <- sapply(wq_models, function (x) tolower(x[length(x)]))
   
   for(i in seq_len(length(models_coupled))){
+    model_cfg_rel <- lst_config[["config_files"]][[models_coupled[i]]]
+    if(is.null(model_cfg_rel) || length(model_cfg_rel) == 0 || is.na(model_cfg_rel) ||
+       !nzchar(trimws(model_cfg_rel)) || tolower(trimws(model_cfg_rel)) == "na"){
+      warning(paste0("Skipping coupling for model '", models_coupled[i],
+                     "' because config_files entry is missing or NA."))
+      next
+    }
     
     if(wq_models[i] == "selmaprotbas"){
       wq_config <- read.config(file.path(folder,
@@ -780,4 +787,4 @@ if(j == "humus"){
   }
 }
 
-  }
+}
