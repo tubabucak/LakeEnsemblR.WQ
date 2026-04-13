@@ -20,56 +20,63 @@
 
 
 # Function to create the data for each depth and plot
-compare_plot <- function(data_glm, data_wet, data_selma, data_obs, depth, y_title) {
+compare_plot <- function(data_glm, data_wet, data_selma, data_simstrat, data_obs, depth, y_title) {
 
   # Select the relevant depth column dynamically
   GLM_data <- data_glm %>%
-    select(datetime, !!sym(paste0("Depth_", depth))) %>%
+    dplyr::select(datetime, !!sym(paste0("Depth_", depth))) %>%
     rename(Value = !!sym(paste0("Depth_", depth))) %>%
     mutate(Model = "GLM")
 
   WET_data <- data_wet %>%
-    select(datetime, !!sym(paste0("Depth_", depth))) %>%
+    dplyr::select(datetime, !!sym(paste0("Depth_", depth))) %>%
     rename(Value = !!sym(paste0("Depth_", depth))) %>%
     mutate(Model = "WET")
 
   Selma_data <- data_selma %>%
-    select(datetime, !!sym(paste0("Depth_", depth))) %>%
+    dplyr::select(datetime, !!sym(paste0("Depth_", depth))) %>%
     rename(Value = !!sym(paste0("Depth_", depth))) %>%
     mutate(Model = "SELMAPROTBAS")
 
+   Simstrat_data <- data_simstrat %>%
+    dplyr::select(datetime, !!sym(paste0("Depth_", depth))) %>%
+
+    rename(Value = !!sym(paste0("Depth_", depth))) %>%
+    mutate(Model = "SIMSTRAT")
+
   Obs_data <- data_obs %>%
-    select(datetime, !!sym(paste0("Depth_", depth))) %>%
+    dplyr::select(datetime, !!sym(paste0("Depth_", depth))) %>%
     rename(Value = !!sym(paste0("Depth_", depth))) %>%
     mutate(Model = "OBSERVED")
 
   # Combine all data
-  data_all <- bind_rows(GLM_data, WET_data, Selma_data, Obs_data)
+  data_all <- bind_rows(GLM_data, WET_data, Selma_data, Simstrat_data, Obs_data)
 
 
   # Extract the points for statistics
   observed_dates <- data_all %>%
-  filter(Model == "OBSERVED") %>%
-  pull(datetime) # Extract observed dates
+  dplyr::filter(Model == "OBSERVED") %>%
+  dplyr::pull(datetime) # Extract observed dates
 
   data_all_obsdates <- data_all %>%
-  filter(datetime %in% observed_dates)
+  dplyr::filter(datetime %in% observed_dates)
 
 
-  data_all_obsdates_wide <- spread(data_all_obsdates, key = Model, value = Value)
+  data_all_obsdates_wide <- tidyr::spread(data_all_obsdates, key = Model, value = Value)
 
  stats_glm <-  cal_stats(data_all_obsdates_wide$OBSERVED, data_all_obsdates_wide$GLM)
  stats_wet <-  cal_stats(data_all_obsdates_wide$OBSERVED, data_all_obsdates_wide$WET)
  stats_selma <-   cal_stats(data_all_obsdates_wide$OBSERVED, data_all_obsdates_wide$SELMAPROTBAS)
+ stats_simstrat <-   cal_stats(data_all_obsdates_wide$OBSERVED, data_all_obsdates_wide$SIMSTRAT)
 
   # Create plot
   data_plot <- ggplot(data_all, aes(x = datetime, y = Value, color = Model, group = Model)) +
-    geom_line(data = data_all[data_all$Model != "OBSERVED",], aes(linetype = Model)) +  # Line plot for GLM, WET, and SELMA
+    geom_line(data = data_all[data_all$Model != "OBSERVED",], aes(linetype = Model)) +  # Line plot for GLM, WET, SELMA, and SIMSTRAT
     geom_point(data = data_all[data_all$Model == "OBSERVED",], aes(shape = Model), col = "black") +  # Points for observed data
     labs(title = paste0("Depth: ", depth, " m"),
          x = "Date",
          y = y_title) +
     theme(legend.title = element_blank())
 
-  return(list(data_plot, stats_glm, stats_wet, stats_selma))
+  return(list(data_plot, stats_glm, stats_wet, stats_selma, stats_simstrat))
 }
