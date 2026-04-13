@@ -46,14 +46,22 @@ extract_variable_list <- function(extracted_metric_dict, config_file, model_filt
         depth_01 <- extracted_metric_dict$depth_01[i]
         conversion_factor <- extracted_metric_dict$conversion_factor[i]
         
-        # Determine the file path based on the model
-        nc_file <- file.path(cfg$model_folders[[model_name]],  "output.nc")
+        # Resolve model folder key in a case-insensitive way
+        model_key <- names(cfg$model_folders)[toupper(names(cfg$model_folders)) == toupper(model_name)][1]
+        if (is.na(model_key)) {
+            cat("Model folder for", model_name, "not found in config$model_folders\n")
+            next
+        }
+
+        # Determine whether this model uses NetCDF output
+        is_simstrat <- toupper(model_name) == "SIMSTRAT"
+        nc_file <- file.path(cfg$model_folders[[model_key]], "output.nc")
 
         # cfg_dir <- dirname(config_file)
         # model_dir <- file.path(cfg_dir, cfg$model_folders[[model_name]])
         # nc_file <- file.path(model_dir, "Output", "Output.nc")
 
-        if (!file.exists(nc_file)) {
+        if (!is_simstrat && !file.exists(nc_file)) {
             cat("NetCDF file for model", model_name, "not found at:", nc_file, "\n")
             next
         }
@@ -63,6 +71,7 @@ extract_variable_list <- function(extracted_metric_dict, config_file, model_filt
         
         for (var_name in variable_list) {
             var_name <- trimws(var_name)  # Remove any whitespace
+            metric_data <- NULL
             
             # Define a cache key based only on model_name and var_name to store the already extracted ones
             cache_key <- paste0(model_name, "_", var_name)
@@ -73,17 +82,8 @@ extract_variable_list <- function(extracted_metric_dict, config_file, model_filt
                 metric_data <- cache[[cache_key]]
             } else {
                 cat("Extracting data for model", model_name, "using variable", var_name, "\n")
-                
-                # Open the NetCDF file and extract data
-                nc <- tryCatch({
-                    ncdf4::nc_open(nc_file)
-                }, error = function(e) {
-                    cat("Error opening NetCDF file:", nc_file, "\n")
-                    
-                    return(NULL)
-                })
-                
-                if (!is.null(nc)) {
+
+                if (is_simstrat) {
                     metric_data <- tryCatch({
                         get_output_wq(config_file = config_file, model = model_name, vars = var_name, depth_01 = depth_01, conversion_factor = conversion_factor)
                     }, error = function(e) {
@@ -91,14 +91,32 @@ extract_variable_list <- function(extracted_metric_dict, config_file, model_filt
                         print(e)  # Print the full error message
                         return(NULL)
                     })
-                    
-                    # Close the NetCDF file
-                    ncdf4::nc_close(nc)
-                    
-                    # Cache the extracted data based on the model-variable combination
-                    if (!is.null(metric_data)) {
-                        cache[[cache_key]] <- metric_data
+                } else {
+                    # Open the NetCDF file and extract data
+                    nc <- tryCatch({
+                        ncdf4::nc_open(nc_file)
+                    }, error = function(e) {
+                        cat("Error opening NetCDF file:", nc_file, "\n")
+                        return(NULL)
+                    })
+
+                    if (!is.null(nc)) {
+                        metric_data <- tryCatch({
+                            get_output_wq(config_file = config_file, model = model_name, vars = var_name, depth_01 = depth_01, conversion_factor = conversion_factor)
+                        }, error = function(e) {
+                            cat("Error extracting data for variable:", var_name, "\n")
+                            print(e)  # Print the full error message
+                            return(NULL)
+                        })
+
+                        # Close the NetCDF file
+                        ncdf4::nc_close(nc)
                     }
+                }
+
+                # Cache the extracted data based on the model-variable combination
+                if (!is.null(metric_data)) {
+                    cache[[cache_key]] <- metric_data
                 }
             }
             
