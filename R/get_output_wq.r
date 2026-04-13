@@ -35,10 +35,11 @@ get_output_wq <- function(config_file,
   
   # Load configuration file
   cfg <- load_config(config_file)
+  model_upper <- toupper(model)
   # cfg$model_folders$GLM, cfg$model_folders$WET, cfg$model_folders$SELMAPROTBAS
 
   ##------------------------- GLM ---------------------------------------
-  if ("GLM" %in% model) {
+  if ("GLM" %in% model_upper) {
     glm_out <- list()
     
     if (depth_01 == 1) {
@@ -96,7 +97,7 @@ depth <- suppressWarnings(get_nml_value(
 
 ##--------------------------- SELMAPROTBAS ------------------------------------------------
   
-  if("SELMAPROTBAS" %in% model){
+  if("SELMAPROTBAS" %in% model_upper){
     
     selma_out <- list()
     if (depth_01 == 1){
@@ -176,7 +177,7 @@ depth <- suppressWarnings(get_nml_value(
 
   ##------------------- WET ----------------------------------------------------
   
-  if("WET" %in% model){
+  if("WET" %in% model_upper){
     
     wet_out <- list()
      if (depth_01 == 1){
@@ -251,10 +252,122 @@ depth <- suppressWarnings(get_nml_value(
     }
     
     return(wet_out)
-    
-
   }
-  
+
+  ##------------------- Simstrat ------------------------------------------------
+
+  if("SIMSTRAT" %in% model_upper){
+
+    sim_cfg_rel <- NULL
+    for (sim_cfg_key in c("Simstrat", "SIMSTRAT", "simstrat")) {
+      sim_cfg_rel <- tryCatch({
+        gotmtools::get_yaml_value(cfg$LER_config_file, "config_files", sim_cfg_key)
+      }, error = function(e) {
+        NULL
+      })
+      if (!is.null(sim_cfg_rel)) {
+        break
+      }
+    }
+    if (is.null(sim_cfg_rel)) {
+      stop("Could not find Simstrat entry in LER config 'config_files'.")
+    }
+
+    sim_folder_key <- names(cfg$model_folders)[toupper(names(cfg$model_folders)) == "SIMSTRAT"][1]
+    if (is.na(sim_folder_key)) {
+      stop("Could not find Simstrat entry in Output config 'model_folders'.")
+    }
+    sim_folder <- cfg$model_folders[[sim_folder_key]]
+
+    # Get reference year and timestep from Simstrat par (JSON) file
+    sim_par <- file.path(dirname(cfg$LER_config_file),
+                         sim_cfg_rel)
+    timestep <- get_json_value(sim_par, "Simulation", "Timestep s")
+    reference_year <- get_json_value(sim_par, "Simulation", "Reference year")
+
+    sim_out <- list()
+
+    if(depth_01 == 1){
+      for(variable_model_name in vars){
+
+        dat_file <- file.path(sim_folder,
+                              paste0(variable_model_name, "_out.dat"))
+        var_dat <- read.table(dat_file, header = TRUE, sep = ",", check.names = FALSE)
+
+        # Convert decimal days to POSIXct
+        var_dat[, 1] <- as.POSIXct(var_dat[, 1] * 3600 * 24,
+                                    origin = paste0(reference_year, "-01-01"), tz = "UTC")
+        var_dat[, 1] <- lubridate::round_date(var_dat[, 1],
+                                              unit = lubridate::seconds_to_period(timestep))
+
+        # Reorder columns: datetime, then depth from shallow to deep
+        var_dat <- var_dat[, c(1, ncol(var_dat):2)]
+
+        mod_depths <- as.numeric(colnames(var_dat)[-1])
+        if(is.null(obs_depths)){
+          obs_dep_neg <- NULL
+        } else {
+          obs_dep_neg <- -obs_depths
+        }
+        add_deps <- obs_dep_neg[!(obs_dep_neg %in% mod_depths)]
+        depths <- c(add_deps, mod_depths)
+        depths <- depths[order(-depths)]
+
+        if(length(depths) != (ncol(var_dat) - 1)){
+          message("Interpolating Simstrat ", variable_model_name,
+                  " to include obs depths... ", paste0("[", Sys.time(), "]"))
+          wat_mat <- matrix(NA, nrow = nrow(var_dat), ncol = length(depths))
+          for(i in seq_len(nrow(var_dat))){
+            y <- as.vector(unlist(var_dat[i, -1]))
+            wat_mat[i, ] <- approx(mod_depths, y, depths, rule = 2)$y
+            if(any(is.na(y))){
+              min_depth_na <- mod_depths[min(which(is.na(y)))]
+              min_ind_na <- min(which(depths <= min_depth_na))
+              wat_mat[i, (min_ind_na:length(wat_mat[i, ]))] <- NA
+            }
+          }
+          message("Finished interpolating! ", paste0("[", Sys.time(), "]"))
+          df <- data.frame(wat_mat)
+          df$datetime <- var_dat[, 1]
+          df <- df[, c(ncol(df), 1:(ncol(df) - 1))]
+          colnames(df) <- c("datetime", paste0("Depth_", abs(depths)))
+          var_dat <- df
+        } else {
+          str_depths <- abs(as.numeric(colnames(var_dat)[2:ncol(var_dat)]))
+          colnames(var_dat) <- c("datetime", paste0("Depth_", str_depths))
+        }
+
+        var_dat[, -1] <- var_dat[, -1] * conversion_factor
+        sim_out[[variable_model_name]] <- var_dat
+      }
+    }
+
+    if(depth_01 == 0){
+      for(variable_model_name in vars){
+
+        dat_file <- file.path(sim_folder,
+                              paste0(variable_model_name, "_out.dat"))
+        var_dat <- read.table(dat_file, header = TRUE, sep = ",", check.names = FALSE)
+
+        # Convert decimal days to POSIXct
+        var_dat[, 1] <- as.POSIXct(var_dat[, 1] * 3600 * 24,
+                                    origin = paste0(reference_year, "-01-01"), tz = "UTC")
+        var_dat[, 1] <- lubridate::round_date(var_dat[, 1],
+                                              unit = lubridate::seconds_to_period(timestep))
+        colnames(var_dat)[1] <- "datetime"
+
+        var_dat[, -1] <- var_dat[, -1] * conversion_factor
+        sim_out[[variable_model_name]] <- var_dat
+      }
+    }
+
+    if(length(sim_out) == 1){
+      sim_out <- sim_out[1]
+    }
+
+    return(sim_out)
+  }
+
 }
 
 
