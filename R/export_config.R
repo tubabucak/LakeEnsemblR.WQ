@@ -33,7 +33,7 @@ export_config_wq <- function(config_file, folder = ".", verbose = FALSE,
                           convert_from_lakeensemblr = TRUE,
                           ler_config_file = "LakeEnsemblR.yaml",
                           overwrite = FALSE){
-  
+
   if(convert_from_lakeensemblr){
     # LakeEnsemblR::export_config has been run beforehand
     # Convert folders and activate wq settings
@@ -81,6 +81,8 @@ export_config_wq <- function(config_file, folder = ".", verbose = FALSE,
         input_file_paths <- file.path(folder, input_file_paths)
         names(input_file_paths) <- names(lst_config[[i]][["groups"]])
       }
+
+
       
       # Read the file(s)
       for(j in seq_len(length(input_file_paths))){
@@ -133,12 +135,12 @@ lst_config2 <- configr::read.config(file.path(folder, config_file))
 
 # Which model config files are YAML?
 cfgs <- lst_config2[["config_files"]]
-yaml_models <- names(cfgs)[grepl("\\.ya?ml$", cfgs, ignore.case = TRUE)]
+yaml_models <- names(cfgs)[grepl("\\.ya?ml$", cfgs, ignore.case = TRUE)] 
 
 for (m in yaml_models) {
   p <- file.path(folder, cfgs[[m]])
   if (file.exists(p)) 
-  normalize_yaml_bools(p)
-  apply_selma_default_comments(p)
+    normalize_yaml_bools(p)
+    apply_selma_default_comments(p)
 }
 }
