@@ -4,7 +4,9 @@
 #' This function reads a YAML file containing metrics and extracts the relevant metric details based on a provided dictionary. Firstly, it checks whether each metric in the YAML file exists in the dictionary and, then extracts the necessary information needed for calculating the metric.
 #'
 #' @param metric_yaml_file Character: Name of the YAML file containing the list of metrics.
-#' @param dict_file Character: Full path of the metric dictionary
+#' @param dict_file Character or data.frame: Metric dictionary source. Can be a
+#'   full file path (.rda or .csv), a data.frame, or NULL. If NULL/empty, a bundled default
+#'   dictionary will be used.
 #'
 
 #' @return
@@ -17,18 +19,99 @@
 #' 
 
 
-check_the_metrics <- function(metric_yaml_file, dict_file) {
-  # If folder is not provided, use the folder of the metric_yaml_file
-    yaml_path <- metric_yaml_file
-    dict_path <- dict_file
+.load_metrics_dictionary_wq <- function(dict_file = NULL, metric_yaml_file = NULL) {
+  if (is.data.frame(dict_file)) {
+    return(dict_file)
+  }
 
-  
-  # Read dictionary file (handle semicolon or comma-separated)
-  dict <- tryCatch({
-    read.csv(dict_path, sep = ifelse(grepl(";", readLines(dict_path, n = 1)), ";", ","), stringsAsFactors = FALSE)
-  }, error = function(e) {
-    stop("Error reading the dictionary CSV file: ", dict_path)
-  })
+  if (!is.null(dict_file) && nzchar(dict_file)) {
+    if (grepl("\\.rda$", dict_file, ignore.case = TRUE)) {
+      tmp_env <- new.env(parent = emptyenv())
+      tryCatch({
+        load(dict_file, envir = tmp_env)
+      }, error = function(e) {
+        stop("Error reading the dictionary RDA file: ", dict_file)
+      })
+
+      if (!exists("Metrics_dict", envir = tmp_env, inherits = FALSE)) {
+        stop("RDA dictionary file must contain an object named 'Metrics_dict': ", dict_file)
+      }
+
+      dict_obj <- get("Metrics_dict", envir = tmp_env, inherits = FALSE)
+      if (!is.data.frame(dict_obj)) {
+        stop("Object 'Metrics_dict' in RDA file is not a data.frame: ", dict_file)
+      }
+      return(dict_obj)
+    }
+
+    return(tryCatch({
+      read.csv(
+        dict_file,
+        sep = ifelse(grepl(";", readLines(dict_file, n = 1)), ";", ","),
+        stringsAsFactors = FALSE
+      )
+    }, error = function(e) {
+      stop("Error reading the dictionary CSV file: ", dict_file)
+    }))
+  }
+
+  default_dataset_names <- c("Metrics_dict")
+  for (dataset_name in default_dataset_names) {
+    if (exists(dataset_name, inherits = TRUE)) {
+      dict_obj <- get(dataset_name, inherits = TRUE)
+      if (is.data.frame(dict_obj)) {
+        return(dict_obj)
+      }
+    }
+
+    tmp_env <- new.env(parent = emptyenv())
+    try(utils::data(list = dataset_name, package = "LakeEnsemblR.WQ", envir = tmp_env), silent = TRUE)
+    if (exists(dataset_name, envir = tmp_env, inherits = FALSE)) {
+      dict_obj <- get(dataset_name, envir = tmp_env, inherits = FALSE)
+      if (is.data.frame(dict_obj)) {
+        return(dict_obj)
+      }
+    }
+  }
+
+  dict_candidates <- c(
+    if (!is.null(metric_yaml_file) && nzchar(metric_yaml_file)) file.path(dirname(metric_yaml_file), "Metrics_dict.rda") else "",
+    system.file("extdata", "Metrics_dict.rda", package = "LakeEnsemblR.WQ"),
+    file.path("data", "Metrics_dict.rda")
+  )
+  dict_candidates <- dict_candidates[nzchar(dict_candidates)]
+  dict_existing <- dict_candidates[file.exists(dict_candidates)]
+
+  if (length(dict_existing) > 0) {
+    dict_path <- dict_existing[1]
+    tmp_env <- new.env(parent = emptyenv())
+    tryCatch({
+      load(dict_path, envir = tmp_env)
+    }, error = function(e) {
+      stop("Error reading the dictionary RDA file: ", dict_path)
+    })
+
+    if (!exists("Metrics_dict", envir = tmp_env, inherits = FALSE)) {
+      stop("Default dictionary RDA must contain an object named 'Metrics_dict': ", dict_path)
+    }
+
+    dict_obj <- get("Metrics_dict", envir = tmp_env, inherits = FALSE)
+    if (!is.data.frame(dict_obj)) {
+      stop("Object 'Metrics_dict' in default RDA is not a data.frame: ", dict_path)
+    }
+    return(dict_obj)
+  }
+
+  stop(
+    "No metrics dictionary provided and no bundled default found. ",
+    "Provide files$metrics_dict in the config yaml or include Metrics_dict as package data."
+  )
+}
+
+
+check_the_metrics <- function(metric_yaml_file, dict_file = NULL) {
+  yaml_path <- metric_yaml_file
+  dict <- .load_metrics_dictionary_wq(dict_file = dict_file, metric_yaml_file = yaml_path)
   
   # Load the YAML file
   config <- tryCatch({
