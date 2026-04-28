@@ -13,7 +13,7 @@
 #' \describe{
 #'   \item{folder}{Base directory specified in the config file.}
 #'   \item{bathy_file}{Full path to the bathymetry file.}
-#'   \item{metrics_dict_file}{Full path to the metrics dictionary CSV file.}
+#'   \item{metrics_dict_file}{Full path to the metrics dictionary file (.rda or .csv; NULL if not provided).}
 #'   \item{metric_yaml_file}{Full path to the metric output YAML file.}
 #'   \item{LER_config_file}{Full path to the metric output YAML file.}
 #'   \item{model_folders}{A named list with full paths to model output folders (e.g., GLM, WET, SELMA).}
@@ -56,7 +56,7 @@ load_config <- function(config_path) {
   }
   
   # Ensure each required file is present and exists
-  required_files <- c("bathy_file", "metrics_dict", "metric_yaml_file", "LER_config_file")
+  required_files <- c("bathy_file", "metric_yaml_file", "LER_config_file")
   for (key in required_files) {
     if (is.null(files[[key]])) stop(paste("Missing", key, "in 'files'."))
     
@@ -64,6 +64,15 @@ load_config <- function(config_path) {
     if (!file.exists(full_path)) stop(paste("File not found:", full_path))
     
     files[[key]] <- full_path  # overwrite with full path
+  }
+
+  # metrics_dict is optional; use it when provided and valid.
+  if (!is.null(files[["metrics_dict"]]) && nzchar(files[["metrics_dict"]])) {
+    metrics_dict_path <- resolve_path(files[["metrics_dict"]])
+    if (!file.exists(metrics_dict_path)) stop(paste("File not found:", metrics_dict_path))
+    files[["metrics_dict"]] <- metrics_dict_path
+  } else {
+    files[["metrics_dict"]] <- NULL
   }
   
   # Ensure model folders exist
