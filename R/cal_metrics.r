@@ -44,10 +44,15 @@ sel_metric <- expand_templates(sel_metric, wq_config_file)
 sel_metric <- sel_metric %>%
   distinct(metric_name, model, variable_model_name, .keep_all = TRUE)
 
-# create metric_instance
-sel_metric$metric_instance <- paste(
-  sel_metric$metric_name,
-  sel_metric$variable_model_name,
+# Create metric_instance keys for output.
+# Prefer clean metric names and only append variable_model_name when needed
+# to keep keys unique within a model.
+sel_metric$metric_instance <- sel_metric$metric_name
+dupl_metric_model <- duplicated(sel_metric[, c("metric_name", "model")]) |
+  duplicated(sel_metric[, c("metric_name", "model")], fromLast = TRUE)
+sel_metric$metric_instance[dupl_metric_model] <- paste(
+  sel_metric$metric_name[dupl_metric_model],
+  sel_metric$variable_model_name[dupl_metric_model],
   sep = "_"
 )
 
