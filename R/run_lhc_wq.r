@@ -396,13 +396,12 @@ run_lhc_wq <- function(model,
            paste(missing_obs_cols, collapse = ", "))
     }
 
-    # Load metrics dictionary path from the yaml config
+    # Load metrics dictionary from configured file or bundled defaults.
     cfg_for_dict <- load_config(yaml_file)
-    dict_path    <- cfg_for_dict$metrics_dict_file
-    if (is.null(dict_path) || !file.exists(dict_path)) {
-      stop("Could not locate metrics_dict_file from yaml_file config: ", dict_path)
-    }
-    dict_loaded <- utils::read.csv(dict_path, stringsAsFactors = FALSE)
+    dict_loaded <- .load_metrics_dictionary_wq(
+      dict_file = cfg_for_dict$metrics_dict_file,
+      metric_yaml_file = cfg_for_dict$metric_yaml_file
+    )
 
     # Warn early when observed dates do not overlap the model simulation period.
     obs_dates <- as.POSIXct(
