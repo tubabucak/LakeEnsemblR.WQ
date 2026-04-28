@@ -29,9 +29,20 @@ remotes::install_github("tubabucak/LakeEnsemblR.WQ")
 ## Typical workflow
 
 ```r
+library(LakeEnsemblR)
+
+# 0) Export model-specific configuration and inputs for physical setup
+
+export_config(
+  config_file = "LakeEnsemblR.yaml",
+  folder = ".",
+  verbose = TRUE
+)
+
 library(LakeEnsemblR.WQ)
 
-# 1) Export model-specific configuration and inputs
+
+# 1) Export model-specific configuration and inputs for WQ setup
 export_config_wq(
   config_file = "LakeEnsemblR_WQ.yaml",
   folder = ".",
