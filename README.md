@@ -1,97 +1,141 @@
-## LakeEnsemblR.WQ: Calculate and Export Lake Ecosystem Metrics
+# LakeEnsemblR.WQ
 
-This version of the package focuses on harmonizing and post-processing lake model outputs from **GLM-AED2**, **GOTM-WET**, and **GOTM-SELMAPROTBAS**. Using raw model outputs, the package calculates system metrics (as outlined in Hipsey et al. 2021) and returns them in a structured list format. Model running & calibration functions will be added soon.
+Run, harmonize, and compare water quality simulations across multiple 1D lake model frameworks.
 
-The `output.yaml` file should specify:
+LakeEnsemblR.WQ extends LakeEnsemblR workflows with tools to:
 
-- Paths to required input files (e.g., bathymetry, metric dictionary, NetCDF model outputs)
-- A list of metrics to compute
+- configure model-specific WQ settings,
+- validate model setups before run,
+- run model ensembles,
+- calibrate model ensembles,
+- extract and harmonize output variables,
+- calculate standardized ecosystem metrics and summary statistics.
 
-The core function of the package is `cal_metrics()`. It reads the YAML configuration file, extracts relevant data, harmonizes variable formats and units, and applies metric functions to generate outputs.
+Supported model frameworks:
 
----
+- GLM-AED2
+- GOTM-WET
+- GOTM-Selmaprotbas
+- Simstrat-AED2
 
-### `cal_metrics()`: Main Metric Calculation Function
-
-#### What it does:
-
-- Loads model output and bathymetry files based on a YAML config
-- Extracts variables across different models (GLM, SELMAPROTBAS, WET)
-- Applies predefined or custom metric functions
-- Returns results as a named list organized by metric and model
-
----
-
-### Input
+## Installation
 
 ```r
-cal_metrics(
-  metric_yaml_file = "output.yaml",   # YAML file defining variables and metrics
-  model_filter = "all"                # Options: "GLM", "WET", "SELMAPROTBAS", or "all"
-)
+# install.packages("remotes")
+# After release it will be pushed to aemon-j github account.
+remotes::install_github("tubabucak/LakeEnsemblR.WQ")
 ```
 
----
-
-### Output
-
-A nested list:
-```r
-$MetricName
-  $ModelName
-    data.frame (datetime × value(s))
-```
-
-**Example:**
-```r
-result$Temp_degreeCelcius$GLM
-result$Chla_TP_ratio$SELMAPROTBAS
-```
-
-
-### Example Usage
+## Typical workflow
 
 ```r
 library(LakeEnsemblR.WQ)
 
-result <- cal_metrics("config/output.yaml")
+# 1) Export model-specific configuration and inputs
+export_config_wq(
+  config_file = "LakeEnsemblR_WQ.yaml",
+  folder = ".",
+  verbose = TRUE
+)
 
-# Plot example: Temperature at 1m depth
-plot(result$Temp_degreeCelcius$GLM$datetime,
-     result$Temp_degreeCelcius$GLM$Depth_1,
-     type = "l", xlab = "Date", ylab = "Temperature (°C) at 1m")
+# 2) Run selected models
+run_res <- run_ensemble_wq(
+  config_file = "LakeEnsemblR_WQ.yaml",
+  models = c("GLM-AED2", "GOTM-WET", "GOTM-Selmaprotbas", "SIMSTRAT-AED2"),
+  folder = ".",
+  validate = TRUE,
+  verbose = TRUE
+)
+
+# 3) Compute metrics listed in Output.yaml
+metric_out <- cal_metrics(
+  metric_yaml_file = "Output.yaml",
+  model_filter = "all",
+  wq_config_file = "LakeEnsemblR_WQ.yaml"
+)
+
+# 4) Optional: compute summary statistics
+stat_out <- cal_stats(metric_out)
 ```
 
+## Key functions
 
+- Setup and export:
+  - export_config_wq()
+  - export_inputs()
+  - set_up_configs()
+  - set_value_config()
+- Validation and run:
+  - validate_glm_aed()
+  - validate_gotm_wet()
+  - validate_simstrat()
+  - run_ensemble_wq()
+- Extraction and metrics:
+  - get_output_wq()
+  - extract_variable_list()
+  - cal_metrics()
+  - cal_stats()
+  - export_all_stats()
+- Calibration
+  - run_lhc_wq()
 
+## Input files
 
-# How do I contribute new code back to the LakeEnsemblR.WQ project?
-In order to contribute to this code, we recommend the following workflow:
+Common project files include:
 
-- "fork" this repository to your own personal github account
+- LakeEnsemblR_WQ master config (for model/module settings)
+- LakeEnsemblR physical config
+- Output metric config (for selected metric families)
 
-- clone the github repository to your computer:
+Example from a typical setup:
 
-- `$git clone <git@github.com:{username}/LakeEnsemblR.WQ.git>`
+- LakeEnsemblR_WQ.yaml
+- LakeEnsemblR.yaml
+- Output.yaml
+- LakeEnsemblR_bathymetry_standard
+- LakeEnsemblR_ice-height_standard
+- LakeEnsemblR_inflow_standard
+- LakeEnsemblR_meteo_standard
+- LakeEnsemblR_outflow_standard
 
-- modify code or add new functionality, save the code
+## Output structure
 
-add the repository main to a remote main called "upstream"
+`cal_metrics()` returns a nested list by metric and model. For each metric/model combination, values are stored as data frames with `datetime` and depth/value columns.
 
-- `$cd LakeEnsemblR.WQ`
+Example access:
 
-- `$git remote add upstream <git@github.com:aemon-j/LakeEnsemblR.WQ.git>`
+```r
+metric_out$GLM$TP_gramsPerCubicMeter
 
-before pushing your changes to your repository, pull in the current version of the aemon-j main:
+```
 
-- `$git fetch upstream`
+## Troubleshooting
 
-- merge these differences with your own "main" version:
+If a model run succeeds but some metrics are missing:
 
-- `$git merge upstream/main`
+1. Confirm the metric is enabled in Output.yaml.
+2. Confirm the metric-variable mapping exists in the metrics dictionary.
+3. Confirm the model actually wrote that variable to output.
 
-push your changes to your github repository, in addition to changes made by pulling in the aemon-j main:
+For Simstrat-AED2 specifically, missing derived metrics (for example total chlorophyll-a or total phosphorus) are often caused by missing output variables in the Simstrat/AED2 output configuration (OutputDiagnosticVars should be 'true' ), not by run failure.
 
-- `$git push`
+## Contributing
 
-submit a pull request to aemon-j main using your account at github.com
+1. Fork this repository.
+2. Clone your fork.
+3. Add the original repository as `upstream`.
+4. Pull latest changes from `upstream/main`.
+5. Create a feature branch, commit changes, and push.
+6. Open a pull request.
+
+Example git commands:
+
+```bash
+git clone git@github.com:<username>/LakeEnsemblR.WQ.git
+cd LakeEnsemblR.WQ
+git remote add upstream git@github.com:aemon-j/LakeEnsemblR.WQ.git
+git fetch upstream
+git checkout -b my-feature
+git merge upstream/main
+git push -u origin my-feature
+```
