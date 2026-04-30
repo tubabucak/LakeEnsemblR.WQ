@@ -14,7 +14,7 @@
 #'
 #' @importFrom yaml yaml.load_file
 #' @importFrom dplyr filter select
-#' @export
+#' @keywords internal
 #' 
 #' 
 

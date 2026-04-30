@@ -111,7 +111,7 @@ get_phyto_names <- function(phyto_pars_file, sanitize = TRUE) {
 #' Extract zooplankton group name from \code{aed2_zoop_pars.nml}
 #'
 #' This helper reads the AED2 zooplankton parameter file and extracts the
-#' zooplankton name from the \code{zoop_param%zoop_name} line.
+#' zooplankton name from the \code{zoop_param\%zoop_name} line.
 #'
 #' @param zoop_pars_file Character string; path to \code{aed2_zoop_pars.nml}.
 #' @param sanitize Logical; if \code{TRUE}, return file-name-safe names.

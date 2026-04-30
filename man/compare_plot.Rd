@@ -4,7 +4,15 @@
 \alias{compare_plot}
 \title{Comparing observed/predicted data and calculate the stats}
 \usage{
-compare_plot(data_glm, data_wet, data_selma, data_obs, depth, y_title)
+compare_plot(
+  data_glm,
+  data_wet,
+  data_selma,
+  data_simstrat,
+  data_obs,
+  depth,
+  y_title
+)
 }
 \arguments{
 \item{data_glm}{dataframe. Timeseries output of GLM model ...}

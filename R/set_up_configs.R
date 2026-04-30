@@ -393,8 +393,6 @@
 #'@param config_file character; name of LakeEnsemblR_WQ config file
 #'@param folder path; location of config_file
 #'
-#'@examples
-#'
 #'@importFrom configr read.config write.config
 #'@importFrom glmtools write_nml
 #'

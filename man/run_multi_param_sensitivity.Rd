@@ -18,21 +18,26 @@ run_multi_param_sensitivity(
 \item{param_names}{A character vector of parameter names to vary in the sensitivity analysis.}
 
 \item{calib_setup}{A data frame containing calibration setup information. Must include columns:
-(`pars`) (parameter names), (`x0`) (default values), (`file`) (file path relative to model_dir),
-and optionally (`group_name`) (for phytoplankton related parameters).}
+\code{pars} (parameter names), \code{x0} (default values), \code{file}
+(file path relative to \code{model_dir}), and optionally \code{group_name}
+(for phytoplankton related parameters).}
 
-\item{rel_change}{A numeric value specifying the relative range (e.g., 0.1 for ±10//%) around the default value (`x0`) to sample from.}
+\item{rel_change}{A numeric value specifying the relative range (e.g. 0.1
+for plus or minus 10 percent) around the default value \code{x0}.}
 
-\item{yaml_file}{Path to the YAML file used for metric extraction by (`cal_metrics`).}
+\item{yaml_file}{Path to the YAML file used for metric extraction by
+\code{cal_metrics()}.}
 
 \item{model_dir}{Path to the directory containing the lake model files and subdirectories. It should include the parameter files (e.g., for phytoplankton).}
 
-\item{n_steps}{Number of LHS iterations to run (i.e., model realizations).}
+\item{n_steps}{Number of LHS iterations (i.e., model realizations).}
 
-\item{model_filter}{A character string specifying the model filter to pass to (`cal_metrics()`) (default is "GLM").}
+\item{model_filter}{A character string specifying the model filter passed to
+\code{cal_metrics()} (default is \code{"GLM"}).}
 }
 \value{
-A list of length (`n_steps`), where each element contains params and metrics
+A list of length \code{n_steps}, where each element contains
+  sampled parameter values and extracted metrics.
 }
 \description{
 This function performs a multi-parameter sensitivity analysis using

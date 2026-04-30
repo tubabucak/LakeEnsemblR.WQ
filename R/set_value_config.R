@@ -16,8 +16,6 @@
 #'@param folder path; relative to what folder 
 #'@param verbose boolean; print output to console
 #'
-#'@examples
-#'
 #'@importFrom configr read.config
 #'@importFrom LakeEnsemblR input_yaml_multiple
 #'@importFrom glmtools read_nml write_nml

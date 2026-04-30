@@ -6,8 +6,6 @@
 #'@param folder path; location of config_file
 #'@param module character; name of the module to disable
 #'
-#'@examples
-#'
 #'@importFrom configr read.config
 #'
 #'@export

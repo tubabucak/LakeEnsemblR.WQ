@@ -14,8 +14,6 @@
 #'@param model boolean; include model in visualisation?
 #'@param parameter boolean; include parameter in visualisation?
 #'
-#'@examples
-#'
 #'@import data.tree
 #'
 #'@export

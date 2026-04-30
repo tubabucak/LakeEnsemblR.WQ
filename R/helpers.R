@@ -11,8 +11,6 @@
 #' 
 #' @importFrom LakeEnsemblR get_yaml_multiple input_json
 #' 
-#' @examples
-#' 
 #' @noRd
 add_aed2_section_simstrat <- function(folder = ".",
                                       simstrat_par = "simstrat.par",
@@ -94,8 +92,6 @@ add_aed2_section_simstrat <- function(folder = ".",
 #' @param settings_section list; corresponding section from LER.WQ config
 #' 
 #' @importFrom LakeEnsemblR get_yaml_multiple input_yaml_multiple
-#' 
-#' @examples
 #' 
 #' @noRd
 add_fabm_settings_gotm <- function(folder = ".",
@@ -182,8 +178,6 @@ add_fabm_settings_gotm <- function(folder = ".",
 #' 
 #' @importFrom configr read.config
 #' 
-#' @examples
-#' 
 #' @noRd
 
 get_mylake_group <- function(config_file, module, folder = "."){
@@ -234,8 +228,6 @@ get_mylake_group <- function(config_file, module, folder = "."){
 #'  identify groups by their names?
 #' 
 #' @importFrom configr read.config
-#' 
-#' @examples
 #' 
 #' @noRd
 
@@ -420,8 +412,8 @@ lerwq_write_yaml_file <- function(yml, filepath, is_gotm_yaml = NULL){
 #'@param column character; column name to change in file. defaults to sSet1
 #'@param verbose logical; print changed parameters to screen
 #'
-#'@examples
-#'
+#' @keywords internal
+
 
 set_pclake_r <- function(file, par_list,
                          column = "sSet1", verbose = FALSE){

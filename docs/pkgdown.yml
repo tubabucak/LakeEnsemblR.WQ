@@ -1,0 +1,9 @@
+pandoc: 3.1.1
+pkgdown: 2.2.0
+pkgdown_sha: ~
+articles:
+  full-workflow: full-workflow.html
+last_built: 2026-04-30T12:37Z
+urls:
+  reference: https://aemon-j.github.io/LakeEnsemblR.WQ/reference
+  article: https://aemon-j.github.io/LakeEnsemblR.WQ/articles

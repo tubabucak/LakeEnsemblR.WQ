@@ -1,0 +1,75 @@
+template:
+  bootstrap: 5
+
+home:
+  title: LakeEnsemblR.WQ
+  description: Tools to configure, run, calibrate, and evaluate coupled 1D lake water-quality models.
+
+url: https://aemon-j.github.io/LakeEnsemblR.WQ
+
+authors:
+  footer:
+    roles: [aut, cre]
+
+reference:
+  - title: Setup and Configuration
+    desc: Build model-specific configuration and inputs.
+    contents:
+      - export_config_wq
+      - export_inputs
+      - create_input_tables
+      - set_up_configs
+      - set_value_config
+      - set_coupling
+      - disable_module
+      - input_pclakeconfig
+      - export_pclake_physics
+      - generate_simstrat_aed2_inflows
+
+  - title: Validation and Run
+    desc: Validate setups and execute coupled simulations.
+    contents:
+      - validate_glm_aed
+      - validate_gotm_wet
+      - validate_simstrat
+      - run_ensemble_wq
+
+  - title: Calibration and Sensitivity
+    desc: Create calibration tables and run calibration/sensitivity analyses.
+    contents:
+      - create_calibration_tables
+      - calib_setup_from_tables
+      - run_lhc_wq
+      - run_sensitivity
+      - run_multi_param_sensitivity
+
+  - title: Extraction and Metrics
+    desc: Extract model output and compute harmonized metrics/statistics.
+    contents:
+      - get_output_wq
+      - extract_variable_list
+      - integrate_depths
+      - cal_metrics
+      - cal_stats
+      - cal_anoxic_date
+      - cal_bot_surf_temp_dif
+      - cal_DO_exceedance
+      - cal_epi_depth
+      - cal_ice_duration
+      - cal_meta_depth
+      - cal_nitrif_selma
+      - cal_strat_date
+      - compare_plot
+      - scat_plot
+
+  - title: Helpers
+    contents:
+      - load_config
+      - visualise_dictionary
+      - convert_ler_to_lerwq
+
+articles:
+  - title: Workflow Guides
+    navbar: ~
+    contents:
+      - full-workflow

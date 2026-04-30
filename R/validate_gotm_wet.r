@@ -19,6 +19,7 @@
 #' \dontrun{
 #' # Validate a prepared GOTM-WET run directory
 #' validate_gotm_wet(sim_folder = "models/gotm_wet", file = "gotm.yaml")
+#' }
 #'
 
 

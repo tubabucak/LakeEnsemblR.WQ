@@ -1,8 +1,9 @@
-#'Create input tables
+#'Create input tables (Deprecated)
 #'
-#'Create csv files from the LakeEnsemblR dictionary file, where the user can enter values
-#'for selected parameters. Running the function with default arguments will print all
-#'empty input files, whereas adding the argument "all" will print all parameters.
+#'\strong{Deprecated.} This function generates CSV scaffolds for parameter overrides but
+#'no function in the package reads them back. Use \code{\link{set_value_config}} to set
+#'fixed parameter values directly, or \code{\link{create_calibration_tables}} to set up
+#'calibration ranges.
 #'
 #'@param folder path; where is the config_file located
 #'@param config_file character; read groups of phytoplankton, zooplankton, etc. from here
@@ -12,8 +13,6 @@
 #'@importFrom configr read.config
 #'@importFrom plyr count
 #'@importFrom stringr str_extract
-#'
-#'@examples
 #'
 #'@export
 
@@ -29,6 +28,12 @@
 create_input_tables <- function(folder = ".", config_file, folder_out = folder, input = NULL,
                                 models_coupled = c("GLM-AED2", "GOTM-Selmaprotbas", "GOTM-WET",
                                                    "Simstrat-AED2", "MyLake", "PCLake")){
+
+  .Deprecated(msg = paste0(
+    "'create_input_tables()' is deprecated and has no downstream reader in the package.\n",
+    "To set fixed parameter values, use 'set_value_config()' directly.\n",
+    "To set up calibration ranges, use 'create_calibration_tables()' instead."
+  ))
 
   if (!file.exists(folder_out)) {
     cat("Creating new folder for input tables")

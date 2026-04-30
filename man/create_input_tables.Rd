@@ -2,7 +2,7 @@
 % Please edit documentation in R/create_input_tables.R
 \name{create_input_tables}
 \alias{create_input_tables}
-\title{Create input tables}
+\title{Create input tables (Deprecated)}
 \usage{
 create_input_tables(
   folder = ".",
@@ -23,7 +23,8 @@ create_input_tables(
 \item{input}{character vector; for what parameters do you want to fill in values}
 }
 \description{
-Create csv files from the LakeEnsemblR dictionary file, where the user can enter values
-for selected parameters. Running the function with default arguments will print all
-empty input files, whereas adding the argument "all" will print all parameters.
+\strong{Deprecated.} This function generates CSV scaffolds for parameter overrides but
+no function in the package reads them back. Use \code{\link{set_value_config}} to set
+fixed parameter values directly, or \code{\link{create_calibration_tables}} to set up
+calibration ranges.
 }

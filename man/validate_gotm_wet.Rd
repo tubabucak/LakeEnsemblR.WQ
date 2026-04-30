@@ -24,3 +24,11 @@ and attempts to create it if missing.
 If any required file is missing, the function stops with an informative
 error message describing which file(s) could not be found.
 }
+\examples{
+\dontrun{
+# Validate a prepared GOTM-WET run directory
+validate_gotm_wet(sim_folder = "models/gotm_wet", file = "gotm.yaml")
+}
+
+Validate GOTM-WET configuration
+}

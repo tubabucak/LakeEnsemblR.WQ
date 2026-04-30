@@ -27,7 +27,8 @@
 #'   (default = 50).
 #' @param model_filter Character. Optional model filter string passed to
 #'   \code{\link{cal_metrics}}. If \code{NULL} (default), auto-derived from
-#'   \code{model} (e.g., "GLM-AED2" → "GLM", "GOTM-WET" → "GOTM").
+#'   \code{model} (e.g., "GLM-AED2" → "GLM", "GOTM-WET" → "WET",
+#'   "GOTM-Selmaprotbas" → "SELMAPROTBAS").
 #' @param wq_config_file Character. Path to the WQ config file passed to
 #'   \code{\link{cal_metrics}}.
 #' @param yaml_file_model Character. Name of the GOTM yaml file used when
@@ -89,7 +90,7 @@
 #' )
 #' }
 #'
-#' @export
+#' @keywords internal
 
 # ---------------------------------------------------------------------------
 # Internal helper: compare simulated vs. observed and return statistics.
@@ -296,6 +297,43 @@
   stats_out
 }
 
+#' Run Latin Hypercube Calibration for Water Quality Models
+#'
+#' Performs Latin Hypercube Sampling (LHS) based parameter-space exploration
+#' for coupled water-quality model setups and evaluates each sampled run using
+#' either \code{cal_metrics()} outputs or observed-data statistics.
+#'
+#' @param model Character. One of \code{"GLM-AED2"}, \code{"GOTM-WET"},
+#'   \code{"GOTM-Selmaprotbas"}, or \code{"Simstrat-AED2"}.
+#' @param param_names Character vector. Parameter names to vary.
+#' @param calib_setup Data frame with at least columns \code{pars}, \code{lb},
+#'   \code{ub}, and \code{file}; optional \code{group_name} for group-specific
+#'   CSV updates.
+#' @param yaml_file Character. Path to output metrics YAML file.
+#' @param model_dir Character. Path to model simulation directory.
+#' @param n_samples Integer. Number of LHS samples (default = 50).
+#' @param model_filter Character or \code{NULL}. Optional model key for
+#'   \code{cal_metrics()}. If \code{NULL}, it is auto-derived from
+#'   \code{model}.
+#' @param wq_config_file Character or \code{NULL}. Path to WQ config file.
+#' @param yaml_file_model Character. GOTM yaml filename (default
+#'   \code{"gotm.yaml"}).
+#' @param par_file Character. Simstrat par filename (default
+#'   \code{"simstrat.par"}).
+#' @param verbose Logical. Print progress messages.
+#' @param save_results Logical. If \code{TRUE}, save results to
+#'   \code{output_file} in \code{model_dir}.
+#' @param output_file Character. RDS output filename when
+#'   \code{save_results = TRUE}.
+#' @param obs_file Character or \code{NULL}. Optional observed-data CSV for
+#'   per-run statistics.
+#'
+#' @return If \code{obs_file = NULL}, a list of length \code{n_samples} with
+#'   sampled parameters and metrics per run. If \code{obs_file} is supplied,
+#'   returns a flattened data frame with sampled parameters and summary
+#'   statistics.
+#' @export
+
 run_lhc_wq <- function(model,
                        param_names,
                        calib_setup,
@@ -325,7 +363,7 @@ run_lhc_wq <- function(model,
       model_filter <- "GLM"
     } else if (grepl("GOTM", model_upper)) {
       if (grepl("WET", model_upper)) {
-        model_filter <- "GOTM"
+        model_filter <- "WET"
       } else if (grepl("SELMA", model_upper)) {
         model_filter <- "SELMAPROTBAS"
       } else {
@@ -483,24 +521,25 @@ run_lhc_wq <- function(model,
   # Helper to update one parameter in .nml/.csv/.yaml file
   .update_param <- function(p, value) {
     rows <- calib_setup[calib_setup$pars == p, ]
-    param_path <- file.path(model_dir, rows$file[1])
+    for (k in seq_len(nrow(rows))) {
+      file_or_path <- as.character(rows$file[k])
+      param_path <- file.path(model_dir, file_or_path)
 
-    if (grepl("\\.nml$", rows$file[1], ignore.case = TRUE)) {
-      nml <- glmtools::read_nml(param_path)
-      nml <- glmtools::set_nml(nml, p, value)
-      glmtools::write_nml(nml, param_path)
+      if (grepl("\\.nml$", file_or_path, ignore.case = TRUE)) {
+        nml <- glmtools::read_nml(param_path)
+        nml <- glmtools::set_nml(nml, p, value)
+        glmtools::write_nml(nml, param_path)
 
-    } else if (grepl("\\.csv$", rows$file[1], ignore.case = TRUE)) {
-      df <- readr::read_csv(param_path, show_col_types = FALSE)
-      names(df) <- gsub("^['\"]|['\"]$", "", names(df))
-      pname_col <- intersect(c("p_name", "pname"), names(df))
-      if (length(pname_col) == 0) {
-        stop("Could not identify parameter name column ('p_name' or 'pname') in: ",
-             param_path)
-      }
-      df[[pname_col]] <- gsub("^['\"]|['\"]$", "", df[[pname_col]])
+      } else if (grepl("\\.csv$", file_or_path, ignore.case = TRUE)) {
+        df <- readr::read_csv(param_path, show_col_types = FALSE)
+        names(df) <- gsub("^['\"]|['\"]$", "", names(df))
+        pname_col <- intersect(c("p_name", "pname"), names(df))
+        if (length(pname_col) == 0) {
+          stop("Could not identify parameter name column ('p_name' or 'pname') in: ",
+               param_path)
+        }
+        df[[pname_col]] <- gsub("^['\"]|['\"]$", "", df[[pname_col]])
 
-      for (k in seq_len(nrow(rows))) {
         idx <- which(df[[pname_col]] == p)
         if (length(idx) == 0) {
           stop("Parameter '", p, "' not found in ", param_path)
@@ -512,14 +551,119 @@ run_lhc_wq <- function(model,
         } else {
           df[idx, 2:ncol(df)] <- value
         }
+        readr::write_csv(df, param_path)
+
+      } else if (grepl("\\.yaml$|\\.yml$", file_or_path, ignore.case = TRUE)) {
+        gotmtools::set_yaml_value(param_path, label = p, value = value)
+
+      } else if (model_upper %in% c("GLM-AED2", "SIMSTRAT-AED2")) {
+        # Dictionary-style AED2 key path (e.g. aed2_oxygen/theta_sed_oxy)
+        if (!requireNamespace("configr", quietly = TRUE)) {
+          stop("Package 'configr' is required to resolve model config files.")
+        }
+
+        if (is.null(wq_config_file) || !nzchar(wq_config_file)) {
+          stop("'wq_config_file' must be provided when calib_setup$file contains ",
+               "dictionary-style AED2 paths (e.g. section/parameter).")
+        }
+
+        lst_cfg <- configr::read.config(wq_config_file)
+        cfg_files <- lst_cfg[["config_files"]]
+        model_cfg <- cfg_files[[model]]
+        if (is.null(model_cfg) || !nzchar(model_cfg)) {
+          cfg_names <- names(cfg_files)
+          cfg_idx <- which(toupper(cfg_names) == toupper(model))[1]
+          if (!is.na(cfg_idx)) {
+            model_cfg <- cfg_files[[cfg_idx]]
+          }
+        }
+        if (is.null(model_cfg) || !nzchar(model_cfg)) {
+          stop("Could not resolve config file for model '", model,
+               "' from wq_config_file: ", wq_config_file,
+               ". Available keys: ", paste(names(cfg_files), collapse = ", "))
+        }
+
+        # For Simstrat, config_files often points to simstrat.par (physics),
+        # while WQ parameters from AED2 dictionary paths belong in AED2 nml files.
+        if (model_upper == "SIMSTRAT-AED2" &&
+            grepl("\\.par$", model_cfg, ignore.case = TRUE)) {
+          model_cfg <- file.path(dirname(model_cfg), "aed2.nml")
+        }
+
+        module_k <- if ("module" %in% names(rows)) as.character(rows$module[k]) else NA_character_
+        if (module_k %in% c("phytoplankton", "zooplankton")) {
+          base_dir <- dirname(model_cfg)
+          model_cfg <- if (module_k == "phytoplankton") {
+            file.path(base_dir, "aed2_phyto_pars.nml")
+          } else {
+            file.path(base_dir, "aed2_zoop_pars.nml")
+          }
+        }
+
+        nml_candidates <- c(
+          file.path(model_dir, model_cfg),
+          file.path(dirname(model_dir), model_cfg),
+          model_cfg
+        )
+        nml_candidates <- unique(normalizePath(nml_candidates,
+                                               winslash = "/",
+                                               mustWork = FALSE))
+        nml_path <- nml_candidates[file.exists(nml_candidates)][1]
+        if (is.na(nml_path) || !nzchar(nml_path)) {
+          stop("Could not find resolved nml file for parameter '", p,
+               "'. Tried: ", paste(nml_candidates, collapse = ", "))
+        }
+
+        path_parts <- strsplit(file_or_path, "/", fixed = TRUE)[[1]]
+        if (length(path_parts) != 2L) {
+          stop("Unsupported AED2 dictionary path for parameter '", p,
+               "': ", file_or_path, " (expected 'section/parameter').")
+        }
+
+        nml <- glmtools::read_nml(nml_path)
+        section <- path_parts[1]
+        par_name <- path_parts[2]
+
+        if (is.null(nml[[section]]) || is.null(nml[[section]][[par_name]])) {
+          nml <- glmtools::set_nml(nml, par_name, value)
+        } else {
+          nml[[section]][[par_name]][1] <- value
+        }
+        glmtools::write_nml(nml, nml_path)
+
+      } else if (model_upper %in% c("GOTM-WET", "GOTM-SELMAPROTBAS")) {
+        # Dictionary-style YAML key path (e.g. selmaprotbas/initialization/o2)
+        if (!requireNamespace("LakeEnsemblR", quietly = TRUE)) {
+          stop("Package 'LakeEnsemblR' is required to update GOTM YAML key paths.")
+        }
+
+        # Prefer fabm.yaml for biogeochemistry parameters; fallback to yaml_file_model.
+        yaml_target <- file.path(model_dir, "fabm.yaml")
+        if (!file.exists(yaml_target)) {
+          yaml_target <- file.path(model_dir, yaml_file_model)
+        }
+        if (!file.exists(yaml_target)) {
+          stop("Could not find a YAML file to update for parameter '", p,
+               "'. Tried: ", file.path(model_dir, "fabm.yaml"), " and ",
+               file.path(model_dir, yaml_file_model))
+        }
+
+        path_parts <- strsplit(file_or_path, "/", fixed = TRUE)[[1]]
+        group_col <- rows$group_name[k]
+        if (!is.na(group_col)) {
+          path_parts[path_parts == "{group_name}"] <- group_col
+        }
+
+        arglist <- as.list(path_parts)
+        names(arglist) <- paste0("key", seq_along(path_parts))
+        arglist$value <- value
+        arglist$file <- yaml_target
+        arglist$verbose <- FALSE
+        do.call(LakeEnsemblR::input_yaml_multiple, args = arglist)
+
+      } else {
+        stop("Unsupported file type for parameter '", p, "': ", file_or_path)
       }
-      readr::write_csv(df, param_path)
-
-    } else if (grepl("\\.yaml$|\\.yml$", rows$file[1], ignore.case = TRUE)) {
-      gotmtools::set_yaml_value(param_path, label = p, value = value)
-
-    } else {
-      stop("Unsupported file type for parameter '", p, "': ", rows$file[1])
     }
   }
 

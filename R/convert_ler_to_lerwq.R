@@ -12,8 +12,6 @@
 #'@param activate_wq logical; if true, changes parameters to run with WQ
 #'@param verbose logical; if true, prints messages
 #'
-#'@examples
-#'
 #'@importFrom configr read.config
 #'@importFrom LakeEnsemblR input_yaml_multiple input_json
 #'@importFrom glmtools read_nml set_nml write_nml

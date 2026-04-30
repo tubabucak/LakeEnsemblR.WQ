@@ -8,8 +8,6 @@
 #'@param column character; column name to change in file. defaults to sSet1
 #'@param verbose logical; print changed parameters to screen
 #'
-#'@examples
-#'
 #'@export
 
 input_pclakeconfig <- function(file, par_list,

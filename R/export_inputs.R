@@ -7,8 +7,6 @@
 #'@param ler_config_file character; name of LakeEnsemblR config file
 #'@param verbose boolean; print changed parameters on screen
 #'
-#'@examples
-#'
 #'@importFrom configr read.config
 #'@importFrom glmtools read_nml
 #'@importFrom gotmtools get_yaml_value
