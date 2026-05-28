@@ -347,7 +347,9 @@ run_lhc_wq <- function(model,
                        verbose         = TRUE,
                        save_results    = FALSE,
                        output_file     = "lhc_results.rds",
-                       obs_file        = NULL) {
+                       obs_file        = NULL,
+                       lhs_matrix      = NULL,
+                       sample_indices  = NULL) {
 
   # Input validation
   model_upper <- toupper(model)
@@ -473,9 +475,30 @@ run_lhc_wq <- function(model,
     }
   }
 
-  # LHS matrix in [0, 1]
   n_params <- length(param_names)
-  lhs_matrix <- lhs::randomLHS(n_samples, n_params)
+  if (is.null(lhs_matrix)) {
+    lhs_matrix <- lhs::randomLHS(n_samples, n_params)
+  } else {
+    if (!is.matrix(lhs_matrix)) {
+      stop("'lhs_matrix' must be a matrix when provided.")
+    }
+    if (ncol(lhs_matrix) != n_params) {
+      stop("'lhs_matrix' must have one column per parameter in 'param_names'.")
+    }
+  }
+
+  total_samples <- nrow(lhs_matrix)
+  if (is.null(sample_indices)) {
+    sample_indices <- seq_len(total_samples)
+  }
+
+  if (length(sample_indices) == 0L) {
+    return(if (is.null(obs_data_loaded)) list() else data.frame())
+  }
+
+  if (any(sample_indices < 1L | sample_indices > total_samples)) {
+    stop("'sample_indices' must fall within the rows of 'lhs_matrix'.")
+  }
 
   # Pre-collect bounds for each parameter
   bounds <- lapply(param_names, function(p) {
@@ -667,12 +690,14 @@ run_lhc_wq <- function(model,
     }
   }
 
-  # Main LHC loop
-  results <- vector("list", n_samples)
+  # Main LHC loop. Iterations update files in-place under model_dir, so this
+  # remains sequential unless each run is executed in an isolated copy.
+  results <- vector("list", length(sample_indices))
 
-  for (i in seq_len(n_samples)) {
+  for (result_idx in seq_along(sample_indices)) {
+    i <- sample_indices[result_idx]
     if (verbose) {
-      cat("\n[LHC] Iteration", i, "/", n_samples, "\n")
+      cat("\n[LHC] Iteration", i, "/", total_samples, "\n")
     }
 
     # Scale LHS values to [lb, ub]
@@ -736,7 +761,7 @@ run_lhc_wq <- function(model,
       }
     }
 
-    results[[i]] <- list(
+    results[[result_idx]] <- list(
       params    = as.list(param_values),
       metrics   = metrics,
       obs_stats = obs_stats,
