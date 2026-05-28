@@ -207,14 +207,31 @@ metric_out[[metric_name]][[model_name]][[metric_instance]] <- metric_i
 
 if ("DIC_gramsPerCubicMeter" %in% names(metric_out) & 
             "DOC_gramsPerCubicMeter" %in% names(metric_out)) {
+
+  .extract_metric_df <- function(x) {
+    if (is.data.frame(x)) {
+      return(x)
+    }
+    if (is.list(x) && length(x) > 0) {
+      # metrics are stored by metric_instance; use the first available instance
+      if (is.data.frame(x[[1]])) {
+        return(x[[1]])
+      }
+    }
+    NULL
+  }
   
   DIC_mod_names <- names(metric_out[["DIC_gramsPerCubicMeter"]])
   DOC_mod_names <- names(metric_out[["DOC_gramsPerCubicMeter"]])
   
   for ( model in DIC_mod_names){
     
-    DIC<- metric_out[["DIC_gramsPerCubicMeter"]][[model]]
-    DOC<- metric_out[["DOC_gramsPerCubicMeter"]][[model]]
+    DIC <- .extract_metric_df(metric_out[["DIC_gramsPerCubicMeter"]][[model]])
+    DOC <- .extract_metric_df(metric_out[["DOC_gramsPerCubicMeter"]][[model]])
+
+    if (is.null(DIC) || is.null(DOC)) {
+      next
+    }
     
     # Check if Date columns are the same in both dataframes (for safety)
     if (!all(DIC$datetime == DOC$datetime)) {
@@ -243,18 +260,30 @@ if ("Nitrif_gramsPerCubicMeterPerDay" %in% names(metric_out) &
             "NH4_gramsPerCubicMeter" %in% names(metric_out)) {
   
 
-NH4_selma <- metric_out[["NH4_gramsPerCubicMeter"]][["SELMAPROTBAS"]] %>%
+NH4_raw <- metric_out[["NH4_gramsPerCubicMeter"]][["SELMAPROTBAS"]]
+DO_raw  <- metric_out[["DO_gramsPerCubicMeter"]][["SELMAPROTBAS"]]
+WT_raw  <- metric_out[["Temp_degreeCelcius"]][["SELMAPROTBAS"]]
+
+if (is.list(NH4_raw) && length(NH4_raw) > 0) NH4_raw <- NH4_raw[[1]]
+if (is.list(DO_raw)  && length(DO_raw) > 0)  DO_raw  <- DO_raw[[1]]
+if (is.list(WT_raw)  && length(WT_raw) > 0)  WT_raw  <- WT_raw[[1]]
+
+if (is.data.frame(NH4_raw) && is.data.frame(DO_raw) && is.data.frame(WT_raw)) {
+
+NH4_selma <- NH4_raw %>%
   mutate(across(-datetime, ~ . * 1000/14)) # mmol/m3
 
-DO_selma <-  metric_out[["DO_gramsPerCubicMeter"]][["SELMAPROTBAS"]] %>%
+DO_selma <- DO_raw %>%
   mutate(across(-datetime, ~ . * 1000/32)) # mmol/m3
 
-WT_selma <- metric_out[["Temp_degreeCelcius"]][["SELMAPROTBAS"]]
+WT_selma <- WT_raw
 
 
 nitri_selma <- cal_nitrif_selma(DO_selma, WT_selma, NH4_selma)
 
 metric_out[["Nitrif_gramsPerCubicMeterPerDay"]][["SELMAPROTBAS"]] = nitri_selma
+
+}
 
 }
   
