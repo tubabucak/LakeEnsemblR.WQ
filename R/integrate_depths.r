@@ -36,8 +36,8 @@
 
 integrate_depths <- function(output, depth, variable, bathy_path, obs_data = NULL, folder = NULL, hypso_avg = TRUE, dz = 0.1) {
   
-  # Load bathymetry file
-  hyps <- read_csv(bathy_path)
+  # Load bathymetry file (supports standard CSV and Lake Analyzer .bth)
+  hyps <- load_bathy_depth_area(bathy_path)
 
  # Extract variable of interest
   metric_output <- output[[variable]]
@@ -49,8 +49,8 @@ integrate_depths <- function(output, depth, variable, bathy_path, obs_data = NUL
   dz = mean(diff(depth_numeric))
   
   # Interpolate bathymetric areas for depths
-  hyps_area <- approx(x = hyps$`Bathymetry Depths`,
-                      y = hyps$`Bathymetry Areas`,
+  hyps_area <- approx(x = hyps$depths,
+                      y = hyps$areas,
                       xout = depth_numeric, 
                       rule = 2)$y  
 
@@ -158,8 +158,8 @@ if (hypso_avg == FALSE){
         na.approx(row, x = selected_obs_depths, rule = 2, na.rm = FALSE)  
       })
       
-    selected_obs_areas <- approx(x = hyps$`Bathymetry Depths`,
-        y = hyps$`Bathymetry Areas`,
+    selected_obs_areas <- approx(x = hyps$depths,
+      y = hyps$areas,
         xout = selected_obs_depths,
         rule = 2)$y 
 
@@ -249,8 +249,8 @@ else if (is.data.frame(depth) && all(c("datetime", "lower", "upper") %in% colnam
           na.approx(row, x = selected_obs_depths, rule = 2, na.rm = FALSE)  
         })
 
-        selected_obs_areas <- approx(x = hyps$`Bathymetry Depths`,
-                                     y = hyps$`Bathymetry Areas`,
+        selected_obs_areas <- approx(x = hyps$depths,
+                   y = hyps$areas,
                                      xout = selected_obs_depths,
                                      rule = 2)$y  
 

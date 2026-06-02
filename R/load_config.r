@@ -12,7 +12,7 @@
 #' @return A named list with the following elements:
 #' \describe{
 #'   \item{folder}{Base directory specified in the config file.}
-#'   \item{bathy_file}{Full path to the bathymetry file.}
+#'   \item{bathy_file}{Full path to the bathymetry file (.csv or .bth).}
 #'   \item{metrics_dict_file}{Full path to the metrics dictionary file (.rda or .csv; NULL if not provided).}
 #'   \item{metric_yaml_file}{Full path to the metric output YAML file.}
 #'   \item{LER_config_file}{Full path to the metric output YAML file.}
@@ -64,6 +64,12 @@ load_config <- function(config_path) {
     if (!file.exists(full_path)) stop(paste("File not found:", full_path))
     
     files[[key]] <- full_path  # overwrite with full path
+  }
+
+  bathy_ext <- tolower(tools::file_ext(files$bathy_file))
+  if (!(bathy_ext %in% c("csv", "bth"))) {
+    stop("Unsupported bathy_file format: '", bathy_ext,
+         "'. Use a standard bathymetry .csv or a Lake Analyzer .bth file.")
   }
 
   # metrics_dict is optional; use it when provided and valid.
