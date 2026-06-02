@@ -9,7 +9,8 @@ cal_anoxic_date(oxy_data, bathy_file, threshold = 1, duration = "full")
 \arguments{
 \item{oxy_data}{{data.frame} The output of the model/observed output. It should include Datetime and depth-specific values per column.}
 
-\item{bathy_file}{{data.frame} The file includes depth and area relationship}
+\item{bathy_file}{{data.frame or character} Bathymetry depth-area
+relationship as a data frame, or a path to a standard CSV/.bth file.}
 
 \item{threshold}{{numeric} Anoxic O2 threshold (mg L-1). Default is 1 mg/L.}
 

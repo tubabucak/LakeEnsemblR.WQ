@@ -18,7 +18,18 @@ run_lhc_wq(
   verbose = TRUE,
   save_results = FALSE,
   output_file = "lhc_results.rds",
-  obs_file = NULL
+  obs_file = NULL,
+  obs_to_model_units = TRUE,
+  spin_up_days = NULL,
+  stats_by_depth = FALSE,
+  return_best = TRUE,
+  best_metric = "KGE",
+  parallel = FALSE,
+  n_workers = NULL,
+  parallel_dir = tempdir(),
+  keep_worker_dirs = FALSE,
+  lhs_matrix = NULL,
+  sample_indices = NULL
 )
 }
 \arguments{
@@ -59,12 +70,50 @@ CSV updates.}
 
 \item{obs_file}{Character or \code{NULL}. Optional observed-data CSV for
 per-run statistics.}
+
+\item{obs_to_model_units}{Logical. When \code{TRUE} and \code{obs_file} is
+provided, observed values (assumed harmonized/global units) are converted
+back to model-specific units using dictionary \code{conversion_factor}
+before computing statistics. Default is \code{TRUE} (model outputs are
+kept in model-specific units for comparison).}
+
+\item{spin_up_days}{Numeric or \code{NULL}. Optional number of days after
+simulation start to exclude from observed-data comparison in
+\code{obs_file} mode. This is useful to ignore model spin-up transients.
+Default is \code{NULL} (no spin-up exclusion).}
+
+\item{stats_by_depth}{Logical. Only used when \code{obs_file} is provided.
+If \code{TRUE}, depth-resolved variables return one set of statistics per
+depth instead of one aggregated set per variable. Default is \code{FALSE}.}
+
+\item{return_best}{Logical. Only used when \code{obs_file} is provided.
+If \code{TRUE}, identify the best parameter set across iterations using
+\code{best_metric}. Default is \code{TRUE}.}
+
+\item{best_metric}{Character. Objective metric used to rank parameter sets
+when \code{return_best = TRUE}. One of \code{"KGE"}, \code{"NSE"},
+\code{"RMSE"}, \code{"NRMSE"}, or \code{"PBIAS"}. Default is
+\code{"KGE"}.}
+
+\item{parallel}{Logical. If \code{TRUE}, run in parallel by delegating to
+\code{run_lhc_wq_parallel()}. Default is \code{FALSE}.}
+
+\item{n_workers}{Integer or \code{NULL}. Number of workers used when
+\code{parallel = TRUE}. Passed to \code{run_lhc_wq_parallel()}.}
+
+\item{parallel_dir}{Character. Parent directory for worker copies when
+\code{parallel = TRUE}. Passed to \code{run_lhc_wq_parallel()}.}
+
+\item{keep_worker_dirs}{Logical. Keep worker directories after completion
+when \code{parallel = TRUE}. Passed to \code{run_lhc_wq_parallel()}.}
 }
 \value{
 If \code{obs_file = NULL}, a list of length \code{n_samples} with
   sampled parameters and metrics per run. If \code{obs_file} is supplied,
   returns a flattened data frame with sampled parameters and summary
-  statistics.
+  statistics. In \code{obs_file} mode and when \code{return_best = TRUE},
+  the returned data.frame includes column \code{is_best}, and attributes
+  \code{best_parameter_set} and \code{best_metric}.
 }
 \description{
 Performs Latin Hypercube Sampling (LHS) based parameter-space exploration

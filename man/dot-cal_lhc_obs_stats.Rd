@@ -9,7 +9,11 @@
   dict,
   model_short,
   yaml_file,
-  wq_config_file = NULL
+  wq_config_file = NULL,
+  verbose = FALSE,
+  obs_to_model_units = TRUE,
+  spin_up_days = NULL,
+  stats_by_depth = FALSE
 )
 }
 \arguments{
@@ -18,6 +22,8 @@
 
 \item{wq_config_file}{Character. Path to the WQ config file passed to
 \code{\link{cal_metrics}}.}
+
+\item{verbose}{Logical. Print progress messages (default = \code{TRUE}).}
 
 \item{model}{Character. One of \code{"GLM-AED2"}, \code{"GOTM-WET"},
 \code{"GOTM-Selmaprotbas"}, or \code{"Simstrat-AED2"} (case-insensitive).}
@@ -46,8 +52,6 @@ Ignored for GLM-AED2 and Simstrat-AED2.}
 
 \item{par_file}{Character. Name of the Simstrat \code{.par} file
 (default = \code{"simstrat.par"}). Ignored for other models.}
-
-\item{verbose}{Logical. Print progress messages (default = \code{TRUE}).}
 
 \item{save_results}{Logical. If \code{TRUE}, save the results as an
 \code{.rds} file inside \code{model_dir} after all iterations

@@ -14,7 +14,7 @@ load_config(config_path)
 A named list with the following elements:
 \describe{
   \item{folder}{Base directory specified in the config file.}
-  \item{bathy_file}{Full path to the bathymetry file.}
+  \item{bathy_file}{Full path to the bathymetry file (.csv or .bth).}
   \item{metrics_dict_file}{Full path to the metrics dictionary file (.rda or .csv; NULL if not provided).}
   \item{metric_yaml_file}{Full path to the metric output YAML file.}
   \item{LER_config_file}{Full path to the metric output YAML file.}

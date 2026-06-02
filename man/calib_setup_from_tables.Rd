@@ -23,7 +23,8 @@ multiple groups (phytoplankton, zooplankton, etc.) this maps to the
 }
 \value{
 A data frame with columns \code{model_coupled}, \code{module},
-  \code{pars}, \code{lb}, \code{ub}, \code{x0}, \code{log}, \code{file},
+  \code{domain}, \code{process}, \code{subprocess}, \code{pars},
+  \code{lb}, \code{ub}, \code{x0}, \code{log}, \code{file},
   \code{group_name}, \code{unit}, \code{note}. When a single model is
   supplied, the result can be passed directly to \code{run_lhc_wq} or
   \code{run_sensitivity}. When multiple models are supplied, the output is a
