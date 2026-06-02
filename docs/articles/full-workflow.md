@@ -23,6 +23,7 @@ This vignette provides an end-to-end workflow for LakeEnsemblR.WQ:
   - SIMSTRAT-AED2
 
 ``` r
+
 library(LakeEnsemblR)
 library(LakeEnsemblR.WQ)
 ```
@@ -30,6 +31,7 @@ library(LakeEnsemblR.WQ)
 ## 1) Export WQ configuration and inputs
 
 ``` r
+
 export_config_wq(
   config_file = "LakeEnsemblR_WQ.yaml",
   folder = ".",
@@ -45,6 +47,7 @@ export_inputs(
 ## 2) Validate model setups
 
 ``` r
+
 validate_glm_aed(config_file = "LakeEnsemblR_WQ.yaml", folder = ".")
 validate_gotm_wet(config_file = "LakeEnsemblR_WQ.yaml", folder = ".")
 validate_simstrat(config_file = "LakeEnsemblR_WQ.yaml", folder = ".")
@@ -53,6 +56,7 @@ validate_simstrat(config_file = "LakeEnsemblR_WQ.yaml", folder = ".")
 ## 3) Run ensemble simulations
 
 ``` r
+
 run_res <- run_ensemble_wq(
   config_file = "LakeEnsemblR_WQ.yaml",
   models = c("GLM-AED2", "GOTM-WET", "GOTM-Selmaprotbas", "SIMSTRAT-AED2"),
@@ -65,6 +69,7 @@ run_res <- run_ensemble_wq(
 ## 4) Compute metrics and statistics
 
 ``` r
+
 metric_out <- cal_metrics(
   metric_yaml_file = "Output.yaml",
   model_filter = "all",
@@ -83,6 +88,7 @@ creates: - one master file with all module/model parameters - one
 editable file per active module
 
 ``` r
+
 create_calibration_tables(
   folder = ".",
   config_file = "LakeEnsemblR_WQ.yaml",
@@ -98,6 +104,7 @@ selected parameters - adjust lower, upper, and initial as needed
 ### 5.2 Build calib_setup from edited tables
 
 ``` r
+
 cs_all <- calib_setup_from_tables(
   folder_in = "calibration",
   model_coupled = c("GLM-AED2", "GOTM-WET", "GOTM-Selmaprotbas", "SIMSTRAT-AED2")
@@ -109,6 +116,7 @@ cs_all <- calib_setup_from_tables(
 Run one model at a time.
 
 ``` r
+
 cs_glm <- subset(cs_all, model_coupled == "GLM-AED2")
 
 res_glm <- run_lhc_wq(
@@ -126,6 +134,7 @@ res_glm <- run_lhc_wq(
 ## 6) Sensitivity analysis
 
 ``` r
+
 res_sens <- run_sensitivity(
   param_name = "theta_sed_oxy",
   calib_setup = cs_glm,
@@ -154,6 +163,7 @@ GOTM-Selmaprotbas, and SIMSTRAT-AED2.
 ## Build package docs
 
 ``` r
+
 # Regenerate Rd files from roxygen comments
 devtools::document()
 

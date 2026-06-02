@@ -13,7 +13,11 @@ Simstrat-AED2.
   dict,
   model_short,
   yaml_file,
-  wq_config_file = NULL
+  wq_config_file = NULL,
+  verbose = FALSE,
+  obs_to_model_units = TRUE,
+  spin_up_days = NULL,
+  stats_by_depth = FALSE
 )
 ```
 
@@ -28,6 +32,10 @@ Simstrat-AED2.
 
   Character. Path to the WQ config file passed to
   [`cal_metrics`](https://aemon-j.github.io/LakeEnsemblR.WQ/reference/cal_metrics.md).
+
+- verbose:
+
+  Logical. Print progress messages (default = `TRUE`).
 
 - model:
 
@@ -71,10 +79,6 @@ Simstrat-AED2.
 
   Character. Name of the Simstrat `.par` file (default =
   `"simstrat.par"`). Ignored for other models.
-
-- verbose:
-
-  Logical. Print progress messages (default = `TRUE`).
 
 - save_results:
 

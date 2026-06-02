@@ -23,7 +23,18 @@ run_lhc_wq(
   verbose = TRUE,
   save_results = FALSE,
   output_file = "lhc_results.rds",
-  obs_file = NULL
+  obs_file = NULL,
+  obs_to_model_units = TRUE,
+  spin_up_days = NULL,
+  stats_by_depth = FALSE,
+  return_best = TRUE,
+  best_metric = "KGE",
+  parallel = FALSE,
+  n_workers = NULL,
+  parallel_dir = tempdir(),
+  keep_worker_dirs = FALSE,
+  lhs_matrix = NULL,
+  sample_indices = NULL
 )
 ```
 
@@ -90,8 +101,68 @@ run_lhc_wq(
   Character or `NULL`. Optional observed-data CSV for per-run
   statistics.
 
+- obs_to_model_units:
+
+  Logical. When `TRUE` and `obs_file` is provided, observed values
+  (assumed harmonized/global units) are converted back to model-specific
+  units using dictionary `conversion_factor` before computing
+  statistics. Default is `TRUE` (model outputs are kept in
+  model-specific units for comparison).
+
+- spin_up_days:
+
+  Numeric or `NULL`. Optional number of days after simulation start to
+  exclude from observed-data comparison in `obs_file` mode. This is
+  useful to ignore model spin-up transients. Default is `NULL` (no
+  spin-up exclusion).
+
+- stats_by_depth:
+
+  Logical. Only used when `obs_file` is provided. If `TRUE`,
+  depth-resolved variables return one set of statistics per depth
+  instead of one aggregated set per variable. Default is `FALSE`.
+
+- return_best:
+
+  Logical. Only used when `obs_file` is provided. If `TRUE`, identify
+  the best parameter set across iterations using `best_metric`. Default
+  is `TRUE`.
+
+- best_metric:
+
+  Character. Objective metric used to rank parameter sets when
+  `return_best = TRUE`. One of `"KGE"`, `"NSE"`, `"RMSE"`, `"NRMSE"`, or
+  `"PBIAS"`. Default is `"KGE"`.
+
+- parallel:
+
+  Logical. If `TRUE`, run in parallel by delegating to
+  [`run_lhc_wq_parallel()`](https://aemon-j.github.io/LakeEnsemblR.WQ/reference/run_lhc_wq_parallel.md).
+  Default is `FALSE`.
+
+- n_workers:
+
+  Integer or `NULL`. Number of workers used when `parallel = TRUE`.
+  Passed to
+  [`run_lhc_wq_parallel()`](https://aemon-j.github.io/LakeEnsemblR.WQ/reference/run_lhc_wq_parallel.md).
+
+- parallel_dir:
+
+  Character. Parent directory for worker copies when `parallel = TRUE`.
+  Passed to
+  [`run_lhc_wq_parallel()`](https://aemon-j.github.io/LakeEnsemblR.WQ/reference/run_lhc_wq_parallel.md).
+
+- keep_worker_dirs:
+
+  Logical. Keep worker directories after completion when
+  `parallel = TRUE`. Passed to
+  [`run_lhc_wq_parallel()`](https://aemon-j.github.io/LakeEnsemblR.WQ/reference/run_lhc_wq_parallel.md).
+
 ## Value
 
 If `obs_file = NULL`, a list of length `n_samples` with sampled
 parameters and metrics per run. If `obs_file` is supplied, returns a
-flattened data frame with sampled parameters and summary statistics.
+flattened data frame with sampled parameters and summary statistics. In
+`obs_file` mode and when `return_best = TRUE`, the returned data.frame
+includes column `is_best`, and attributes `best_parameter_set` and
+`best_metric`.

@@ -70,7 +70,7 @@ following metrics:
 - **lnlikelihood**: Log-likelihood assuming normal distribution
 
 - **KGE**: Kling-Gupta Efficiency (from
-  [`hydroGOF::KGE`](https://rdrr.io/pkg/hydroGOF/man/KGE.html))
+  [`hydroGOF::KGE`](https://hzambran.github.io/hydroGOF/reference/KGE.html))
 
 - **residual**: Vector of observed - predicted residuals
 

@@ -18,7 +18,8 @@ cal_anoxic_date(oxy_data, bathy_file, threshold = 1, duration = "full")
 
 - bathy_file:
 
-  data.frame The file includes depth and area relationship
+  data.frame or character Bathymetry depth-area relationship as a data
+  frame, or a path to a standard CSV/.bth file.
 
 - threshold:
 

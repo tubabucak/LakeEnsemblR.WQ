@@ -53,6 +53,12 @@ Create calibration tables and run calibration/sensitivity analyses.
 - [`run_multi_param_sensitivity()`](https://aemon-j.github.io/LakeEnsemblR.WQ/reference/run_multi_param_sensitivity.md)
   : Run Multi-Parameter Sensitivity Analysis Using Latin Hypercube
   Sampling
+- [`run_lhc_wq_parallel()`](https://aemon-j.github.io/LakeEnsemblR.WQ/reference/run_lhc_wq_parallel.md)
+  : Run Latin Hypercube Calibration in Parallel
+- [`cali_ensemble_wq()`](https://aemon-j.github.io/LakeEnsemblR.WQ/reference/cali_ensemble_wq.md)
+  : Calibrate an ensemble of LakeEnsemblR.WQ models
+- [`write_best_calib_to_par_files()`](https://aemon-j.github.io/LakeEnsemblR.WQ/reference/write_best_calib_to_par_files.md)
+  : Write best calibration parameter set back to par_file CSVs
 
 ## Extraction and Metrics
 
@@ -90,6 +96,32 @@ Extract model output and compute harmonized metrics/statistics.
   : Comparing observed/predicted data and calculate the stats
 - [`scat_plot()`](https://aemon-j.github.io/LakeEnsemblR.WQ/reference/scat_plot.md)
   : Scatter plot modeled vs observed
+- [`compare_models_metric()`](https://aemon-j.github.io/LakeEnsemblR.WQ/reference/compare_models_metric.md)
+  : Compare one metric across models
+- [`compare_models_metric_netcdf()`](https://aemon-j.github.io/LakeEnsemblR.WQ/reference/compare_models_metric_netcdf.md)
+  : Compare one metric across models from NetCDF output
+
+## Visualization
+
+Plot model outputs and derived metrics.
+
+- [`plot_heatmap_wq()`](https://aemon-j.github.io/LakeEnsemblR.WQ/reference/plot_heatmap_wq.md)
+  : Plot heat map from LakeEnsemblR.WQ NetCDF output
+- [`plot_strat_metrics()`](https://aemon-j.github.io/LakeEnsemblR.WQ/reference/plot_strat_metrics.md)
+  : Plot and compare stratification metrics across models
+- [`plot_anoxic_metrics()`](https://aemon-j.github.io/LakeEnsemblR.WQ/reference/plot_anoxic_metrics.md)
+  : Plot and compare anoxia metrics across models
+- [`plot_ice_metrics()`](https://aemon-j.github.io/LakeEnsemblR.WQ/reference/plot_ice_metrics.md)
+  : Plot and compare ice metrics across models
+
+## NetCDF and Outputs
+
+Create and manage NetCDF outputs.
+
+- [`create_netcdf_output()`](https://aemon-j.github.io/LakeEnsemblR.WQ/reference/create_netcdf_output.md)
+  : Create NetCDF output from model-specific runs
+- [`create_netcdf_wq()`](https://aemon-j.github.io/LakeEnsemblR.WQ/reference/create_netcdf_wq.md)
+  : Backward-compatible alias for create_netcdf_output
 
 ## Helpers
 
@@ -100,3 +132,5 @@ Extract model output and compute harmonized metrics/statistics.
   : Visualise LakeEnsemblR.WQ dictionary
 - [`convert_ler_to_lerwq()`](https://aemon-j.github.io/LakeEnsemblR.WQ/reference/convert_ler_to_lerwq.md)
   : Convert LakeEnsemblR configuration to LakeEnsemblR.WQ
+- [`create_bathy_bth()`](https://aemon-j.github.io/LakeEnsemblR.WQ/reference/create_bathy_bth.md)
+  : Create a Lake Analyzer bathymetry file (.bth)

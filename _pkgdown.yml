@@ -42,6 +42,10 @@ reference:
       - run_lhc_wq
       - run_sensitivity
       - run_multi_param_sensitivity
+      - run_lhc_wq_parallel
+      - cali_ensemble_wq
+      - write_best_calib_to_par_files
+
 
   - title: Extraction and Metrics
     desc: Extract model output and compute harmonized metrics/statistics.
@@ -61,12 +65,28 @@ reference:
       - cal_strat_date
       - compare_plot
       - scat_plot
+      - compare_models_metric
+      - compare_models_metric_netcdf
 
+  - title: Visualization
+    desc: Plot model outputs and derived metrics.
+    contents:
+      - plot_heatmap_wq
+      - plot_strat_metrics
+      - plot_anoxic_metrics
+      - plot_ice_metrics
+
+  - title: NetCDF and Outputs 
+    desc: Create and manage NetCDF outputs.
+    contents:
+      - create_netcdf_output
+      - create_netcdf_wq
   - title: Helpers
     contents:
       - load_config
       - visualise_dictionary
       - convert_ler_to_lerwq
+      - create_bathy_bth
 
 articles:
   - title: Workflow Guides

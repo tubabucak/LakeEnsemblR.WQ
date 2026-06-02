@@ -22,6 +22,7 @@ Supported model frameworks:
 ## Installation
 
 ``` r
+
 # install.packages("remotes")
 # After release it will be pushed to aemon-j github account.
 remotes::install_github("tubabucak/LakeEnsemblR.WQ")
@@ -30,6 +31,7 @@ remotes::install_github("tubabucak/LakeEnsemblR.WQ")
 ## Typical workflow
 
 ``` r
+
 library(LakeEnsemblR)
 
 # 0) Export model-specific configuration and inputs for physical setup
@@ -120,6 +122,7 @@ depth/value columns.
 Example access:
 
 ``` r
+
 metric_out$GLM$TP_gramsPerCubicMeter
 ```
 

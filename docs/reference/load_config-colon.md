@@ -28,7 +28,7 @@ A named list with the following elements:
 
 - bathy_file:
 
-  Full path to the bathymetry file.
+  Full path to the bathymetry file (.csv or .bth).
 
 - metrics_dict_file:
 

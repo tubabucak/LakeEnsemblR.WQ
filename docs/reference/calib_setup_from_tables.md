@@ -37,12 +37,12 @@ calib_setup_from_tables(folder_in, model_coupled, group_name = NULL)
 
 ## Value
 
-A data frame with columns `model_coupled`, `module`, `pars`, `lb`, `ub`,
-`x0`, `log`, `file`, `group_name`, `unit`, `note`. When a single model
-is supplied, the result can be passed directly to `run_lhc_wq` or
-`run_sensitivity`. When multiple models are supplied, the output is a
-combined reference table and should be filtered per model before running
-calibration.
+A data frame with columns `model_coupled`, `module`, `domain`,
+`process`, `subprocess`, `pars`, `lb`, `ub`, `x0`, `log`, `file`,
+`group_name`, `unit`, `note`. When a single model is supplied, the
+result can be passed directly to `run_lhc_wq` or `run_sensitivity`. When
+multiple models are supplied, the output is a combined reference table
+and should be filtered per model before running calibration.
 
 ## Details
 
