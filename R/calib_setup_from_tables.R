@@ -18,7 +18,8 @@
 #'   (default) the column is set to \code{NA}.
 #'
 #' @return A data frame with columns \code{model_coupled}, \code{module},
-#'   \code{pars}, \code{lb}, \code{ub}, \code{x0}, \code{log}, \code{file},
+#'   \code{domain}, \code{process}, \code{subprocess}, \code{pars},
+#'   \code{lb}, \code{ub}, \code{x0}, \code{log}, \code{file},
 #'   \code{group_name}, \code{unit}, \code{note}. When a single model is
 #'   supplied, the result can be passed directly to \code{run_lhc_wq} or
 #'   \code{run_sensitivity}. When multiple models are supplied, the output is a
@@ -57,6 +58,14 @@
 calib_setup_from_tables <- function(folder_in,
                                     model_coupled,
                                     group_name = NULL) {
+
+  .get_or_na <- function(df, col, default = NA_character_) {
+    if (col %in% names(df)) {
+      df[[col]]
+    } else {
+      rep(default, nrow(df))
+    }
+  }
 
   # Collect all per-module calibration CSVs (exclude the master file)
   csv_files <- list.files(folder_in,
@@ -132,6 +141,9 @@ calib_setup_from_tables <- function(folder_in,
   calib_setup <- data.frame(
     model_coupled = selected$model_coupled,
     module     = selected$module,
+    domain     = .get_or_na(selected, "domain"),
+    process    = .get_or_na(selected, "process"),
+    subprocess = .get_or_na(selected, "subprocess"),
     pars       = selected$parameter,
     lb         = selected$lower,
     ub         = selected$upper,
