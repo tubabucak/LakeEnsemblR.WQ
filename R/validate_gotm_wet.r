@@ -21,9 +21,6 @@
 #' validate_gotm_wet(sim_folder = "models/gotm_wet", file = "gotm.yaml")
 #' }
 #'
-
-
-#' Validate GOTM-WET configuration
 #' @export
 #' 
 #' 
