@@ -93,8 +93,8 @@ if (!identical(model_filter, "all")) {
   }
 }
 
-    # Extract bathymetry file
-    bathy_file <- load.bathy(bathy_file)
+    # Accept both standard CSV bathymetry and Lake Analyzer .bth formats.
+    bathy_file <- load_bathy_depth_area(bathy_file)
 
     # Extract all the variables and harmonize the units
     ext_data <- extract_variable_list(sel_metric, metric_yaml_file)
