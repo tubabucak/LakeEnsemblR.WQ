@@ -100,10 +100,16 @@
 # comparable without any additional unit conversion.
 # ---------------------------------------------------------------------------
 .cal_lhc_obs_stats <- function(obs_data, dict, model_short, yaml_file,
-                               wq_config_file = NULL) {
+                               wq_config_file = NULL,
+                               verbose = FALSE,
+                               obs_to_model_units = TRUE,
+                               spin_up_days = NULL,
+                               stats_by_depth = FALSE) {
+
+  `%||%` <- function(x, y) if (!is.null(x) && length(x) > 0) x else y
 
   .parse_dt <- function(x) {
-    as.POSIXct(
+    parsed <- as.POSIXct(
       x,
       tz = "UTC",
       tryFormats = c(
@@ -112,9 +118,45 @@
         "%m/%d/%Y",
         "%Y-%m-%d %H:%M:%S",
         "%Y-%m-%d %H:%M",
-        "%Y-%m-%d"
+        "%Y-%m-%d",
+        "%Y-%m-%dT%H:%M:%S",
+        "%Y-%m-%dT%H:%M:%OS",
+        "%Y-%m-%dT%H:%M:%SZ",
+        "%Y-%m-%dT%H:%M:%OSZ"
       )
     )
+
+    if (all(is.na(parsed)) && length(x) > 0) {
+      parsed <- suppressWarnings(lubridate::parse_date_time(
+        x,
+        orders = c(
+          "mdY HMS", "mdY HM", "mdY",
+          "Ymd HMS", "Ymd HM", "Ymd",
+          "YmdTHMS", "YmdTHMSz", "YmdTHM", "YmdTHMz"
+        ),
+        tz = "UTC"
+      ))
+      parsed <- as.POSIXct(parsed, tz = "UTC")
+    }
+
+    parsed
+  }
+
+  .to_num <- function(x) {
+    x_chr <- trimws(as.character(x))
+    x_chr <- gsub(",", ".", x_chr, fixed = TRUE)
+    suppressWarnings(as.numeric(x_chr))
+  }
+
+  # conversion_factor is defined as: model_units * conversion_factor =
+  # harmonized_units. For obs values already in harmonized units, converting
+  # to model units is: harmonized / conversion_factor.
+  .harmonized_to_model_units <- function(x, conversion_factor) {
+    cf <- suppressWarnings(as.numeric(as.character(conversion_factor)))
+    if (is.na(cf) || cf == 0) {
+      return(x)
+    }
+    x / cf
   }
 
   .match_obs_sim <- function(obs_df, sim_df) {
@@ -143,7 +185,7 @@
   .match_obs_sim_depth <- function(obs_df, sim_df) {
     matched <- merge(obs_df, sim_df, by = c("datetime", "depth"))
     if (nrow(matched) >= 2L) {
-      return(list(data = matched[, c("value", "sim_value")], mode = "datetime_depth"))
+      return(list(data = matched[, c("depth", "value", "sim_value")], mode = "datetime_depth"))
     }
 
     obs_df$date <- as.Date(obs_df$datetime, tz = "UTC")
@@ -156,15 +198,62 @@
     matched_daily <- merge(obs_daily, sim_daily, by = c("date", "depth"))
 
     if (nrow(matched_daily) >= 2L) {
-      return(list(data = matched_daily[, c("value", "sim_value")], mode = "date_depth"))
+      return(list(data = matched_daily[, c("depth", "value", "sim_value")], mode = "date_depth"))
     }
 
     list(data = NULL, mode = "none")
   }
 
+  .extract_depth_map <- function(df) {
+    depth_cols <- grep("^Depth_", names(df), value = TRUE)
+    if (length(depth_cols) == 0L) {
+      return(data.frame(col = character(0), depth = numeric(0), stringsAsFactors = FALSE))
+    }
+    depth_vals <- suppressWarnings(as.numeric(sub("^Depth_", "", depth_cols)))
+    data.frame(col = depth_cols, depth = depth_vals, stringsAsFactors = FALSE)
+  }
+
+  .resolve_nc_var_name <- function(var_name, available_vars) {
+    if (is.null(available_vars) || length(available_vars) == 0L) {
+      return(var_name)
+    }
+    if (var_name %in% available_vars) {
+      return(var_name)
+    }
+    ci <- which(tolower(available_vars) == tolower(var_name))
+    if (length(ci) >= 1L) {
+      return(available_vars[ci[1]])
+    }
+    NA_character_
+  }
+
   model_dict <- dict[toupper(dict$model) == toupper(model_short), , drop = FALSE]
   if (!is.null(wq_config_file) && nrow(model_dict) > 0) {
     model_dict <- expand_templates(model_dict, wq_config_file)
+  }
+
+  cfg <- load_config(yaml_file)
+
+  model_dict$variable_global_name <- trimws(as.character(model_dict$variable_global_name))
+  obs_data$variable_global_name <- trimws(as.character(obs_data$variable_global_name))
+
+  # Preprocess observed fields once (instead of inside each variable loop).
+  obs_data$depth <- .to_num(obs_data$depth)
+  obs_data$value <- .to_num(obs_data$value)
+  obs_data$datetime <- .parse_dt(obs_data$datetime)
+  obs_data <- obs_data[is.finite(obs_data$value) & !is.na(obs_data$datetime), , drop = FALSE]
+
+  if (!is.null(spin_up_days)) {
+    spin_num <- suppressWarnings(as.numeric(spin_up_days[1]))
+    if (is.na(spin_num) || spin_num < 0) {
+      stop("'spin_up_days' must be NULL or a non-negative number.")
+    }
+    ler_cfg <- yaml::read_yaml(cfg$LER_config_file)
+    sim_start <- as.POSIXct(ler_cfg$time$start, tz = "UTC")
+    if (!is.na(sim_start) && spin_num > 0) {
+      spin_cutoff <- sim_start + spin_num * 24 * 60 * 60
+      obs_data <- obs_data[obs_data$datetime >= spin_cutoff, , drop = FALSE]
+    }
   }
 
   if (nrow(model_dict) == 0) {
@@ -175,7 +264,6 @@
                                model_dict$variable_model_name)
   model_dict <- model_dict[!unresolved_template, , drop = FALSE]
 
-  cfg <- load_config(yaml_file)
   model_key <- names(cfg$model_folders)[toupper(names(cfg$model_folders)) == toupper(model_short)][1]
   available_nc_vars <- NULL
   if (!is.na(model_key) && toupper(model_short) != "SIMSTRAT") {
@@ -188,26 +276,119 @@
   }
 
   obs_vars   <- unique(obs_data$variable_global_name)
+  obs_vars   <- obs_vars[!is.na(obs_vars) & nzchar(as.character(obs_vars))]
   stats_out  <- list()
+  skip_counts <- list()
+  .mark_skip <- function(reason) {
+    current <- skip_counts[[reason]]
+    if (is.null(current)) {
+      current <- 0L
+    }
+    skip_counts[[reason]] <<- current + 1L
+  }
 
   for (gvar in obs_vars) {
     dict_sub <- model_dict[model_dict$variable_global_name == gvar, , drop = FALSE]
-    if (nrow(dict_sub) == 0) next
+    if (nrow(dict_sub) == 0) {
+      dict_sub <- model_dict[tolower(model_dict$variable_global_name) == tolower(gvar), , drop = FALSE]
+    }
+    if (nrow(dict_sub) == 0 && "metric_name" %in% names(model_dict)) {
+      dict_sub <- model_dict[trimws(as.character(model_dict$metric_name)) == gvar, , drop = FALSE]
+    }
+    if (nrow(dict_sub) == 0 && "metric_name" %in% names(model_dict)) {
+      dict_sub <- model_dict[tolower(trimws(as.character(model_dict$metric_name))) == tolower(gvar), , drop = FALSE]
+    }
+    if (nrow(dict_sub) == 0) {
+      .mark_skip("no_dict_match")
+      next
+    }
 
-    obs_sub    <- obs_data[obs_data$variable_global_name == gvar, ]
-    obs_depths <- sort(unique(obs_sub$depth))
+    # Prefer rows where metric_name matches the observed variable. This keeps
+    # calibration against the source metric (e.g. Temp_degreeCelcius) and
+    # avoids mixing in dictionary rows for other derived metrics that happen to
+    # share the same variable_global_name.
+    if ("metric_name" %in% names(dict_sub)) {
+      metric_match_idx <- which(tolower(trimws(as.character(dict_sub$metric_name))) == tolower(gvar))
+      if (length(metric_match_idx) > 0L) {
+        dict_sub <- dict_sub[metric_match_idx, , drop = FALSE]
+      }
+    }
 
-    depth_01_flag <- as.integer(dict_sub$depth_01[1])
+    obs_sub <- obs_data[obs_data$variable_global_name == gvar, ]
+    if (nrow(obs_sub) == 0L) {
+      .mark_skip("no_finite_obs_values")
+      next
+    }
+    obs_depths <- sort(unique(obs_sub$depth[!is.na(obs_sub$depth)]))
+
+    depth_01_raw <- dict_sub$depth_01[1]
+    depth_01_flag <- suppressWarnings(as.integer(as.numeric(as.character(depth_01_raw))))
+    if (is.na(depth_01_flag)) {
+      depth_01_flag <- if (tolower(as.character(depth_01_raw)) %in% c("false", "f", "no", "n")) 0L else 1L
+    }
+
+    if (depth_01_flag == 1L) {
+      dup_idx <- duplicated(obs_sub[, c("datetime", "depth")])
+      if (any(dup_idx)) {
+        if (isTRUE(verbose)) {
+          message("[LHC][obs-stats] Non-unique observations for ", gvar,
+                  " (datetime + depth). Averaging duplicates.")
+        }
+        obs_sub <- stats::aggregate(value ~ datetime + depth, data = obs_sub, FUN = mean)
+      }
+    } else {
+      dup_idx <- duplicated(obs_sub[, c("datetime")])
+      if (any(dup_idx)) {
+        if (isTRUE(verbose)) {
+          message("[LHC][obs-stats] Non-unique observations for ", gvar,
+                  " (datetime). Averaging duplicates.")
+        }
+        obs_sub <- stats::aggregate(value ~ datetime, data = obs_sub, FUN = mean)
+        obs_sub$depth <- NA_real_
+      }
+    }
+
     sim_pieces <- list()
 
-    for (row_idx in seq_len(nrow(dict_sub))) {
-      var_model_name <- dict_sub$variable_model_name[row_idx]
-      cf <- suppressWarnings(as.numeric(as.character(dict_sub$conversion_factor[row_idx])))
-      if (is.na(cf) || cf == 0) cf <- 1
+    # Deduplicate by variable_model_name: the same model variable (e.g. "temp")
+    # can appear in multiple dict rows because several derived metrics all share
+    # one underlying variable. Extracting and summing duplicates would multiply
+    # values by the count of duplicate rows (e.g. 5x for temperature), causing
+    # completely wrong statistics. Only unique model variable names should be
+    # extracted; summing is correct only when genuinely different model variables
+    # (e.g. separate phytoplankton groups) contribute to one observed variable.
+    dict_sub_extract <- dict_sub[!duplicated(dict_sub$variable_model_name), , drop = FALSE]
 
-      if (!is.null(available_nc_vars) && !var_model_name %in% available_nc_vars) {
+    cf_extract <- suppressWarnings(as.numeric(as.character(dict_sub_extract$conversion_factor)))
+    cf_extract[is.na(cf_extract) | cf_extract == 0] <- 1
+    if (isTRUE(obs_to_model_units)) {
+      cf_unique <- unique(cf_extract)
+      if (length(cf_unique) > 1L) {
+        .mark_skip("mixed_conversion_factors_model_units")
+        if (isTRUE(verbose)) {
+          message("[LHC][obs-stats] Skipping ", gvar,
+                  " in obs_to_model_units mode because multiple conversion factors are used: ",
+                  paste(cf_unique, collapse = ", "))
+        }
         next
       }
+      obs_sub$value <- .harmonized_to_model_units(obs_sub$value, cf_unique[1])
+    }
+
+    for (row_idx in seq_len(nrow(dict_sub_extract))) {
+      var_model_name <- dict_sub_extract$variable_model_name[row_idx]
+      var_model_name <- .resolve_nc_var_name(var_model_name, available_nc_vars)
+      if (is.na(var_model_name) || !nzchar(var_model_name)) {
+        .mark_skip("var_missing_in_output_nc")
+        if (isTRUE(verbose)) {
+          message("[LHC][obs-stats] Variable not found in output.nc for ", gvar,
+                  ": ", dict_sub_extract$variable_model_name[row_idx])
+        }
+        next
+      }
+      cf <- suppressWarnings(as.numeric(as.character(dict_sub_extract$conversion_factor[row_idx])))
+      if (is.na(cf) || cf == 0) cf <- 1
+      out_cf <- if (isTRUE(obs_to_model_units)) 1 else cf
 
       sim_data <- tryCatch(
         get_output_wq(
@@ -216,18 +397,27 @@
           vars              = var_model_name,
           obs_depths        = if (depth_01_flag == 1L) obs_depths else NULL,
           depth_01          = depth_01_flag,
-          conversion_factor = cf
+          conversion_factor = out_cf
         ),
         error = function(e) NULL
       )
 
-      if (is.null(sim_data) || length(sim_data) == 0) next
+      if (is.null(sim_data) || length(sim_data) == 0) {
+        .mark_skip("empty_sim_data")
+        next
+      }
       sim_piece <- sim_data[[1]]
-      if (is.null(sim_piece) || nrow(sim_piece) == 0) next
+      if (is.null(sim_piece) || nrow(sim_piece) == 0) {
+        .mark_skip("empty_sim_piece")
+        next
+      }
       sim_pieces[[length(sim_pieces) + 1]] <- sim_piece
     }
 
-    if (length(sim_pieces) == 0) next
+    if (length(sim_pieces) == 0) {
+      .mark_skip("no_sim_pieces")
+      next
+    }
 
     sim_df <- sim_pieces[[1]]
     if (length(sim_pieces) > 1) {
@@ -248,50 +438,174 @@
       }
     }
 
+    # Normalise the datetime column name in sim_df.  gotmtools::get_vari()
+    # returns "date"; glmtools and Simstrat paths return "datetime".
+    sim_dt_col <- names(sim_df)[tolower(names(sim_df)) %in% c("datetime", "date")][1]
+    if (is.na(sim_dt_col)) {
+      .mark_skip("sim_no_datetime_column")
+      next
+    }
+    if (sim_dt_col != "datetime") {
+      names(sim_df)[names(sim_df) == sim_dt_col] <- "datetime"
+    }
+
     sim_df$datetime  <- .parse_dt(sim_df$datetime)
-    obs_sub$datetime <- .parse_dt(obs_sub$datetime)
+    sim_df <- sim_df[!is.na(sim_df$datetime), , drop = FALSE]
+    if (nrow(sim_df) == 0L) {
+      .mark_skip("sim_datetime_unparsed")
+      next
+    }
 
     if (depth_01_flag == 1L) {
+      if (length(obs_depths) == 0L) {
+        .mark_skip("no_obs_depths")
+        next
+      }
+
+      depth_map <- .extract_depth_map(sim_df)
+      if (nrow(depth_map) == 0L) {
+        .mark_skip("no_depth_columns_in_sim")
+        next
+      }
+
       sim_long <- do.call(
         rbind,
         lapply(obs_depths, function(dep) {
-          dep_col <- paste0("Depth_", dep)
-          if (!dep_col %in% names(sim_df)) {
-            return(NULL)
+          exact_idx <- which(!is.na(depth_map$depth) & abs(depth_map$depth - dep) <= 1e-6)
+          if (length(exact_idx) == 0L) {
+            candidate_idx <- which(!is.na(depth_map$depth))
+            if (length(candidate_idx) == 0L) {
+              return(NULL)
+            }
+            nearest <- candidate_idx[which.min(abs(depth_map$depth[candidate_idx] - dep))]
+            dep_col <- depth_map$col[nearest]
+          } else {
+            dep_col <- depth_map$col[exact_idx[1]]
           }
-          out <- sim_df[, c("datetime", dep_col)]
+
+          out <- sim_df[, c("datetime", dep_col), drop = FALSE]
           names(out)[2] <- "sim_value"
-          out$depth <- dep
+          out$depth <- round(dep, 4)
           out
         })
       )
 
       if (is.null(sim_long) || nrow(sim_long) == 0) {
+        .mark_skip("empty_sim_long")
         next
       }
 
       obs_long <- obs_sub[, c("datetime", "depth", "value")]
+      obs_long$depth <- round(obs_long$depth, 4)
+      sim_long$depth <- round(sim_long$depth, 4)
       matched <- .match_obs_sim_depth(obs_long, sim_long)
-      if (is.null(matched$data)) next
+      if (is.null(matched$data)) {
+        .mark_skip("no_obs_sim_overlap_depth")
+        next
+      }
 
-      st <- cal_stats(matched$data$value, matched$data$sim_value)
-      stats_out[[gvar]] <- list(NSE   = st$NSE,   RMSE  = st$RMSE,
-                                NRMSE = st$NRMSE, PBIAS = st$PBIAS,
-                                KGE   = st$KGE)
+      if (isTRUE(stats_by_depth)) {
+        depth_levels <- sort(unique(matched$data$depth))
+        depth_levels <- depth_levels[!is.na(depth_levels)]
+        for (dep in depth_levels) {
+          dep_sub <- matched$data[matched$data$depth == dep, , drop = FALSE]
+          if (nrow(dep_sub) < 2L) {
+            next
+          }
+          st <- cal_stats(dep_sub$value, dep_sub$sim_value)
+          dep_chr <- gsub("[^0-9A-Za-z_.-]", "_", as.character(signif(dep, 8)))
+          key <- paste0(gvar, "__depth_", dep_chr)
+          stats_out[[key]] <- list(
+            variable = gvar,
+            depth = as.numeric(dep),
+            n_pairs = nrow(dep_sub),
+            NSE   = st$NSE,
+            RMSE  = st$RMSE,
+            NRMSE = st$NRMSE,
+            PBIAS = st$PBIAS,
+            KGE   = st$KGE
+          )
+        }
+      } else {
+        st <- cal_stats(matched$data$value, matched$data$sim_value)
+        stats_out[[gvar]] <- list(
+          variable = gvar,
+          depth = NA_real_,
+          n_pairs = nrow(matched$data),
+          NSE   = st$NSE,
+          RMSE  = st$RMSE,
+          NRMSE = st$NRMSE,
+          PBIAS = st$PBIAS,
+          KGE   = st$KGE
+        )
+      }
     } else {
       # No depth dimension – direct time-series comparison
       obs_ts           <- obs_sub[, c("datetime", "value")]
-      sim_ts           <- sim_df[, 1:2]
-      names(sim_ts)[2] <- "sim_value"
+
+      # Identify the datetime column (case-insensitive) and the value column(s).
+      dt_col <- names(sim_df)[tolower(names(sim_df)) == "datetime"][1]
+      if (is.na(dt_col)) dt_col <- names(sim_df)[1]
+      val_cols <- setdiff(names(sim_df), dt_col)
+      if (length(val_cols) == 0L) {
+        .mark_skip("sim_no_value_column")
+        next
+      }
+      # When multiple value columns exist (e.g. depth layers returned for a
+      # scalar variable), average across them.
+      if (length(val_cols) == 1L) {
+        sim_ts <- sim_df[, c(dt_col, val_cols[1]), drop = FALSE]
+      } else {
+        sim_ts <- sim_df[, dt_col, drop = FALSE]
+        sim_ts$sim_value <- rowMeans(sim_df[, val_cols, drop = FALSE], na.rm = TRUE)
+        val_cols <- "sim_value"
+      }
+      names(sim_ts) <- c("datetime", "sim_value")
 
       matched <- .match_obs_sim(obs_ts, sim_ts)
-      if (is.null(matched$data)) next
+      if (is.null(matched$data)) {
+        .mark_skip("no_obs_sim_overlap_time")
+        next
+      }
 
       st  <- cal_stats(matched$data$value, matched$data$sim_value)
-      stats_out[[gvar]] <- list(NSE   = st$NSE,   RMSE  = st$RMSE,
-                                 NRMSE = st$NRMSE, PBIAS = st$PBIAS,
-                                 KGE   = st$KGE)
+      stats_out[[gvar]] <- list(
+        variable = gvar,
+        depth = NA_real_,
+        n_pairs = nrow(matched$data),
+        NSE   = st$NSE,
+        RMSE  = st$RMSE,
+        NRMSE = st$NRMSE,
+        PBIAS = st$PBIAS,
+        KGE   = st$KGE
+      )
     }
+  }
+
+  vars_with_stats <- unique(vapply(stats_out, function(st) as.character(st$variable %||% ""), character(1)))
+  vars_with_stats <- vars_with_stats[nzchar(vars_with_stats)]
+  attr(stats_out, "n_obs_vars_total") <- length(obs_vars)
+  attr(stats_out, "n_obs_vars_with_stats") <- length(vars_with_stats)
+
+  if (length(stats_out) == 0L) {
+    dict_gnames <- if ("variable_global_name" %in% names(model_dict))
+      unique(model_dict$variable_global_name) else character(0)
+    dict_mnames <- if ("metric_name" %in% names(model_dict))
+      unique(model_dict$metric_name) else character(0)
+    skip_msg <- if (length(skip_counts) > 0L)
+      paste(names(skip_counts), unlist(skip_counts), sep = "=", collapse = ", ")
+    else
+      "(no skip counts — obs_vars may be empty)"
+    message(
+      "[LHC][obs-stats] No statistics produced.",
+      "\n  obs variable_global_name values tried: ", paste(obs_vars, collapse = ", "),
+      "\n  dict variable_global_name available : ", paste(head(dict_gnames, 20), collapse = ", "),
+      "\n  dict metric_name available          : ", paste(head(dict_mnames, 20), collapse = ", "),
+      "\n  skip summary: ", skip_msg
+    )
+  } else if (isTRUE(verbose) && length(skip_counts) > 0L) {
+    skip_msg <- paste(names(skip_counts), unlist(skip_counts), sep = "=", collapse = ", ")
+    message("[LHC][obs-stats] Some variables skipped. Skip summary: ", skip_msg)
   }
 
   stats_out
@@ -327,11 +641,40 @@
 #'   \code{save_results = TRUE}.
 #' @param obs_file Character or \code{NULL}. Optional observed-data CSV for
 #'   per-run statistics.
+#' @param obs_to_model_units Logical. When \code{TRUE} and \code{obs_file} is
+#'   provided, observed values (assumed harmonized/global units) are converted
+#'   back to model-specific units using dictionary \code{conversion_factor}
+#'   before computing statistics. Default is \code{TRUE} (model outputs are
+#'   kept in model-specific units for comparison).
+#' @param spin_up_days Numeric or \code{NULL}. Optional number of days after
+#'   simulation start to exclude from observed-data comparison in
+#'   \code{obs_file} mode. This is useful to ignore model spin-up transients.
+#'   Default is \code{NULL} (no spin-up exclusion).
+#' @param stats_by_depth Logical. Only used when \code{obs_file} is provided.
+#'   If \code{TRUE}, depth-resolved variables return one set of statistics per
+#'   depth instead of one aggregated set per variable. Default is \code{FALSE}.
+#' @param return_best Logical. Only used when \code{obs_file} is provided.
+#'   If \code{TRUE}, identify the best parameter set across iterations using
+#'   \code{best_metric}. Default is \code{TRUE}.
+#' @param best_metric Character. Objective metric used to rank parameter sets
+#'   when \code{return_best = TRUE}. One of \code{"KGE"}, \code{"NSE"},
+#'   \code{"RMSE"}, \code{"NRMSE"}, or \code{"PBIAS"}. Default is
+#'   \code{"KGE"}.
+#' @param parallel Logical. If \code{TRUE}, run in parallel by delegating to
+#'   \code{run_lhc_wq_parallel()}. Default is \code{FALSE}.
+#' @param n_workers Integer or \code{NULL}. Number of workers used when
+#'   \code{parallel = TRUE}. Passed to \code{run_lhc_wq_parallel()}.
+#' @param parallel_dir Character. Parent directory for worker copies when
+#'   \code{parallel = TRUE}. Passed to \code{run_lhc_wq_parallel()}.
+#' @param keep_worker_dirs Logical. Keep worker directories after completion
+#'   when \code{parallel = TRUE}. Passed to \code{run_lhc_wq_parallel()}.
 #'
 #' @return If \code{obs_file = NULL}, a list of length \code{n_samples} with
 #'   sampled parameters and metrics per run. If \code{obs_file} is supplied,
 #'   returns a flattened data frame with sampled parameters and summary
-#'   statistics.
+#'   statistics. In \code{obs_file} mode and when \code{return_best = TRUE},
+#'   the returned data.frame includes column \code{is_best}, and attributes
+#'   \code{best_parameter_set} and \code{best_metric}.
 #' @export
 
 run_lhc_wq <- function(model,
@@ -348,8 +691,48 @@ run_lhc_wq <- function(model,
                        save_results    = FALSE,
                        output_file     = "lhc_results.rds",
                        obs_file        = NULL,
+                       obs_to_model_units = TRUE,
+                       spin_up_days    = NULL,
+                       stats_by_depth  = FALSE,
+                       return_best     = TRUE,
+                       best_metric     = "KGE",
+                       parallel        = FALSE,
+                       n_workers       = NULL,
+                       parallel_dir    = tempdir(),
+                       keep_worker_dirs = FALSE,
                        lhs_matrix      = NULL,
                        sample_indices  = NULL) {
+
+  if (isTRUE(parallel)) {
+    return(run_lhc_wq_parallel(
+      model = model,
+      param_names = param_names,
+      calib_setup = calib_setup,
+      yaml_file = yaml_file,
+      model_dir = model_dir,
+      n_samples = n_samples,
+      model_filter = model_filter,
+      wq_config_file = wq_config_file,
+      yaml_file_model = yaml_file_model,
+      par_file = par_file,
+      verbose = verbose,
+      save_results = save_results,
+      output_file = output_file,
+      obs_file = obs_file,
+      obs_to_model_units = obs_to_model_units,
+      spin_up_days = spin_up_days,
+      stats_by_depth = stats_by_depth,
+      return_best = return_best,
+      best_metric = best_metric,
+      n_workers = n_workers,
+      parallel_dir = parallel_dir,
+      keep_worker_dirs = keep_worker_dirs
+    ))
+  }
+
+  original_tz <- Sys.getenv("TZ")
+  Sys.setenv(TZ = "UTC")
+  on.exit(Sys.setenv(TZ = original_tz), add = TRUE)
 
   # Input validation
   model_upper <- toupper(model)
@@ -498,6 +881,13 @@ run_lhc_wq <- function(model,
 
   if (any(sample_indices < 1L | sample_indices > total_samples)) {
     stop("'sample_indices' must fall within the rows of 'lhs_matrix'.")
+  }
+
+  best_metric <- toupper(as.character(best_metric[1]))
+  valid_best_metrics <- c("KGE", "NSE", "RMSE", "NRMSE", "PBIAS")
+  if (!best_metric %in% valid_best_metrics) {
+    stop("'best_metric' must be one of: ", paste(valid_best_metrics, collapse = ", "),
+         "\nProvided: ", best_metric)
   }
 
   # Pre-collect bounds for each parameter
@@ -751,7 +1141,11 @@ run_lhc_wq <- function(model,
         # New behaviour: compare with observed data and collect statistics
         obs_stats <- tryCatch(
           .cal_lhc_obs_stats(obs_data_loaded, dict_loaded, model_short, yaml_file,
-                             wq_config_file = wq_config_file),
+                             wq_config_file = wq_config_file,
+                             verbose = verbose,
+                             obs_to_model_units = obs_to_model_units,
+                             spin_up_days = spin_up_days,
+                             stats_by_depth = stats_by_depth),
           error = function(e) {
             warning("[LHC] obs stats failed at iteration ", i, ": ",
                     conditionMessage(e))
@@ -765,22 +1159,31 @@ run_lhc_wq <- function(model,
       params    = as.list(param_values),
       metrics   = metrics,
       obs_stats = obs_stats,
-      model_ok  = model_ok
+      model_ok  = model_ok,
+      sample_index = i
     )
   }
 
   # When obs_file is provided, flatten results into a long data.frame:
   # one row per (LHC iteration x variable), with stat columns NSE/RMSE/NRMSE/PBIAS/KGE
   if (!is.null(obs_data_loaded)) {
+    `%||%` <- function(x, y) if (!is.null(x) && length(x) > 0) x else y
+
     rows <- lapply(results, function(r) {
       param_row <- as.data.frame(r$params, stringsAsFactors = FALSE)
+      param_row$sample_index <- as.integer(r$sample_index %||% NA_integer_)
       param_row$model_ok <- r$model_ok
       param_row$n_stats  <- if (is.null(r$obs_stats)) 0L else length(r$obs_stats)
+      param_row$n_obs_vars <- if (is.null(r$obs_stats)) NA_integer_ else as.integer(attr(r$obs_stats, "n_obs_vars_total") %||% NA_integer_)
+      param_row$n_obs_vars_with_stats <- if (is.null(r$obs_stats)) NA_integer_ else as.integer(attr(r$obs_stats, "n_obs_vars_with_stats") %||% NA_integer_)
+
       if (!is.null(r$obs_stats) && length(r$obs_stats) > 0) {
         var_rows <- lapply(names(r$obs_stats), function(key) {
           st <- r$obs_stats[[key]]
           out <- param_row
-          out$variable <- key
+          out$variable <- as.character(st$variable %||% key)
+          out$depth    <- suppressWarnings(as.numeric(st$depth %||% NA_real_))
+          out$n_pairs  <- as.integer(st$n_pairs %||% NA_integer_)
           out$NSE      <- st$NSE
           out$RMSE     <- st$RMSE
           out$NRMSE    <- st$NRMSE
@@ -791,6 +1194,8 @@ run_lhc_wq <- function(model,
         do.call(rbind, var_rows)
       } else {
         param_row$variable <- NA_character_
+        param_row$depth    <- NA_real_
+        param_row$n_pairs  <- NA_integer_
         param_row$NSE      <- NA_real_
         param_row$RMSE     <- NA_real_
         param_row$NRMSE    <- NA_real_
@@ -800,6 +1205,78 @@ run_lhc_wq <- function(model,
       }
     })
     results <- if (length(rows) > 0) dplyr::bind_rows(rows) else data.frame()
+
+    # Identify best parameter set across LHC iterations from observed-data stats.
+    if (isTRUE(return_best) && nrow(results) > 0) {
+      score_sign <- if (best_metric %in% c("RMSE", "NRMSE")) -1 else 1
+      score_transform <- function(x) {
+        if (best_metric == "PBIAS") {
+          return(-abs(x))
+        }
+        score_sign * x
+      }
+
+      score_rows <- results[results$model_ok %in% TRUE, , drop = FALSE]
+      score_rows <- score_rows[!is.na(score_rows[[best_metric]]), , drop = FALSE]
+
+      best_summary <- NULL
+      if (nrow(score_rows) > 0) {
+        iter_ids <- sort(unique(score_rows$sample_index))
+        iter_scores <- lapply(iter_ids, function(iter_id) {
+          sub <- score_rows[score_rows$sample_index == iter_id, , drop = FALSE]
+          if (nrow(sub) == 0) {
+            return(NULL)
+          }
+
+          vals <- score_transform(sub[[best_metric]])
+          w <- suppressWarnings(as.numeric(sub$n_pairs))
+          w[is.na(w) | w <= 0] <- 1
+
+          ok <- is.finite(vals) & is.finite(w)
+          if (!any(ok)) {
+            return(NULL)
+          }
+
+          objective <- stats::weighted.mean(vals[ok], w = w[ok], na.rm = TRUE)
+          first_row <- sub[1, , drop = FALSE]
+
+          out <- first_row[, c("sample_index", "n_stats", "n_obs_vars", "n_obs_vars_with_stats"), drop = FALSE]
+          out$best_metric <- best_metric
+          out$objective_score <- objective
+          out$objective_value <- if (best_metric == "PBIAS") -objective else objective * score_sign
+          for (p in param_names) {
+            out[[p]] <- first_row[[p]]
+          }
+          out
+        })
+
+        iter_scores <- iter_scores[!vapply(iter_scores, is.null, logical(1))]
+        if (length(iter_scores) > 0) {
+          score_table <- do.call(rbind, iter_scores)
+          best_idx <- which.max(score_table$objective_score)[1]
+          best_summary <- score_table[best_idx, , drop = FALSE]
+
+          best_iter <- as.integer(best_summary$sample_index[1])
+          results$is_best <- results$sample_index == best_iter
+          attr(results, "best_parameter_set") <- best_summary
+          attr(results, "best_metric") <- best_metric
+
+          if (isTRUE(verbose)) {
+            message("[LHC] Best parameter set identified at sample_index=", best_iter,
+                    " using ", best_metric, ".")
+          }
+        }
+      }
+
+      if (is.null(best_summary)) {
+        results$is_best <- FALSE
+        attr(results, "best_parameter_set") <- NULL
+        attr(results, "best_metric") <- best_metric
+        if (isTRUE(verbose)) {
+          message("[LHC] Could not identify a best parameter set: no valid observed-data statistics were available.")
+        }
+      }
+    }
   }
 
   if (save_results) {

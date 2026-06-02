@@ -4,7 +4,8 @@
 #' Calculates Number of Anoxic Days and Anoxic Factors (Nürnberg, 1995) for each year/season
 
 #' @name cal_anoxic_date
-#' @param bathy_file {data.frame} The file includes depth and area relationship
+#' @param bathy_file {data.frame or character} Bathymetry depth-area
+#' relationship as a data frame, or a path to a standard CSV/.bth file.
 #' @param oxy_data {data.frame} The output of the model/observed output. It should include Datetime and depth-specific values per column.
 #' @param threshold {numeric} Anoxic O2 threshold (mg L-1). Default is 1 mg/L.
 #' @param duration {character} Argument for calculating the anoxic factor and number of anoxic days. Use "full" for all anoxic days or "longest" for only the longest anoxic period.
@@ -18,6 +19,14 @@
 #' @export
 cal_anoxic_date <- function(oxy_data, bathy_file, threshold = 1, duration = "full"){
   duration <- match.arg(duration)
+  if (is.character(bathy_file)) {
+    bathy_file <- load_bathy_depth_area(bathy_file)
+  }
+
+  if (!is.data.frame(bathy_file) || !all(c("depths", "areas") %in% names(bathy_file))) {
+    stop("'bathy_file' must be a data.frame with columns 'depths' and 'areas', or a valid bathymetry file path.")
+  }
+
   bathy_file$depths <- as.numeric(bathy_file$depths)
   bathy_file$areas <- as.numeric(bathy_file$areas)
   
