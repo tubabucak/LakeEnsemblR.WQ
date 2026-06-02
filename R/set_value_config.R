@@ -38,6 +38,7 @@
 set_value_config <- function(config_file, module, group_name = NULL, group_position = NULL,
                              domain, process, subprocess, model_coupled, parameter, value,
                              folder, verbose = FALSE){
+  model_coupled_norm <- toupper(as.character(model_coupled))
   
   model <- strsplit(as.character(model_coupled), "-")[[1]]
   model <- tolower(model[length(model)])
@@ -45,7 +46,7 @@ set_value_config <- function(config_file, module, group_name = NULL, group_posit
   # Check if arguments are allowed
   chck_args <- sapply(c("module", "domain", "process", "subprocess", "model", "parameter"),
                      function(x) get(x) %in% LakeEnsemblR_WQ_dictionary[[x]])
-  if(!all(as.character(unlist(chck_args)))){
+  if(!all(unlist(chck_args))){
     wrong_args <- c("module", "domain", "process",
                     "subprocess", "model", "parameter")[!chck_args]
     error_string <- unlist(lapply(wrong_args, function(x) paste0("\n", x, ": ", get(x))))
@@ -67,15 +68,31 @@ set_value_config <- function(config_file, module, group_name = NULL, group_posit
   
   lst_config <- read.config(file.path(folder, config_file))
   model_config <- lst_config[["config_files"]][[model_coupled]]
+  if (is.null(model_config) || !nzchar(model_config)) {
+    cfg_names <- names(lst_config[["config_files"]])
+    cfg_idx <- which(toupper(cfg_names) == model_coupled_norm)[1]
+    if (!is.na(cfg_idx)) {
+      model_config <- lst_config[["config_files"]][[cfg_idx]]
+    }
+  }
+  if (is.null(model_config) || !nzchar(model_config)) {
+    stop("Could not resolve config_files entry for model_coupled: ", model_coupled)
+  }
   
-  if(model_coupled == "GLM-AED2" | model_coupled == "Simstrat-AED2"){
+  if(model_coupled_norm %in% c("GLM-AED2", "SIMSTRAT-AED2")){
     # Different files for phytoplankton and zooplankton
     if(!(module %in% c("phytoplankton", "zooplankton"))){
       aed_config_path <- file.path(folder, model_config)
+      if (model_coupled_norm == "SIMSTRAT-AED2" && grepl("\\.par$", aed_config_path, ignore.case = TRUE)) {
+        aed_config_path <- file.path(dirname(aed_config_path), "aed2.nml")
+      }
     }else if(module == "phytoplankton"){
       aed_config_path <- file.path(folder, dirname(model_config), "aed2_phyto_pars.nml")
     }else if(module == "zooplankton"){
       aed_config_path <- file.path(folder, dirname(model_config), "aed2_zoop_pars.nml")
+    }
+    if (!file.exists(aed_config_path)) {
+      stop("Resolved AED2 config file does not exist: ", aed_config_path)
     }
     aed_config <- read_nml(aed_config_path)
     
@@ -91,8 +108,9 @@ set_value_config <- function(config_file, module, group_name = NULL, group_posit
     
     aed_config[[path_parts[1]]][[path_parts[2]]][group_position] <- (value)#as.numeric(value)
     write_nml(aed_config, aed_config_path)
+    return(invisible(TRUE))
     
-  }else if(model_coupled == "GOTM-Selmaprotbas" | model_coupled == "GOTM-WET"){
+  }else if(model_coupled_norm %in% c("GOTM-SELMAPROTBAS", "GOTM-WET")){
     path_parts <- strsplit(as.character(row_dict[1, "path"]), "/")[[1]]
     path_parts[path_parts == "{group_name}"] <- group_name
     names(path_parts) <- paste0("key", 1:length(path_parts))
@@ -103,7 +121,8 @@ set_value_config <- function(config_file, module, group_name = NULL, group_posit
                     "verbose" = verbose)
     arglist <- split(path_parts, names(path_parts)) # Turn into named list
     do.call(input_yaml_multiple, args = arglist)
-  }else if(model_coupled == "MyLake"){
+    return(invisible(TRUE))
+  }else if(model_coupled_norm == "MYLAKE"){
     if(!is.null(group_name)){
       if(group_position == 1L){
         # MyLake can only have one phytoplankton group
@@ -132,9 +151,11 @@ set_value_config <- function(config_file, module, group_name = NULL, group_posit
         }
         
         save(mylake_config, file = file.path(folder, model_config))
+        return(invisible(TRUE))
       }
     }
-  }else if(model_coupled == "PCLake"){
+    return(invisible(FALSE))
+  }else if(model_coupled_norm == "PCLAKE"){
     
     path_parts <- strsplit(as.character(row_dict[1, "path"]), "/")[[1]]
     if(path_parts[1] == "parameters"){
@@ -180,6 +201,8 @@ set_value_config <- function(config_file, module, group_name = NULL, group_posit
                 row.names = FALSE,
                 quote = FALSE,
                 sep = "\t")
-    
+    return(invisible(TRUE))
   }
+
+  stop("Unsupported model_coupled value for set_value_config: ", model_coupled)
 }
