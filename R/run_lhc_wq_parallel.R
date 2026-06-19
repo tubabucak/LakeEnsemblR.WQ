@@ -64,6 +64,7 @@ run_lhc_wq_parallel <- function(model,
                                 return_best     = TRUE,
                                 best_metric     = "KGE",
                                 n_workers       = NULL,
+                                use_de           = FALSE,  # NEW: Whether to run DE after LHC
                                 parallel_dir    = tempdir(),
                                 keep_worker_dirs = FALSE) {
 
@@ -144,7 +145,10 @@ run_lhc_wq_parallel <- function(model,
       "lhs_matrix", "sample_splits", "model", "param_names", "calib_setup",
       "yaml_file", "model_dir", "model_filter", "wq_config_file",
       "yaml_file_model", "par_file", "verbose", "obs_file",
-      "obs_to_model_units", "spin_up_days", "stats_by_depth"
+      "obs_to_model_units", "spin_up_days", "stats_by_depth",
+      "parallel_dir",             
+      "keep_worker_dirs"           
+
     ),
     envir = environment()
   )
@@ -152,36 +156,108 @@ run_lhc_wq_parallel <- function(model,
   if (isTRUE(verbose)) {
     message("[LHC] Starting ", n_workers, " parallel workers...")
   }
+result_parts <- parallel::parLapply(cl, seq_len(n_workers), function(worker_idx) {
 
-  # Each worker runs its subset of samples
-  result_parts <- parallel::parLapply(cl, seq_len(n_workers), function(worker_idx) {
-    run_lhc_wq(
-      model              = model,
-      param_names        = param_names,
-      calib_setup        = calib_setup,
-      yaml_file          = yaml_file,
-      model_dir          = model_dir,
-      n_samples          = n_samples,
-      model_filter       = model_filter,
-      wq_config_file     = wq_config_file,
-      yaml_file_model    = yaml_file_model,
-      par_file           = par_file,
-      verbose            = verbose,
-      save_results       = FALSE,
-      output_file        = NULL,
-      obs_file           = obs_file,
-      obs_to_model_units = obs_to_model_units,
-      spin_up_days       = spin_up_days,
-      stats_by_depth     = stats_by_depth,
-      return_best        = FALSE,  # Compute globally at end
-      best_metric        = best_metric,
-      lhs_matrix         = lhs_matrix,
-      sample_indices     = sample_splits[[worker_idx]]
-    )
-  })
+  # ------------------------------------------------------------
+  # Create isolated worker directory
+  # ------------------------------------------------------------
+  worker_dir <- file.path(parallel_dir, paste0("worker_", worker_idx))
+
+  if (dir.exists(worker_dir)) {
+    unlink(worker_dir, recursive = TRUE)
+  }
+  dir.create(worker_dir, recursive = TRUE)
+
+  # ✅ Copy CONTENTS of model_dir
+  file.copy(
+    from = list.files(model_dir, full.names = TRUE),
+    to   = worker_dir,
+    recursive = TRUE,
+    overwrite = TRUE
+  )
+
+  cat("[Worker", worker_idx, "] using:", worker_dir, "\n")
+
+  # ------------------------------------------------------------
+  # Run LHC
+  # ------------------------------------------------------------
+ res <- tryCatch(
+  run_lhc_wq(
+    model              = model,
+    param_names        = param_names,
+    calib_setup        = calib_setup,
+    yaml_file          = yaml_file,
+    model_dir          = worker_dir,
+    n_samples          = n_samples,
+    model_filter       = model_filter,
+    wq_config_file     = wq_config_file,
+    yaml_file_model    = yaml_file_model,
+    par_file           = par_file,
+    verbose            = verbose,
+    save_results       = FALSE,
+    output_file        = NULL,
+    obs_file           = obs_file,
+    obs_to_model_units = obs_to_model_units,
+    spin_up_days       = spin_up_days,
+    stats_by_depth     = stats_by_depth,
+    return_best        = FALSE,
+    best_metric        = best_metric,
+    lhs_matrix         = lhs_matrix,
+    sample_indices     = sample_splits[[worker_idx]],
+    use_de             = FALSE   # 
+  ),
+  error = function(e) {
+    message("[Worker ", worker_idx, "] ERROR: ", conditionMessage(e))
+    return(NULL)
+  }
+)
+
+
+  # ✅ Cleanup (optional)
+  if (!keep_worker_dirs) {
+    unlink(worker_dir, recursive = TRUE)
+  }
+
+  res
+})
 
   if (isTRUE(verbose)) {
     message("[LHC] Parallel workers finished. Combining results...")
+    if (isTRUE(use_de)) {
+
+  if (isTRUE(verbose)) {
+    message("\n[DE] Starting differential evolution phase after LHC...")
+  }
+
+  # reuse same function but now WITHOUT parallel
+  de_results <- run_lhc_wq(
+    model = model,
+    param_names = param_names,
+    calib_setup = calib_setup,
+    yaml_file = yaml_file,
+    model_dir = model_dir,
+    n_samples = n_samples,
+    model_filter = model_filter,
+    wq_config_file = wq_config_file,
+    yaml_file_model = yaml_file_model,
+    par_file = par_file,
+    verbose = verbose,
+    save_results = FALSE,
+    output_file = NULL,
+    obs_file = obs_file,
+    obs_to_model_units = obs_to_model_units,
+    spin_up_days = spin_up_days,
+    stats_by_depth = stats_by_depth,
+    return_best = return_best,
+    best_metric = best_metric,
+
+    # ✅ IMPORTANT
+    parallel = FALSE,
+    use_de = TRUE
+  )
+
+  return(de_results)
+}
   }
 
   # Combine results from all workers in sample order

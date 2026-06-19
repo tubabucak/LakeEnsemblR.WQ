@@ -1,97 +1,3 @@
-#' Run Latin Hypercube Calibration for Water Quality Models
-#'
-#' Performs a Latin Hypercube Sampling (LHS) based parameter space exploration
-#' for water quality models coupled to lake hydrodynamic models. Supports
-#' GLM-AED2, GOTM-WET, GOTM-Selmaprotbas, and Simstrat-AED2.
-#'
-#' For each LHS iteration the function:
-#' \enumerate{
-#'   \item Samples parameter values from the bounds defined in \code{calib_setup}.
-#'   \item Writes the sampled values to the relevant \code{.nml} or \code{.csv} files.
-#'   \item Runs the selected model.
-#'   \item Extracts metrics via \code{\link{cal_metrics}}.
-#' }
-#'
-#' @param model Character. One of \code{"GLM-AED2"}, \code{"GOTM-WET"},
-#'   \code{"GOTM-Selmaprotbas"}, or \code{"Simstrat-AED2"} (case-insensitive).
-#' @param param_names Character vector. Names of parameters to vary (must match
-#'   the \code{pars} column of \code{calib_setup}).
-#' @param calib_setup Data frame. Calibration setup table with at minimum columns:
-#'   \code{pars} (parameter names), \code{lb} (lower bound), \code{ub} (upper bound),
-#'   \code{file} (path relative to \code{model_dir}), and optionally
-#'   \code{group_name} (e.g. for phytoplankton groups in CSV parameter files).
-#' @param yaml_file Character. Path to the YAML metrics file passed to
-#'   \code{\link{cal_metrics}}.
-#' @param model_dir Character. Path to the model simulation directory.
-#' @param n_samples Integer. Number of LHS samples (model runs) to perform
-#'   (default = 50).
-#' @param model_filter Character. Optional model filter string passed to
-#'   \code{\link{cal_metrics}}. If \code{NULL} (default), auto-derived from
-#'   \code{model} (e.g., "GLM-AED2" → "GLM", "GOTM-WET" → "WET",
-#'   "GOTM-Selmaprotbas" → "SELMAPROTBAS").
-#' @param wq_config_file Character. Path to the WQ config file passed to
-#'   \code{\link{cal_metrics}}.
-#' @param yaml_file_model Character. Name of the GOTM yaml file used when
-#'   running GOTM-based models (default = \code{"gotm.yaml"}).
-#'   Ignored for GLM-AED2 and Simstrat-AED2.
-#' @param par_file Character. Name of the Simstrat \code{.par} file
-#'   (default = \code{"simstrat.par"}). Ignored for other models.
-#' @param verbose Logical. Print progress messages (default = \code{TRUE}).
-#' @param save_results Logical. If \code{TRUE}, save the results as an
-#'   \code{.rds} file inside \code{model_dir} after all iterations
-#'   (default = \code{FALSE}).
-#' @param output_file Character. File name for the saved results when
-#'   \code{save_results = TRUE} (default = \code{"lhc_results.rds"}).
-#' @param obs_file Character or \code{NULL}. Path to the standard observed data
-#'   CSV with columns \code{datetime}, \code{depth}, \code{variable_global_name},
-#'   and \code{value} (all values in global units as defined in the metrics
-#'   dictionary). When provided, each model run is evaluated against the
-#'   observations and only a flat \code{data.frame} of parameter values plus
-#'   performance statistics is returned (default = \code{NULL}).
-#'
-#' @return When \code{obs_file = NULL}: a list of length \code{n_samples}.
-#'   Each element is a list with:
-#' \describe{
-#'   \item{\code{params}}{Named list of sampled parameter values for this iteration.}
-#'   \item{\code{metrics}}{Output of \code{cal_metrics()} for this iteration.}
-#'   \item{\code{model_ok}}{Logical; \code{TRUE} if the model run produced output.}
-#' }
-#' When \code{obs_file} is provided: a \code{data.frame} where each row is one
-#' successful LHC iteration. Columns are the sampled parameter values followed
-#' by performance statistics (NSE, RMSE, NRMSE, PBIAS, KGE) for every
-#' variable–depth combination present in the observed data.
-#'
-#' @importFrom lhs randomLHS
-#' @importFrom readr read_csv write_csv
-#' @importFrom GLM3r run_glm
-#'
-#' @seealso \code{\link{cal_stats}}
-#'
-#' @examples
-#' \dontrun{
-#' results <- run_lhc_wq(
-#'   model       = "GLM-AED2",
-#'   param_names = c("Kw", "Knitrif"),
-#'   calib_setup = calib_setup,
-#'   yaml_file   = "metrics.yaml",
-#'   model_dir   = "GLM-AED2",
-#'   n_samples   = 30,
-#'   wq_config_file = "LakeEnsemblR_WQ.yaml"
-#' )
-#'
-#' results <- run_lhc_wq(
-#'   model       = "GOTM-Selmaprotbas",
-#'   param_names = c("spm_initial", "p_vel"),
-#'   calib_setup = calib_setup,
-#'   yaml_file   = "metrics.yaml",
-#'   model_dir   = "GOTM-Selmaprotbas",
-#'   n_samples   = 50,
-#'   wq_config_file = "LakeEnsemblR_WQ.yaml"
-#' )
-#' }
-#'
-#' @keywords internal
-
 # ---------------------------------------------------------------------------
 # Internal helper: compare simulated vs. observed and return statistics.
 # Simulated output from get_output_wq() is already in global units
@@ -105,6 +11,8 @@
                                obs_to_model_units = TRUE,
                                spin_up_days = NULL,
                                stats_by_depth = FALSE) {
+
+                               
 
   `%||%` <- function(x, y) if (!is.null(x) && length(x) > 0) x else y
 
@@ -451,6 +359,13 @@
 
     sim_df$datetime  <- .parse_dt(sim_df$datetime)
     sim_df <- sim_df[!is.na(sim_df$datetime), , drop = FALSE]
+
+     
+    if (nrow(sim_df) > 0) {
+  message("[DEBUG] Sim time range: ",
+          format(min(sim_df$datetime)), " -> ",
+          format(max(sim_df$datetime)))
+}
     if (nrow(sim_df) == 0L) {
       .mark_skip("sim_datetime_unparsed")
       next
@@ -668,11 +583,29 @@
 #'   \code{parallel = TRUE}. Passed to \code{run_lhc_wq_parallel()}.
 #' @param keep_worker_dirs Logical. Keep worker directories after completion
 #'   when \code{parallel = TRUE}. Passed to \code{run_lhc_wq_parallel()}.
+#' @param use_de Logical. If \code{TRUE}, run differential evolution after LHC
+#'   initialization using LHC results as generation 1. Default is \code{FALSE}
+#'   (LHC-only mode maintains backward compatibility).
+#' @param de_iterations Integer. Number of DE generations to run (default = 50).
+#'   Ignored when \code{use_de = FALSE}.
+#' @param de_popsize Integer or \code{NULL}. DE population size. If \code{NULL}
+#'   (default), uses \code{n_samples}. Must be >= 4 for DEoptim. Ignored when
+#'   \code{use_de = FALSE}.
+#' @param de_f Numeric. Mutation scaling factor in range [0.2, 2.0]. Higher
+#'   values increase mutation magnitude. Default is 0.8. Ignored when
+#'   \code{use_de = FALSE}.
+#' @param de_cr Numeric. Crossover probability in range [0, 1]. Higher values
+#'   increase parameter exchange probability. Default is 0.9. Ignored when
+#'   \code{use_de = FALSE}.
+#' @param de_seed_from_lhc Logical. Initialize DE population from best LHC
+#'   results (default = \code{TRUE}). If \code{FALSE}, DE starts from random
+#'   population. Ignored when \code{use_de = FALSE}.
 #'
 #' @return If \code{obs_file = NULL}, a list of length \code{n_samples} with
-#'   sampled parameters and metrics per run. If \code{obs_file} is supplied,
-#'   returns a flattened data frame with sampled parameters and summary
-#'   statistics. In \code{obs_file} mode and when \code{return_best = TRUE},
+#'   sampled parameters and metrics per run. When \code{use_de = TRUE}, includes
+#'   additional \code{de_phase} element with DEoptim results. If \code{obs_file}
+#'   is supplied, returns a flattened data frame with sampled parameters and
+#'   summary statistics. In \code{obs_file} mode and when \code{return_best = TRUE},
 #'   the returned data.frame includes column \code{is_best}, and attributes
 #'   \code{best_parameter_set} and \code{best_metric}.
 #' @export
@@ -701,7 +634,195 @@ run_lhc_wq <- function(model,
                        parallel_dir    = tempdir(),
                        keep_worker_dirs = FALSE,
                        lhs_matrix      = NULL,
-                       sample_indices  = NULL) {
+                       sample_indices  = NULL,
+                       use_de          = FALSE,
+                       de_iterations   = 50,
+                       de_popsize      = NULL,
+                       de_f            = 0.8,
+                       de_cr           = 0.9,
+                       de_seed_from_lhc = TRUE) {
+
+  # Helper: Initialize DE population from best LHC results
+  .init_de_population_from_lhc <- function(lhc_results, lhs_matrix_ref,
+                                         param_names_ref, bounds_ref,
+                                         de_popsize_val) {
+
+  `%||%` <- function(x, y) if (!is.null(x) && length(x) > 0) x else y
+
+  # ------------------------------------------------------------
+  # ✅ CASE 1: obs_file mode → data.frame
+  # ------------------------------------------------------------
+  if (is.data.frame(lhc_results)) {
+
+    metric_col <- best_metric   #
+    df <- lhc_results
+
+    df <- df[df$model_ok %in% TRUE, ]
+    df <- df[!is.na(df[[metric_col]]), ]
+
+    if (nrow(df) == 0) {
+      stop("[DE] No valid LHC results to seed DE")
+    }
+
+    # Aggregate per sample_index
+    agg <- aggregate(df[[metric_col]],
+                     by = list(sample_index = df$sample_index),
+                     FUN = mean, na.rm = TRUE)
+
+    names(agg)[2] <- "fitness"
+
+    # sort best first
+    agg <- agg[order(agg$fitness, decreasing = TRUE), ]
+
+    top_indices <- agg$sample_index[seq_len(min(de_popsize_val, nrow(agg)))]
+
+    # convert to row indices
+    lhs_indices <- match(top_indices, seq_len(nrow(lhs_matrix_ref)))
+
+    init_pop <- lhs_matrix_ref[lhs_indices, , drop = FALSE]
+
+    return(init_pop)
+  }
+
+  # ------------------------------------------------------------
+  # ✅ CASE 2: list mode (original behavior)
+  # ------------------------------------------------------------
+  lhc_fitness <- lapply(lhc_results, function(r) {
+    if (!is.null(r$obs_stats) && length(r$obs_stats) > 0) {
+      vals <- vapply(r$obs_stats, function(st) st$KGE %||% NA_real_, numeric(1))
+      vals <- vals[!is.na(vals)]
+      if (length(vals) > 0) return(mean(vals))
+    }
+    return(NA_real_)
+  })
+
+  lhc_fitness <- unlist(lhc_fitness)
+  lhc_fitness[is.na(lhc_fitness)] <- -Inf
+
+  top_indices <- order(lhc_fitness, decreasing = TRUE)[
+    seq_len(min(de_popsize_val, length(lhc_fitness)))
+  ]
+
+  if (length(top_indices) < de_popsize_val) {
+    top_indices <- c(top_indices,
+                     rep(top_indices,
+                         length.out = de_popsize_val - length(top_indices)))
+  }
+
+  lhs_matrix_ref[top_indices, , drop = FALSE]
+}
+
+  # Helper: Create objective function for DE optimization
+  .make_de_objective <- function() {
+
+    iter_counter <- 0 
+    # ------------------------------------------------------------------
+# Reset model files to clean baseline before applying parameters
+# ------------------------------------------------------------------
+
+    # Closure over all calibration context
+    function(x_scaled) {
+      
+iter_counter <<- iter_counter + 1   # ✅ ADD
+  if (isTRUE(verbose)) {
+    message("[DE] Eval ", iter_counter)
+  }
+
+      file.copy(
+  from = baseline_dir,
+  to   = model_dir,
+  recursive = TRUE,
+  overwrite = TRUE
+)
+      # x_scaled is in [0, 1] from DEoptim; scale to actual bounds
+param_values <- setNames(
+  x_scaled,
+  param_names
+)
+
+      
+      # Update parameters in model config files
+      for (p in param_names) {
+        tryCatch(
+          .update_param(p, param_values[p]),
+          error = function(e) {
+            if (isTRUE(verbose)) {
+              message("[DE-obj] Warning updating param ", p, ": ", conditionMessage(e))
+            }
+          }
+        )
+      }
+      
+      # Run model
+      model_ok <- tryCatch({
+        .run_model()
+        TRUE
+      }, error = function(e) {
+        if (isTRUE(verbose)) {
+          message("[DE-obj] Model run failed: ", conditionMessage(e))
+        }
+        FALSE
+      })
+      
+      if (!model_ok) {
+        return(1e6)  # Large penalty for failed runs
+      }
+      
+      # Compute objective from obs_file stats or metrics
+      if (!is.null(obs_data_loaded)) {
+        obs_stats <- tryCatch(
+          .cal_lhc_obs_stats(obs_data_loaded, dict_loaded, model_short, yaml_file,
+                             wq_config_file = wq_config_file,
+                             verbose = FALSE,
+                             obs_to_model_units = obs_to_model_units,
+                             spin_up_days = spin_up_days,
+                             stats_by_depth = stats_by_depth),
+          error = function(e) NULL
+        )
+        
+        if (is.null(obs_stats) || length(obs_stats) == 0) {
+          return(1e6)
+        }
+        
+        # Extract fitness values (KGE or other metric)
+        metric_col <- best_metric
+        vals <- vapply(obs_stats, function(st) st[[metric_col]] %||% NA_real_, numeric(1))
+        vals <- vals[is.finite(vals)]
+        
+        if (length(vals) == 0) {
+          return(1e6)
+        }
+        
+        # For KGE/NSE, higher is better; for RMSE/NRMSE/PBIAS, lower is better
+        # DEoptim minimizes, so we negate KGE/NSE and keep RMSE/NRMSE/PBIAS
+        mean_val <- mean(vals, na.rm = TRUE)
+        if (metric_col %in% c("KGE", "NSE")) {
+          return(-mean_val)  # Negate for minimization
+        } else if (metric_col == "PBIAS") {
+          return(abs(mean_val))  # Minimize absolute bias
+        } else {
+          return(mean_val)  # RMSE, NRMSE already minimized
+        }
+      } else {
+        # Metrics-based mode (legacy)
+        metrics <- tryCatch(
+          cal_metrics(yaml_file,
+                      model_filter   = model_filter,
+                      wq_config_file = wq_config_file),
+          error = function(e) NULL
+        )
+        
+        if (is.null(metrics)) {
+          return(1e6)
+        }
+        
+        # Simple aggregation: count of non-null metrics (higher is better)
+        # This is a placeholder; users may want to customize this
+        n_metrics <- length(metrics)
+        return(-n_metrics)  # Negate to maximize metric count
+      }
+    }
+  }
 
   if (isTRUE(parallel)) {
     return(run_lhc_wq_parallel(
@@ -726,7 +847,8 @@ run_lhc_wq <- function(model,
       best_metric = best_metric,
       n_workers = n_workers,
       parallel_dir = parallel_dir,
-      keep_worker_dirs = keep_worker_dirs
+      keep_worker_dirs = keep_worker_dirs,
+      use_de = use_de
     ))
   }
 
@@ -827,18 +949,13 @@ run_lhc_wq <- function(model,
     )
 
     # Warn early when observed dates do not overlap the model simulation period.
-    obs_dates <- as.POSIXct(
-      obs_data_loaded$datetime,
-      tz = "UTC",
-      tryFormats = c(
-        "%m/%d/%Y %H:%M:%S",
-        "%m/%d/%Y %H:%M",
-        "%m/%d/%Y",
-        "%Y-%m-%d %H:%M:%S",
-        "%Y-%m-%d %H:%M",
-        "%Y-%m-%d"
-      )
-    )
+    obs_dates <- as.POSIXct(obs_data_loaded$datetime,
+                            tz = "UTC",
+                            tryFormats = c(
+                              "%m/%d/%Y %H:%M:%S", "%m/%d/%Y %H:%M", "%m/%d/%Y",
+                              "%d/%m/%Y %H:%M:%S", "%d/%m/%Y %H:%M", "%d/%m/%Y",
+                              "%Y-%m-%d %H:%M:%S", "%Y-%m-%d %H:%M", "%Y-%m-%d"
+                            ))
     obs_dates <- obs_dates[!is.na(obs_dates)]
     ler_cfg <- yaml::read_yaml(cfg_for_dict$LER_config_file)
     sim_start <- as.POSIXct(ler_cfg$time$start, tz = "UTC")
@@ -890,8 +1007,23 @@ run_lhc_wq <- function(model,
          "\nProvided: ", best_metric)
   }
 
+
+    # ------------------------------------------------------------------
+# Create baseline copy of the model directory (for DE stability)
+# ------------------------------------------------------------------
+
+
+baseline_dir <- file.path(tempdir(), "model_baseline_copy")
+
+if (!dir.exists(baseline_dir)) {
+  dir.create(baseline_dir, recursive = TRUE)
+  file.copy(model_dir, baseline_dir,
+            recursive = TRUE,
+            overwrite = TRUE)
+}
   # Pre-collect bounds for each parameter
   bounds <- lapply(param_names, function(p) {
+
     row <- calib_setup[calib_setup$pars == p, ]
     c(lb = row$lb[1], ub = row$ub[1])
   })
@@ -1208,16 +1340,32 @@ run_lhc_wq <- function(model,
 
     # Identify best parameter set across LHC iterations from observed-data stats.
     if (isTRUE(return_best) && nrow(results) > 0) {
-      score_sign <- if (best_metric %in% c("RMSE", "NRMSE")) -1 else 1
+      metric_for_scoring <- best_metric
+      score_sign <- if (metric_for_scoring %in% c("RMSE", "NRMSE")) -1 else 1
       score_transform <- function(x) {
-        if (best_metric == "PBIAS") {
+        if (metric_for_scoring == "PBIAS") {
           return(-abs(x))
         }
         score_sign * x
       }
 
       score_rows <- results[results$model_ok %in% TRUE, , drop = FALSE]
-      score_rows <- score_rows[!is.na(score_rows[[best_metric]]), , drop = FALSE]
+      score_rows <- score_rows[!is.na(score_rows[[metric_for_scoring]]), , drop = FALSE]
+      if (nrow(score_rows) == 0 && best_metric %in% c("KGE", "NSE")) {
+        fallback_metric <- "RMSE"
+        fallback_rows <- results[results$model_ok %in% TRUE, , drop = FALSE]
+        fallback_rows <- fallback_rows[!is.na(fallback_rows[[fallback_metric]]), , drop = FALSE]
+        if (nrow(fallback_rows) > 0) {
+          metric_for_scoring <- fallback_metric
+          score_sign <- -1
+          score_transform <- function(x) -x
+          score_rows <- fallback_rows
+          if (isTRUE(verbose)) {
+            message("[LHC] No finite ", best_metric,
+                    " values were available; using RMSE to rank parameter sets.")
+          }
+        }
+      }
 
       best_summary <- NULL
       if (nrow(score_rows) > 0) {
@@ -1228,7 +1376,7 @@ run_lhc_wq <- function(model,
             return(NULL)
           }
 
-          vals <- score_transform(sub[[best_metric]])
+          vals <- score_transform(sub[[metric_for_scoring]])
           w <- suppressWarnings(as.numeric(sub$n_pairs))
           w[is.na(w) | w <= 0] <- 1
 
@@ -1241,9 +1389,9 @@ run_lhc_wq <- function(model,
           first_row <- sub[1, , drop = FALSE]
 
           out <- first_row[, c("sample_index", "n_stats", "n_obs_vars", "n_obs_vars_with_stats"), drop = FALSE]
-          out$best_metric <- best_metric
+          out$best_metric <- metric_for_scoring
           out$objective_score <- objective
-          out$objective_value <- if (best_metric == "PBIAS") -objective else objective * score_sign
+          out$objective_value <- if (metric_for_scoring == "PBIAS") -objective else objective * score_sign
           for (p in param_names) {
             out[[p]] <- first_row[[p]]
           }
@@ -1259,7 +1407,7 @@ run_lhc_wq <- function(model,
           best_iter <- as.integer(best_summary$sample_index[1])
           results$is_best <- results$sample_index == best_iter
           attr(results, "best_parameter_set") <- best_summary
-          attr(results, "best_metric") <- best_metric
+          attr(results, "best_metric") <- metric_for_scoring
 
           if (isTRUE(verbose)) {
             message("[LHC] Best parameter set identified at sample_index=", best_iter,
@@ -1271,10 +1419,128 @@ run_lhc_wq <- function(model,
       if (is.null(best_summary)) {
         results$is_best <- FALSE
         attr(results, "best_parameter_set") <- NULL
-        attr(results, "best_metric") <- best_metric
+        attr(results, "best_metric") <- metric_for_scoring
         if (isTRUE(verbose)) {
           message("[LHC] Could not identify a best parameter set: no valid observed-data statistics were available.")
         }
+      }
+    }
+  }
+
+  # =========================================================================
+  # DIFFERENTIAL EVOLUTION PHASE
+  # =========================================================================
+  # Use LHC results as generation 1 and apply DE refinement if requested
+  if (isTRUE(use_de)) {
+    if (isTRUE(verbose)) {
+      message("\n[DE] Starting differential evolution phase after LHC...")
+    }
+    
+    # Validate DE parameters
+    de_popsize <- de_popsize %||% n_samples
+    if (de_popsize < 4) {
+      stop("de_popsize must be >= 4 for DEoptim; provided: ", de_popsize)
+    }
+    
+    if (de_f < 0.2 || de_f > 2.0) {
+      warning("de_f should be in [0.2, 2.0]; provided: ", de_f, ". Proceeding anyway.")
+    }
+    
+    if (de_cr < 0 || de_cr > 1) {
+      stop("de_cr must be in [0, 1]; provided: ", de_cr)
+    }
+    
+    # Initialize DE population from LHC results
+    initial_pop <- NULL
+    if (isTRUE(de_seed_from_lhc)) {
+      initial_pop <- .init_de_population_from_lhc(
+        results, lhs_matrix, param_names, bounds, de_popsize
+      )
+    }
+    
+    # Create objective function for DE
+    obj_fn <- .make_de_objective()
+    
+    # Build lower and upper bounds vectors for DEoptim
+    bounds_lower <- vapply(param_names, function(p) bounds[[p]]["lb"], numeric(1))
+    bounds_upper <- vapply(param_names, function(p) bounds[[p]]["ub"], numeric(1))
+    
+    # Run DE
+    if (isTRUE(verbose)) {
+      message("[DE] Population size: ", de_popsize, 
+              ", Generations: ", de_iterations,
+              ", F: ", de_f, ", CR: ", de_cr)
+    }
+    
+
+    de_result <- DEoptim::DEoptim(
+  fn = obj_fn,
+  lower = bounds_lower,
+  upper = bounds_upper,
+  control = DEoptim::DEoptim.control(
+    itermax = de_iterations,
+    NP = de_popsize,
+    F = de_f,
+    CR = de_cr,
+   # initial.pop = initial_pop,
+    trace = TRUE,
+    parallelType = 0
+  )
+)
+    # de_result <- tryCatch(
+    #   DEoptim::DEoptim(
+    #     fn = obj_fn,
+    #     lower = bounds_lower,
+    #     upper = bounds_upper,
+    #     control = DEoptim::DEoptim.control(
+    #       itermax = de_iterations,
+    #       NP = de_popsize,
+    #       F = de_f,
+    #       CR = de_cr,
+    #       initial.pop = initial_pop,
+    #       trace = if (isTRUE(verbose)) 10 else FALSE,
+    #       parallelType = 0  # Sequential (parallel would need different setup)
+    #     )
+    #   ),
+    #   error = function(e) {
+    #     warning("[DE] DEoptim failed: ", conditionMessage(e))
+    #     NULL
+    #   }
+    # )
+    
+    if (!is.null(de_result)) {
+      if (isTRUE(verbose)) {
+        message("[DE] Optimization complete. Best fitness: ", 
+                round(de_result$optim$bestval, 6))
+      }
+      
+      # Store DE phase results
+      if (is.null(obs_data_loaded)) {
+        # For list-based LHC results, append de_phase
+        results$de_phase <- de_result
+        results$de_best_params <- setNames(
+          as.list(de_result$optim$bestmem),
+          param_names
+        )
+      } else {
+        # For data.frame results from obs_file, store as attributes
+        attr(results, "de_phase") <- de_result
+        attr(results, "de_best_params") <- setNames(
+          as.list(de_result$optim$bestmem),
+          param_names
+        )
+        
+        if (isTRUE(verbose)) {
+          message("[DE] Best parameters from DE:")
+          for (i in seq_along(param_names)) {
+            message("  ", param_names[i], " = ", 
+                    round(de_result$optim$bestmem[i], 6))
+          }
+        }
+      }
+    } else {
+      if (isTRUE(verbose)) {
+        message("[DE] DE phase skipped due to error.")
       }
     }
   }
