@@ -48,13 +48,27 @@ cal_stats <- function(observed, predicted) {
   data <- remove_na(observed, predicted)
   observed <- data$obs
   predicted <- data$pred
+
+  if (length(observed) == 0L) {
+    return(list(
+      residual = numeric(0),
+      NSE = NA_real_,
+      RMSE = NA_real_,
+      NRMSE = NA_real_,
+      PBIAS = NA_real_,
+      lnlikelihood = NA_real_,
+      KGE = NA_real_
+    ))
+  }
   
   
   # NSE Function
   calculate_nse <- function(observed, predicted) {
-    
-    NSE <- 1 - (sum((observed - predicted)^2) / sum((observed - mean(observed))^2))
-    
+    denom <- sum((observed - mean(observed))^2)
+    if (!is.finite(denom) || denom <= 0) {
+      return(NA_real_)
+    }
+    NSE <- 1 - (sum((observed - predicted)^2) / denom)
     return(NSE)
   }
   
@@ -72,7 +86,11 @@ cal_stats <- function(observed, predicted) {
     
     residual <- observed-predicted
     RMSE <- sqrt(sum(residual^2)/length(observed))
-    NRMSE <- RMSE/(max(observed)- min(observed))
+    rng <- max(observed) - min(observed)
+    if (!is.finite(rng) || rng == 0) {
+      return(NA_real_)
+    }
+    NRMSE <- RMSE/rng
     
     return(NRMSE)
   }
@@ -88,8 +106,14 @@ cal_stats <- function(observed, predicted) {
   }
   
   calculate_lnlikelihood <- function(observed, predicted) {
-    
-    return(sum(dnorm(observed, mean = predicted, log = TRUE)))
+    if (length(observed) < 2L) {
+      return(NA_real_)
+    }
+    sd_obs <- stats::sd(observed)
+    if (!is.finite(sd_obs) || sd_obs <= 0) {
+      return(NA_real_)
+    }
+    return(sum(stats::dnorm(observed, mean = predicted, sd = sd_obs, log = TRUE)))
     
   }
   
@@ -98,7 +122,11 @@ cal_stats <- function(observed, predicted) {
   NRMSE<-  calculate_nrmse (observed, predicted)
   PBIAS <-   calculate_pbias (observed, predicted)
   lnlikelihood<- calculate_lnlikelihood (observed, predicted)
-  KGE <- hydroGOF::KGE(observed, predicted)
+  KGE <- if (length(observed) >= 2L) {
+    suppressWarnings(hydroGOF::KGE(observed, predicted))
+  } else {
+    NA_real_
+  }
   residual <- observed-predicted
   return(list(residual =residual, NSE = NSE, RMSE = RMSE, NRMSE = NRMSE, PBIAS =PBIAS, lnlikelihood = lnlikelihood, KGE = KGE))
   
