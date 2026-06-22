@@ -407,12 +407,18 @@
 # folder = "."
 
 set_up_configs <- function(config_file, folder = "."){
-  coerce_default <- function(x) {
+ coerce_default <- function(x) {
   # keep NA as NA
   if (length(x) == 0 || is.null(x)) return(NA)
 
-  # if it already is logical/numeric, return it unchanged
-  if (is.logical(x) || is.numeric(x)) return(x)
+  # if it already is logical/numeric, refine numeric case
+  if (is.logical(x)) return(x)
+  if (is.numeric(x)) {
+    if (all(!is.na(x)) && all(x == floor(x))) {
+      return(as.integer(x))
+    }
+    return(x)
+  }
 
   x_chr <- trimws(as.character(x))
   if (is.na(x_chr) || x_chr == "") return(NA)
@@ -424,11 +430,19 @@ set_up_configs <- function(config_file, folder = "."){
 
   # Numeric
   num <- suppressWarnings(as.numeric(x_chr))
-  if (!is.na(num)) return(num)
+  if (!is.na(num)) {
+  
+    if (num == floor(num)) {
+      return(as.integer(num))
+    } else {
+      return(num)
+    }
+  }
 
   # Otherwise character
   x_chr
 }
+
 
 
 
