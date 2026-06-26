@@ -456,13 +456,13 @@ set_up_configs <- function(config_file, folder = "."){
     if(models_coupled[i] == "GOTM-Selmaprotbas"){
       dict <- LakeEnsemblR_WQ_dictionary[LakeEnsemblR_WQ_dictionary$model == "selmaprotbas",]
       
-      lst <- list()
+      lst <- list(instances = list())
       
       # Biogeochemistry
       lst[["instances"]][["selmaprotbas"]] <- list(model = "selmaprotbas/selmaprotbas",
                                                    parameters = list(),
                                                    initialization = list())
-      dict_biogeochem <- dict[!(dict$module %in% c("phytoplankton", "zooplankton")),]
+      dict_biogeochem <- dict[!(dict$module %in% c("phytoplankton", "zooplankton", "dom")),]
       
       for(j in seq_len(nrow(dict_biogeochem))){
         path <- strsplit(as.character(dict_biogeochem[j, "path"]), "/")[[1]]
@@ -521,6 +521,50 @@ for (j in c("phytoplankton", "zooplankton")) {
     }
   }
 }
+# =========================
+# DOM MODULE FROM DICTIONARY
+# =========================
+
+
+
+use_dom <- TRUE
+
+if (!is.null(lst_config[["dom"]][["use"]])) {
+  use_dom <- isTRUE(lst_config[["dom"]][["use"]])
+}
+
+
+if (use_dom) {
+
+  dict_dom <- dict[dict$module == "dom", , drop = FALSE]
+
+  dom_instance <- list(
+    model = "selmaprotbas/dom",
+    parameters = list(),
+    initialization = list()
+  )
+
+  for (j in seq_len(nrow(dict_dom))) {
+
+    path <- strsplit(as.character(dict_dom[j, "path"]), "/")[[1]]
+
+    if (length(path) == 3) {
+      section <- path[2]
+      var <- path[3]
+
+      dom_instance[[section]][[var]] <-
+        coerce_default(dict_dom[j, "default"])
+    }
+  }
+
+  # IMPORTANT: force overwrite AFTER everything else
+ lst[["instances"]] <- modifyList(
+  if (is.null(lst[["instances"]])) list() else lst[["instances"]],
+  list(dom = dom_instance)
+)
+
+}
+
 
       
       filename <- lst_config[["config_files"]][[models_coupled[i]]]

@@ -386,7 +386,15 @@ set_coupling <- function(config_file, folder){
               coupling[["fl_si"]] <- "selmaprotbas/fl_si"
             }
           }
-        }else if(selmaprotbas_model == "selmaprotbas/zooplankton"){
+         
+#  DOM coupling
+          if (!is.null(wq_config[["instances"]][[j]][["parameters"]][["couple_dom"]]) &&
+              wq_config[["instances"]][[j]][["parameters"]][["couple_dom"]]) {
+
+              coupling[["dom_a"]] <- "dom/dom_a" 
+        }
+        }
+        else if(selmaprotbas_model == "selmaprotbas/zooplankton"){
 
 # Start from whatever coupling already exists in the SELMA fabm.yaml
   existing_coupling <- wq_config[["instances"]][[j]][["coupling"]]
@@ -403,7 +411,17 @@ set_coupling <- function(config_file, folder){
           
         # keep prey1.. etc from existing, but ensure base keys are set
   coupling <- modifyList(existing_coupling, base_coupling)
+
+  
+    #  DOM coupling
+          if (!is.null(wq_config[["instances"]][[j]][["parameters"]][["couple_dom"]]) &&
+              wq_config[["instances"]][[j]][["parameters"]][["couple_dom"]]) {
+            
+            coupling[["dom_a"]] <- "dom/dom_a"
+          }
         }
+
+  
         
         if(exists("coupling")){
           wq_config[["instances"]][[j]][["coupling"]] <- coupling
@@ -412,13 +430,53 @@ set_coupling <- function(config_file, folder){
         
       }
    
+
+# DOM MODULE HANDLING
+      
+      
+      # Detect if DOM is needed
+      use_dom <- any(sapply(wq_config[["instances"]], function(inst) {
+        !is.null(inst[["parameters"]][["couple_dom"]]) &&
+          inst[["parameters"]][["couple_dom"]]
+      }))
+      
+      # Add DOM module if missing
+      if (use_dom && is.null(wq_config[["instances"]][["dom"]])) {
+        
+        wq_config[["instances"]][["dom"]] <- list(
+          model = "selmaprotbas/dom",
+          parameters = list(),      # ✅ handled by dictionary
+          coupling = list(),
+          initialization = list()
+        )
+      }
+      
+      # Ensure DOM coupling is correct
+      if (!is.null(wq_config[["instances"]][["dom"]])) {
+        
+        existing_dom_coupling <- wq_config[["instances"]][["dom"]][["coupling"]]
+        if (is.null(existing_dom_coupling)) existing_dom_coupling <- list()
+        
+        required_dom_coupling <- list(
+          o2   = "selmaprotbas/o2",
+          nn   = "selmaprotbas/nn",
+          aa   = "selmaprotbas/aa",
+          dd_c = "selmaprotbas/dd_c"
+        )
+        
+        wq_config[["instances"]][["dom"]][["coupling"]] <-
+          modifyList(existing_dom_coupling, required_dom_coupling)
+      }
+
+
+
 wq_config <- add_selma_prey_to_scaffold(wq_config, lst_config, zoo_instance = "zooplankton")
 
       write.config(wq_config,
                    file.path(folder,
                              lst_config[["config_files"]][[models_coupled[i]]]),
                    write.type = "yaml")
-      
+           
     }else if(wq_models[i] == "wet"){
       wq_config <- read.config(file.path(folder,
                                          lst_config[["config_files"]][[models_coupled[i]]]))
