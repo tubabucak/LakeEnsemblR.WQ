@@ -10,7 +10,8 @@
                                verbose = FALSE,
                                obs_to_model_units = TRUE,
                                spin_up_days = NULL,
-                               stats_by_depth = FALSE) {
+                               stats_by_depth = FALSE,
+                               target_variables = NULL) {
 
                                
 
@@ -185,6 +186,14 @@
 
   obs_vars   <- unique(obs_data$variable_global_name)
   obs_vars   <- obs_vars[!is.na(obs_vars) & nzchar(as.character(obs_vars))]
+  
+  # Filter to target variables
+
+  if (!is.null(target_variables)) {
+    obs_vars <- obs_vars[obs_vars %in% target_variables]
+  }
+  
+
   stats_out  <- list()
   skip_counts <- list()
   .mark_skip <- function(reason) {
@@ -575,6 +584,7 @@
 #'   when \code{return_best = TRUE}. One of \code{"KGE"}, \code{"NSE"},
 #'   \code{"RMSE"}, \code{"NRMSE"}, or \code{"PBIAS"}. Default is
 #'   \code{"KGE"}.
+#' @param target_variables Character. Vector of variables to be included in the objective function
 #' @param parallel Logical. If \code{TRUE}, run in parallel by delegating to
 #'   \code{run_lhc_wq_parallel()}. Default is \code{FALSE}.
 #' @param n_workers Integer or \code{NULL}. Number of workers used when
