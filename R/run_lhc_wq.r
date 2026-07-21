@@ -173,10 +173,14 @@
                                model_dict$variable_model_name)
   model_dict <- model_dict[!unresolved_template, , drop = FALSE]
 
-  model_key <- names(cfg$model_folders)[toupper(names(cfg$model_folders)) == toupper(model_short)][1]
+model_key <- names(cfg$model_folders)[toupper(names(cfg$model_folders)) == toupper(model_short)][1]
   available_nc_vars <- NULL
   if (!is.na(model_key) && toupper(model_short) != "SIMSTRAT") {
-    nc_file <- file.path(cfg$model_folders[[model_key]], "output.nc")
+    # Force it to check relative to where the current configuration file resides
+    nc_file <- file.path(dirname(yaml_file), "output.nc")
+    if (!file.exists(nc_file)) {
+      nc_file <- file.path(cfg$model_folders[[model_key]], "output.nc") # fallback
+    }
     if (file.exists(nc_file)) {
       nc <- ncdf4::nc_open(nc_file)
       on.exit(ncdf4::nc_close(nc), add = TRUE)
@@ -370,11 +374,11 @@
     sim_df <- sim_df[!is.na(sim_df$datetime), , drop = FALSE]
 
      
-    if (nrow(sim_df) > 0) {
-  message("[DEBUG] Sim time range: ",
-          format(min(sim_df$datetime)), " -> ",
-          format(max(sim_df$datetime)))
-}
+ #   if (nrow(sim_df) > 0) {
+ # message("[DEBUG] Sim time range: ",
+ #         format(min(sim_df$datetime)), " -> ",
+ #         format(max(sim_df$datetime)))
+#}
     if (nrow(sim_df) == 0L) {
       .mark_skip("sim_datetime_unparsed")
       next
@@ -651,7 +655,9 @@ run_lhc_wq <- function(model,
                        de_popsize      = NULL,
                        de_f            = 0.8,
                        de_cr           = 0.9,
-                       de_seed_from_lhc = TRUE) {
+                       de_seed_from_lhc = TRUE,
+                       de_parallel     = FALSE,
+                       de_n_workers    = NULL) {
 
   # Helper: Initialize DE population from best LHC results
   .init_de_population_from_lhc <- function(lhc_results, lhs_matrix_ref,
@@ -723,117 +729,172 @@ run_lhc_wq <- function(model,
   lhs_matrix_ref[top_indices, , drop = FALSE]
 }
 
-  # Helper: Create objective function for DE optimization
-  .make_de_objective <- function() {
+.make_de_objective <- function(obs_data_loaded, dict_loaded, model_short, yaml_file,
+                               wq_config_file, obs_to_model_units, spin_up_days,
+                               stats_by_depth, target_variables, best_metric,
+                               model_dir, param_names, calib_setup,
+                               model = NULL, verbose = FALSE,
+                               yaml_file_model = "gotm.yaml", par_file = "simstrat.par") {
+  
+  thread_eval_counter <- 0 
+  best_metric_upper <- toupper(as.character(best_metric[1]))
+  score_sign <- if (best_metric_upper %in% c("RMSE", "NRMSE")) 1 else -1
+  stats_fn <- .cal_lhc_obs_stats
+  
+  function(x_scaled) {
+    thread_eval_counter <<- thread_eval_counter + 1
 
-    iter_counter <- 0 
-    # ------------------------------------------------------------------
-# Reset model files to clean baseline before applying parameters
-# ------------------------------------------------------------------
+    cat(sprintf(
+      "[DE eval %d] pid=%d time=%s x=%s\n",
+      thread_eval_counter,
+      Sys.getpid(),
+      format(Sys.time(), "%H:%M:%OS3"),
+      paste(round(x_scaled, 4), collapse = ", ")
+    ), file = stdout(), fill = TRUE)
+    flush.console()
 
-    # Closure over all calibration context
-    function(x_scaled) {
-      
-iter_counter <<- iter_counter + 1   # ✅ ADD
-  if (isTRUE(verbose)) {
-    message("[DE] Eval ", iter_counter)
-  }
+    unique_timestamp <- format(Sys.time(), "%Y%m%d_%H%M%OS3")
+    unique_run_id <- paste0("de_worker_pid", Sys.getpid(), "_", unique_timestamp, "_", sample(100000:999999, 1))
+    project_root <- dirname(model_dir)
+    eval_dir <- file.path(project_root, unique_run_id)
+    debug_dir <- file.path(model_dir, "de_debug_logs")
+    if (!dir.exists(debug_dir)) dir.create(debug_dir, recursive = TRUE, showWarnings = FALSE)
+    debug_log <- file.path(debug_dir, sprintf("de_worker_%s_%s.log", Sys.getpid(), thread_eval_counter))
 
-      file.copy(
-  from = baseline_dir, 
-  to   = model_dir,
-  recursive = TRUE,
-  overwrite = TRUE
-)
-      # x_scaled is in [0, 1] from DEoptim; scale to actual bounds
-param_values <- setNames(
-  x_scaled,
-  param_names
-)
+    if (dir.exists(eval_dir)) unlink(eval_dir, recursive = TRUE, force = TRUE)
+    dir.create(eval_dir, showWarnings = FALSE, recursive = TRUE)
+    on.exit(unlink(eval_dir, recursive = TRUE, force = TRUE), add = TRUE)
 
-      
-      # Update parameters in model config files
-      for (p in param_names) {
-        tryCatch(
-          .update_param(p, param_values[p]),
-          error = function(e) {
-            if (isTRUE(verbose)) {
-              message("[DE-obj] Warning updating param ", p, ": ", conditionMessage(e))
-            }
+    cat(sprintf("[%s] DE objective started on worker pid=%s eval=%s uid=%s dir=%s\n",
+                format(Sys.time(), "%Y-%m-%d %H:%M:%OS3"), Sys.getpid(), thread_eval_counter,
+                unique_run_id, eval_dir),
+        file = debug_log, append = TRUE)
+
+    all_files <- list.files(model_dir, full.names = TRUE)
+    files_to_copy <- all_files[!grepl("de_worker_", basename(all_files))]
+    file.copy(from = files_to_copy, to = eval_dir, recursive = TRUE, overwrite = TRUE)
+
+    root_yamls <- list.files(project_root, pattern = "\\.yaml$", full.names = TRUE)
+    if (length(root_yamls) > 0) {
+      file.copy(from = root_yamls, to = eval_dir, overwrite = TRUE)
+    }
+
+    sandbox_yaml_path <- file.path(eval_dir, yaml_file)
+    if (file.exists(sandbox_yaml_path)) {
+      yaml_content <- yaml::read_yaml(sandbox_yaml_path)
+      model_key <- names(yaml_content$model_folders)[toupper(names(yaml_content$model_folders)) == toupper(model_short)][1]
+      if (!is.na(model_key)) {
+        yaml_content$model_folders[[model_key]] <- file.path(eval_dir, "Output")
+      }
+      yaml::write_yaml(yaml_content, sandbox_yaml_path)
+      cat("\n", file = sandbox_yaml_path, append = TRUE)
+    }
+
+    for (i in seq_along(param_names)) {
+      .update_param(
+        p = param_names[i], value = x_scaled[i], current_dir = eval_dir,
+        calib_setup. = calib_setup, model. = model, wq_config_file. = wq_config_file
+      )
+    }
+
+    run_model_in_eval_dir <- function() {
+      switch(toupper(model),
+        "GLM-AED2" = {
+          if (!requireNamespace("GLM3r", quietly = TRUE)) {
+            stop("Package 'GLM3r' is required to run GLM-AED2.")
           }
-        )
-      }
-      
-      # Run model
-      model_ok <- tryCatch({
-        .run_model()
-        TRUE
-      }, error = function(e) {
-        if (isTRUE(verbose)) {
-          message("[DE-obj] Model run failed: ", conditionMessage(e))
-        }
-        FALSE
-      })
-      
-      if (!model_ok) {
-        return(1e6)  # Large penalty for failed runs
-      }
-      
-      # Compute objective from obs_file stats or metrics
-      if (!is.null(obs_data_loaded)) {
-        obs_stats <- tryCatch(
-          .cal_lhc_obs_stats(obs_data_loaded, dict_loaded, model_short, yaml_file,
-                             wq_config_file = wq_config_file,
-                             verbose = FALSE,
-                             obs_to_model_units = obs_to_model_units,
-                             spin_up_days = spin_up_days,
-                             stats_by_depth = stats_by_depth),
-          error = function(e) NULL
-        )
-        
-        if (is.null(obs_stats) || length(obs_stats) == 0) {
-          return(1e6)
-        }
-        
-        # Extract fitness values (KGE or other metric)
-        metric_col <- best_metric
-        vals <- vapply(obs_stats, function(st) st[[metric_col]] %||% NA_real_, numeric(1))
-        vals <- vals[is.finite(vals)]
-        
-        if (length(vals) == 0) {
-          return(1e6)
-        }
-        
-        # For KGE/NSE, higher is better; for RMSE/NRMSE/PBIAS, lower is better
-        # DEoptim minimizes, so we negate KGE/NSE and keep RMSE/NRMSE/PBIAS
-        mean_val <- mean(vals, na.rm = TRUE)
-        if (metric_col %in% c("KGE", "NSE")) {
-          return(-mean_val)  # Negate for minimization
-        } else if (metric_col == "PBIAS") {
-          return(abs(mean_val))  # Minimize absolute bias
-        } else {
-          return(mean_val)  # RMSE, NRMSE already minimized
-        }
+          GLM3r::run_glm(sim_folder = eval_dir, verbose = verbose)
+        },
+        "GOTM-WET" = {
+          if (!requireNamespace("WETr", quietly = TRUE)) {
+            stop("Package 'WETr' is required to run GOTM-WET.")
+          }
+          WETr::run_wet(sim_folder = eval_dir, yaml_file = yaml_file_model, verbose = verbose)
+        },
+        "GOTM-SELMAPROTBAS" = {
+          if (!requireNamespace("SelmaprotbasR", quietly = TRUE)) {
+            stop("Package 'SelmaprotbasR' is required to run GOTM-Selmaprotbas.")
+          }
+          SelmaprotbasR::run_gotm_sp(sim_folder = eval_dir, yaml_file = yaml_file_model, verbose = verbose)
+        },
+        "SIMSTRAT-AED2" = {
+          if (!requireNamespace("SimstratR", quietly = TRUE)) {
+            stop("Package 'SimstratR' is required to run Simstrat-AED2.")
+          }
+          SimstratR::run_simstrat(sim_folder = eval_dir, par_file = par_file, verbose = verbose)
+        },
+        stop("Unsupported model: ", model)
+      )
+    }
+
+    model_ok <- tryCatch({
+      old_wd <- getwd()
+      setwd(eval_dir)
+      on.exit(setwd(old_wd), add = TRUE)
+      run_model_in_eval_dir()
+      cat(sprintf("[%s] worker pid=%s eval=%s uid=%s model run OK dir=%s\n",
+                  format(Sys.time(), "%Y-%m-%d %H:%M:%OS3"), Sys.getpid(), thread_eval_counter,
+                  unique_run_id, eval_dir),
+          file = debug_log, append = TRUE)
+      TRUE
+    }, error = function(e) {
+      cat(sprintf("[%s] worker pid=%s eval=%s model run ERROR: %s\n",
+                  format(Sys.time(), "%Y-%m-%d %H:%M:%OS3"), Sys.getpid(), thread_eval_counter, e$message),
+          file = debug_log, append = TRUE)
+      message("--- MODEL ENGINE RUN ERROR: ", e$message)
+      FALSE
+    })
+
+    if (!model_ok) return(1e6)
+
+    if (!is.null(obs_data_loaded)) {
+      obs_stats <- stats_fn(
+        obs_data           = obs_data_loaded,
+        dict               = dict_loaded,
+        model_short        = model_short,
+        yaml_file          = sandbox_yaml_path,
+        wq_config_file     = file.path(eval_dir, wq_config_file),
+        verbose            = TRUE,
+        obs_to_model_units = obs_to_model_units,
+        spin_up_days       = spin_up_days,
+        stats_by_depth     = stats_by_depth,
+        target_variables   = target_variables
+      )
+
+      if (is.null(obs_stats) || length(obs_stats) == 0L) return(Inf)
+
+      if (is.data.frame(obs_stats)) {
+        vals <- obs_stats[[best_metric_upper]]
+        w    <- suppressWarnings(as.numeric(obs_stats$n_pairs))
       } else {
-        # Metrics-based mode (legacy)
-        metrics <- tryCatch(
-          cal_metrics(yaml_file,
-                      model_filter   = model_filter,
-                      wq_config_file = wq_config_file),
-          error = function(e) NULL
-        )
-        
-        if (is.null(metrics)) {
-          return(1e6)
-        }
-        
-        # Simple aggregation: count of non-null metrics (higher is better)
-        # This is a placeholder; users may want to customize this
-        n_metrics <- length(metrics)
-        return(-n_metrics)  # Negate to maximize metric count
+        vals <- vapply(obs_stats, function(st) {
+          if (is.null(st) || !is.list(st)) return(NA_real_)
+          st[[best_metric_upper]]
+        }, numeric(1))
+        w <- vapply(obs_stats, function(st) {
+          if (is.null(st) || !is.list(st)) return(NA_real_)
+          suppressWarnings(as.numeric(st$n_pairs))
+        }, numeric(1))
       }
+
+      w[is.na(w) | w <= 0] <- 1
+      ok <- is.finite(vals) & is.finite(w)
+      if (!any(ok)) return(Inf)
+
+      mean_metric <- stats::weighted.mean(vals[ok], w = w[ok], na.rm = TRUE)
+      unlink(eval_dir, recursive = TRUE, force = TRUE)
+
+      if (best_metric_upper == "PBIAS") {
+        return(mean(abs(vals[ok]), na.rm = TRUE))
+      } else {
+        return(mean_metric * score_sign)
+      }
+    } else {
+      unlink(eval_dir, recursive = TRUE, force = TRUE)
+      return(Inf)
     }
   }
+}
 
   if (isTRUE(parallel)) {
     return(run_lhc_wq_parallel(
@@ -859,7 +920,14 @@ param_values <- setNames(
       n_workers = n_workers,
       parallel_dir = parallel_dir,
       keep_worker_dirs = keep_worker_dirs,
-      use_de = use_de
+      use_de = use_de,
+      de_parallel = de_parallel,
+      de_n_workers = de_n_workers,
+      de_iterations = de_iterations,
+      de_popsize = de_popsize,
+      de_f = de_f,
+      de_cr = de_cr,
+      de_seed_from_lhc = de_seed_from_lhc
     ))
   }
 
@@ -913,6 +981,7 @@ param_values <- setNames(
   if (!dir.exists(model_dir)) {
     stop("model_dir does not exist: ", model_dir)
   }
+  model_dir <- normalizePath(model_dir, winslash = "/", mustWork = TRUE)
 
   # Model-specific config file checks
   if (model_upper %in% c("GOTM-WET", "GOTM-SELMAPROTBAS")) {
@@ -1074,154 +1143,166 @@ if (!dir.exists(baseline_dir)) {
     )
   }
 
-  # Helper to update one parameter in .nml/.csv/.yaml file
-  .update_param <- function(p, value) {
-    rows <- calib_setup[calib_setup$pars == p, ]
-    for (k in seq_len(nrow(rows))) {
-      file_or_path <- as.character(rows$file[k])
-      param_path <- file.path(model_dir, file_or_path)
+.update_param <- function(p, value, current_dir = model_dir, calib_setup. = calib_setup, 
+                          model. = model, wq_config_file. = wq_config_file) {
+  
+  if (missing(current_dir)) current_dir <- get("model_dir", envir = parent.frame())
+  if (missing(calib_setup.)) calib_setup. <- get("calib_setup", envir = parent.frame())
+  if (missing(model.)) model. <- get("model", envir = parent.frame())
+  if (missing(wq_config_file.)) wq_config_file. <- get("wq_config_file", envir = parent.frame())
+  
+  model_upper <- toupper(model.)
+  rows <- calib_setup.[calib_setup.$param == p, ]
+  
+  for (k in seq_len(nrow(rows))) {
+    file_or_path <- as.character(rows$file[k])
+    param_path <- file.path(current_dir, file_or_path)
 
-      if (grepl("\\.nml$", file_or_path, ignore.case = TRUE)) {
-        nml <- glmtools::read_nml(param_path)
-        nml <- glmtools::set_nml(nml, p, value)
-        glmtools::write_nml(nml, param_path)
-
-      } else if (grepl("\\.csv$", file_or_path, ignore.case = TRUE)) {
-        df <- readr::read_csv(param_path, show_col_types = FALSE)
-        names(df) <- gsub("^['\"]|['\"]$", "", names(df))
-        pname_col <- intersect(c("p_name", "pname"), names(df))
-        if (length(pname_col) == 0) {
-          stop("Could not identify parameter name column ('p_name' or 'pname') in: ",
-               param_path)
-        }
-        df[[pname_col]] <- gsub("^['\"]|['\"]$", "", df[[pname_col]])
-
-        idx <- which(df[[pname_col]] == p)
-        if (length(idx) == 0) {
-          stop("Parameter '", p, "' not found in ", param_path)
-        }
-
-        group_col <- rows$group_name[k]
-        if (!is.na(group_col) && group_col %in% names(df)) {
-          df[idx, group_col] <- value
-        } else {
-          df[idx, 2:ncol(df)] <- value
-        }
-        readr::write_csv(df, param_path)
-
-      } else if (grepl("\\.yaml$|\\.yml$", file_or_path, ignore.case = TRUE)) {
-        gotmtools::set_yaml_value(param_path, label = p, value = value)
-
-      } else if (model_upper %in% c("GLM-AED2", "SIMSTRAT-AED2")) {
-        # Dictionary-style AED2 key path (e.g. aed2_oxygen/theta_sed_oxy)
-        if (!requireNamespace("configr", quietly = TRUE)) {
-          stop("Package 'configr' is required to resolve model config files.")
-        }
-
-        if (is.null(wq_config_file) || !nzchar(wq_config_file)) {
-          stop("'wq_config_file' must be provided when calib_setup$file contains ",
-               "dictionary-style AED2 paths (e.g. section/parameter).")
-        }
-
-        lst_cfg <- configr::read.config(wq_config_file)
-        cfg_files <- lst_cfg[["config_files"]]
-        model_cfg <- cfg_files[[model]]
-        if (is.null(model_cfg) || !nzchar(model_cfg)) {
-          cfg_names <- names(cfg_files)
-          cfg_idx <- which(toupper(cfg_names) == toupper(model))[1]
-          if (!is.na(cfg_idx)) {
-            model_cfg <- cfg_files[[cfg_idx]]
+    if (grepl("\\.nml$", file_or_path, ignore.case = TRUE)) {
+      
+      # 🔹 SAFE INTERCEPT: If it's an AED2 file, do NOT use glmtools!
+      if (model_upper %in% c("GLM-AED2", "SIMSTRAT-AED2") || grepl("aed2", basename(param_path), ignore.case = TRUE)) {
+        
+        path_parts <- strsplit(file_or_path, "/", fixed = TRUE)[[1]]
+        nml_lines <- readLines(param_path, warn = FALSE)
+        
+        # If it's a standard dictionary path format (e.g., "aed2_oxygen/Fsed_oxy")
+        if (length(path_parts) == 2L) {
+          target_sec <- paste0("&", trimws(path_parts[1]))
+          target_var <- trimws(path_parts[2])
+          
+          sec_idx <- which(grepl(paste0("^\\s*", target_sec, "\\b"), nml_lines, ignore.case = TRUE))
+          if (length(sec_idx) > 0) {
+            sec_start <- sec_idx[1]
+            # Find the end of this namelist block (marked by a forward slash)
+            slashes <- Jack <- which(grepl("^\\s*/\\s*$", nml_lines))
+            sec_end <- slashes[slashes > sec_start][1]
+            if (is.na(sec_end)) sec_end <- length(nml_lines)
+            
+            # Locate the parameter line within this block
+            var_pattern <- paste0("^(\\s*", target_var, "\\s*=\\s*)[^\\s,!;#]*")
+            var_idx <- which(grepl(var_pattern, nml_lines[sec_start:sec_end], ignore.case = TRUE))
+            
+            if (length(var_idx) > 0) {
+              actual_line <- sec_start + var_idx[1] - 1
+              nml_lines[actual_line] <- sub(var_pattern, paste0("\\1", value), nml_lines[actual_line], ignore.case = TRUE)
+              writeLines(nml_lines, param_path)
+              next # Move to next parameter safely!
+            }
           }
         }
-        if (is.null(model_cfg) || !nzchar(model_cfg)) {
-          stop("Could not resolve config file for model '", model,
-               "' from wq_config_file: ", wq_config_file,
-               ". Available keys: ", paste(names(cfg_files), collapse = ", "))
+        
+        # Fallback text substitution if the dictionary path layout varies
+        var_pattern <- paste0("^(\\s*", p, "\\s*=\\s*)[^\\s,!;#]*")
+        var_idx <- which(grepl(var_pattern, nml_lines, ignore.case = TRUE))
+        if (length(var_idx) > 0) {
+          nml_lines[var_idx[1]] <- sub(var_pattern, paste0("\\1", value), nml_lines[var_idx[1]], ignore.case = TRUE)
+          writeLines(nml_lines, param_path)
+          next
         }
-
-        # For Simstrat, config_files often points to simstrat.par (physics),
-        # while WQ parameters from AED2 dictionary paths belong in AED2 nml files.
-        if (model_upper == "SIMSTRAT-AED2" &&
-            grepl("\\.par$", model_cfg, ignore.case = TRUE)) {
-          model_cfg <- file.path(dirname(model_cfg), "aed2.nml")
-        }
-
-        module_k <- if ("module" %in% names(rows)) as.character(rows$module[k]) else NA_character_
-        if (module_k %in% c("phytoplankton", "zooplankton")) {
-          base_dir <- dirname(model_cfg)
-          model_cfg <- if (module_k == "phytoplankton") {
-            file.path(base_dir, "aed2_phyto_pars.nml")
-          } else {
-            file.path(base_dir, "aed2_zoop_pars.nml")
-          }
-        }
-
-        nml_candidates <- c(
-          file.path(model_dir, model_cfg),
-          file.path(dirname(model_dir), model_cfg),
-          model_cfg
-        )
-        nml_candidates <- unique(normalizePath(nml_candidates,
-                                               winslash = "/",
-                                               mustWork = FALSE))
-        nml_path <- nml_candidates[file.exists(nml_candidates)][1]
-        if (is.na(nml_path) || !nzchar(nml_path)) {
-          stop("Could not find resolved nml file for parameter '", p,
-               "'. Tried: ", paste(nml_candidates, collapse = ", "))
-        }
-
-        path_parts <- strsplit(file_or_path, "/", fixed = TRUE)[[1]]
-        if (length(path_parts) != 2L) {
-          stop("Unsupported AED2 dictionary path for parameter '", p,
-               "': ", file_or_path, " (expected 'section/parameter').")
-        }
-
-        nml <- glmtools::read_nml(nml_path)
-        section <- path_parts[1]
-        par_name <- path_parts[2]
-
-        if (is.null(nml[[section]]) || is.null(nml[[section]][[par_name]])) {
-          nml <- glmtools::set_nml(nml, par_name, value)
-        } else {
-          nml[[section]][[par_name]][1] <- value
-        }
-        glmtools::write_nml(nml, nml_path)
-
-      } else if (model_upper %in% c("GOTM-WET", "GOTM-SELMAPROTBAS")) {
-        # Dictionary-style YAML key path (e.g. selmaprotbas/initialization/o2)
-        if (!requireNamespace("LakeEnsemblR", quietly = TRUE)) {
-          stop("Package 'LakeEnsemblR' is required to update GOTM YAML key paths.")
-        }
-
-        # Prefer fabm.yaml for biogeochemistry parameters; fallback to yaml_file_model.
-        yaml_target <- file.path(model_dir, "fabm.yaml")
-        if (!file.exists(yaml_target)) {
-          yaml_target <- file.path(model_dir, yaml_file_model)
-        }
-        if (!file.exists(yaml_target)) {
-          stop("Could not find a YAML file to update for parameter '", p,
-               "'. Tried: ", file.path(model_dir, "fabm.yaml"), " and ",
-               file.path(model_dir, yaml_file_model))
-        }
-
-        path_parts <- strsplit(file_or_path, "/", fixed = TRUE)[[1]]
-        group_col <- rows$group_name[k]
-        if (!is.na(group_col)) {
-          path_parts[path_parts == "{group_name}"] <- group_col
-        }
-
-        arglist <- as.list(path_parts)
-        names(arglist) <- paste0("key", seq_along(path_parts))
-        arglist$value <- value
-        arglist$file <- yaml_target
-        arglist$verbose <- FALSE
-        do.call(LakeEnsemblR::input_yaml_multiple, args = arglist)
-
-      } else {
-        stop("Unsupported file type for parameter '", p, "': ", file_or_path)
       }
+      
+      # Standard glmtools processing ONLY for native glm3.nml files
+      nml <- glmtools::read_nml(param_path)
+      nml <- glmtools::set_nml(nml, p, value)
+      glmtools::write_nml(nml, param_path)
+
+    } else if (grepl("\\.csv$", file_or_path, ignore.case = TRUE)) {
+      df <- readr::read_csv(param_path, show_col_types = FALSE)
+      names(df) <- gsub("^['\"]|['\"]$", "", names(df))
+      pname_col <- intersect(c("p_name", "pname"), names(df))
+      if (length(pname_col) == 0) stop("Could not identify parameter name column.")
+      df[[pname_col]] <- gsub("^['\"]|['\"]$", "", df[[pname_col]])
+      idx <- which(df[[pname_col]] == p)
+      if (length(idx) == 0) stop("Parameter not found.")
+      
+      group_col <- rows$group_name[k]
+      if (!is.na(group_col) && group_col %in% names(df)) {
+        df[idx, group_col] <- value
+      } else {
+        df[idx, 2:ncol(df)] <- value
+      }
+      readr::write_csv(df, param_path)
+
+    } else if (grepl("\\.yaml$|\\.yml$", file_or_path, ignore.case = TRUE)) {
+      gotmtools::set_yaml_value(param_path, label = p, value = value)
+
+    } else if (model_upper %in% c("GLM-AED2", "SIMSTRAT-AED2")) {
+      # Custom path logic fallback for dictionary pointers
+      if (!requireNamespace("configr", quietly = TRUE)) stop("configr package required.")
+      if (is.null(wq_config_file.) || !nzchar(wq_config_file.)) stop("wq_config_file missing.")
+
+      isolated_wq_yaml <- file.path(current_dir, basename(wq_config_file.))
+      lst_cfg <- configr::read.config(isolated_wq_yaml)
+      cfg_files <- lst_cfg[["config_files"]]
+      model_cfg <- cfg_files[[model.]]
+      
+      if (is.null(model_cfg) || !nzchar(model_cfg)) {
+        cfg_names <- names(cfg_files)
+        cfg_idx <- which(toupper(cfg_names) == toupper(model.))[1]
+        if (!is.na(cfg_idx)) model_cfg <- cfg_files[[cfg_idx]]
+      }
+      
+      if (model_upper == "SIMSTRAT-AED2" && grepl("\\.par$", model_cfg, ignore.case = TRUE)) {
+        model_cfg <- file.path(dirname(model_cfg), "aed2.nml")
+      }
+
+      module_k <- if ("module" %in% names(rows)) as.character(rows$module[k]) else NA_character_
+      if (module_k %in% c("phytoplankton", "zooplankton")) {
+        base_dir <- dirname(model_cfg)
+        model_cfg <- if (module_k == "phytoplankton") {
+          file.path(base_dir, "aed2_phyto_pars.nml")
+        } else {
+          file.path(base_dir, "aed2_zoop_pars.nml")
+        }
+      }
+
+      nml_candidates <- c(file.path(current_dir, model_cfg), file.path(current_dir, basename(model_cfg)))
+      nml_candidates <- unique(normalizePath(nml_candidates, winslash = "/", mustWork = FALSE))
+      nml_path <- nml_candidates[file.exists(nml_candidates)][1]
+
+      
+      
+      if (is.na(nml_path) || !nzchar(nml_path)) stop("NML file not found.")
+
+      # Apply text-based search and edit directly to the resolved deep configurations
+      path_parts <- strsplit(file_or_path, "/", fixed = TRUE)[[1]]
+      nml_lines <- readLines(nml_path, warn = FALSE)
+      target_sec <- paste0("&", trimws(path_parts[1]))
+      target_var <- if(length(path_parts) == 2L) trimws(path_parts[2]) else p
+      
+      sec_idx <- which(grepl(paste0("^\\s*", target_sec, "\\b"), nml_lines, ignore.case = TRUE))
+      if (length(sec_idx) > 0) {
+        sec_start <- sec_idx[1]
+        slashes <- jack <- which(grepl("^\\s*/\\s*$", nml_lines))
+        sec_end <- slashes[slashes > sec_start][1]
+        if (is.na(sec_end)) sec_end <- length(nml_lines)
+        
+        var_pattern <- paste0("^(\\s*", target_var, "\\s*=\\s*)[^\\s,!;#]*")
+        var_idx <- which(grepl(var_pattern, nml_lines[sec_start:sec_end], ignore.case = TRUE))
+        if (length(var_idx) > 0) {
+          actual_line <- sec_start + var_idx[1] - 1
+          nml_lines[actual_line] <- sub(var_pattern, paste0("\\1", value), nml_lines[actual_line], ignore.case = TRUE)
+          writeLines(nml_lines, nml_path)
+        }
+      }
+
+    } else if (model_upper %in% c("GOTM-WET", "GOTM-SELMAPROTBAS")) {
+      yaml_target <- file.path(current_dir, "fabm.yaml")
+      if (!file.exists(yaml_target)) yaml_target <- file.path(current_dir, "lake_ensemblr.yaml")
+      path_parts <- strsplit(file_or_path, "/", fixed = TRUE)[[1]]
+      group_col <- rows$group_name[k]
+      if (!is.na(group_col)) path_parts[path_parts == "{group_name}"] <- group_col
+
+      arglist <- as.list(path_parts)
+      names(arglist) <- paste0("key", seq_along(path_parts))
+      arglist$value <- value
+      arglist$file <- yaml_target
+      arglist$verbose <- FALSE
+      do.call(LakeEnsemblR::input_yaml_multiple, args = arglist)
     }
   }
+}
 
   # Main LHC loop. Iterations update files in-place under model_dir, so this
   # remains sequential unless each run is executed in an isolated copy.
@@ -1252,7 +1333,14 @@ if (!dir.exists(baseline_dir)) {
 
     # Write sampled parameters
     for (p in param_names) {
-      .update_param(p, param_values[p])
+      .update_param(
+    p              = p, 
+    value          = param_values[p], 
+    current_dir    = model_dir,        # During LHC, update the master workspace
+    calib_setup    = calib_setup, 
+    model          = model,            # Pass the top-level model variable
+    wq_config_file = wq_config_file
+  )
     }
 
     # Run model
@@ -1286,6 +1374,7 @@ if (!dir.exists(baseline_dir)) {
           .cal_lhc_obs_stats(obs_data_loaded, dict_loaded, model_short, yaml_file,
                              wq_config_file = wq_config_file,
                              verbose = verbose,
+                             target_variables = target_variables,
                              obs_to_model_units = obs_to_model_units,
                              spin_up_days = spin_up_days,
                              stats_by_depth = stats_by_depth),
@@ -1470,7 +1559,27 @@ if (!dir.exists(baseline_dir)) {
     }
     
     # Create objective function for DE
-    obj_fn <- .make_de_objective()
+    local_obj_fun <- .make_de_objective(
+      obs_data_loaded    = obs_data_loaded,
+      dict_loaded        = dict_loaded,
+      model_short        = model_filter,
+      yaml_file          = yaml_file,
+      wq_config_file     = wq_config_file,
+      obs_to_model_units = obs_to_model_units,
+      spin_up_days       = spin_up_days,
+      stats_by_depth     = stats_by_depth,
+      target_variables   = target_variables,
+      best_metric        = best_metric,
+      model_dir          = model_dir,
+      param_names        = param_names,
+      calib_setup        = calib_setup,
+      model              = model,
+      verbose            = verbose,
+      yaml_file_model    = yaml_file_model,
+      par_file           = par_file
+    )
+
+    obj_fun <- local_obj_fun
     
     # Build lower and upper bounds vectors for DEoptim
     bounds_lower <- vapply(param_names, function(p) bounds[[p]]["lb"], numeric(1))
@@ -1484,20 +1593,109 @@ if (!dir.exists(baseline_dir)) {
     }
     
 
-    de_result <- DEoptim::DEoptim(
-  fn = obj_fn,
-  lower = bounds_lower,
-  upper = bounds_upper,
-  control = DEoptim::DEoptim.control(
-    itermax = de_iterations,
-    NP = de_popsize,
-    F = de_f,
-    CR = de_cr,
-   # initial.pop = initial_pop,
-    trace = TRUE,
-    parallelType = 0
-  )
-)
+    de_parallel_enabled <- isTRUE(de_parallel)
+    if (de_parallel_enabled && is.null(de_n_workers)) {
+      de_n_workers <- max(1L, parallel::detectCores(logical = FALSE) - 1L)
+    }
+    if (de_parallel_enabled && de_n_workers < 1L) {
+      de_n_workers <- 1L
+    }
+
+    de_control_args <- list(
+      itermax = de_iterations,
+      NP = de_popsize,
+      F = de_f,
+      CR = de_cr,
+      trace = if (isTRUE(verbose)) 10 else FALSE,
+      packages = c("stats", "utils", "yaml", "readr", "dplyr", "ncdf4", "lubridate", "glmtools", "gotmtools", "configr", "GLM3r")
+    )
+
+    de_control_formals <- names(formals(DEoptim::DEoptim.control))
+    supported_control_args <- intersect(names(de_control_args), de_control_formals)
+    de_control_args <- de_control_args[supported_control_args]
+
+    parallel_mode_used <- FALSE
+    de_cluster <- NULL
+    if (de_parallel_enabled && "cluster" %in% de_control_formals) {
+      de_cluster <- parallel::makeCluster(de_n_workers)
+      de_control_args$cluster <- de_cluster
+      parallel_mode_used <- TRUE
+      if (isTRUE(verbose)) {
+        message("[DE] Created parallel cluster with ", de_n_workers, " workers")
+      }
+      worker_pids <- parallel::clusterCall(de_cluster, Sys.getpid)
+      if (isTRUE(verbose)) {
+        message("[DE] Cluster worker PIDs: ", paste(worker_pids, collapse = ", "))
+        message("[DE] Worker debug logs will be written under: ", file.path(model_dir, "de_debug_logs"))
+      }
+    }
+
+    if (!is.null(de_cluster)) {
+      parallel::clusterExport(
+        de_cluster,
+        varlist = c(
+          "obj_fun", "target_variables", "obs_data_loaded",
+          ".cal_lhc_obs_stats", "load_config", "expand_templates", "get_output_wq",
+          "cal_metrics", "cal_stats", "dict_loaded", "model_short", "yaml_file",
+          "wq_config_file", "obs_to_model_units", "spin_up_days", "stats_by_depth",
+          "best_metric", "model_dir", "param_names", "calib_setup", "verbose",
+          "yaml_file_model", "par_file", "bounds", "model"
+        ),
+        envir = environment()
+      )
+    }
+
+    if (isTRUE(verbose)) {
+      message(sprintf(
+        "[DE] parallelEnabled=%s parallelModeUsed=%s workers=%s",
+        if (de_parallel_enabled) "TRUE" else "FALSE",
+        if (parallel_mode_used) "TRUE" else "FALSE",
+        if (!is.null(de_n_workers)) as.character(de_n_workers) else "NULL"
+      ))
+    }
+
+    de_control <- do.call(DEoptim::DEoptim.control, de_control_args)
+
+    de_result <- tryCatch(
+      DEoptim::DEoptim(
+        fn = obj_fun,
+        lower = bounds_lower,
+        upper = bounds_upper,
+        control = de_control
+      ),
+      error = function(e) {
+        if (de_parallel_enabled && !is.null(de_cluster)) {
+          message("[DE] Parallel backend failed (", conditionMessage(e), "). Retrying sequentially.")
+          de_control$cluster <- NULL
+          if ("parallelType" %in% names(de_control)) {
+            de_control$parallelType <- 0L
+          }
+          DEoptim::DEoptim(
+            fn = obj_fun,
+            lower = bounds_lower,
+            upper = bounds_upper,
+            control = de_control
+          )
+        } else {
+          stop(conditionMessage(e), call. = FALSE)
+        }
+      }
+    )
+
+    if (isTRUE(verbose)) {
+      if (parallel_mode_used) {
+        message("[DE] Run completed using parallel cluster with ", de_n_workers, " workers.")
+      } else if (de_parallel_enabled) {
+        message("[DE] Run completed sequentially after parallel backend could not be used.")
+      } else {
+        message("[DE] Run completed sequentially (parallel disabled).")
+      }
+    }
+
+    if (!is.null(de_cluster)) {
+      parallel::stopCluster(de_cluster)
+      de_cluster <- NULL
+    }
     # de_result <- tryCatch(
     #   DEoptim::DEoptim(
     #     fn = obj_fn,

@@ -63,8 +63,16 @@ run_lhc_wq_parallel <- function(model,
                                 stats_by_depth  = FALSE,
                                 return_best     = TRUE,
                                 best_metric     = "KGE",
+                                target_variables = NULL,
                                 n_workers       = NULL,
-                                use_de           = FALSE,  # NEW: Whether to run DE after LHC
+                                use_de           = FALSE,
+                                de_parallel      = FALSE,
+                                de_n_workers     = NULL,
+                                de_iterations    = 50,
+                                de_popsize       = NULL,
+                                de_f             = 0.8,
+                                de_cr            = 0.9,
+                                de_seed_from_lhc = TRUE,
                                 parallel_dir    = tempdir(),
                                 keep_worker_dirs = FALSE) {
 
@@ -102,6 +110,7 @@ run_lhc_wq_parallel <- function(model,
       obs_to_model_units = obs_to_model_units,
       spin_up_days    = spin_up_days,
       stats_by_depth  = stats_by_depth,
+      target_variables = target_variables,
       return_best     = return_best,
       best_metric     = best_metric
     ))
@@ -147,8 +156,7 @@ run_lhc_wq_parallel <- function(model,
       "yaml_file_model", "par_file", "verbose", "obs_file",
       "obs_to_model_units", "spin_up_days", "stats_by_depth",
       "parallel_dir",             
-      "keep_worker_dirs"           
-
+      "keep_worker_dirs", "best_metric", "return_best", "target_variables"
     ),
     envir = environment()
   )
@@ -202,6 +210,7 @@ result_parts <- parallel::parLapply(cl, seq_len(n_workers), function(worker_idx)
     stats_by_depth     = stats_by_depth,
     return_best        = FALSE,
     best_metric        = best_metric,
+    target_variables   = target_variables,
     lhs_matrix         = lhs_matrix,
     sample_indices     = sample_splits[[worker_idx]],
     use_de             = FALSE   # 
@@ -250,10 +259,16 @@ result_parts <- parallel::parLapply(cl, seq_len(n_workers), function(worker_idx)
     stats_by_depth = stats_by_depth,
     return_best = return_best,
     best_metric = best_metric,
-
-    # ✅ IMPORTANT
+    target_variables = target_variables,
     parallel = FALSE,
-    use_de = TRUE
+    use_de = TRUE,
+    de_parallel = de_parallel,
+    de_n_workers = de_n_workers,
+    de_iterations = de_iterations,
+    de_popsize = de_popsize,
+    de_f = de_f,
+    de_cr = de_cr,
+    de_seed_from_lhc = de_seed_from_lhc
   )
 
   return(de_results)
