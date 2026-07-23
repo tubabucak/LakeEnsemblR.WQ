@@ -29,11 +29,20 @@ jobs:
         with:
           use-public-rspm: true
 
-      # dependencies: "hard" skips Suggests (GLM3r/WETr/SelmaprotbasR/SimstratR/
-      # MyLakeR) -- resolving them pulls in glmtools' undeclared nested GLM3r
-      # dependency and breaks pak's solve step. See R-CMD-check.yaml for the
-      # full explanation. pkgdown site building doesn't need those packages
-      # since vignette chunks are all eval=FALSE.
+      # See R-CMD-check.yaml for the full explanation: glmtools (a hard
+      # Imports dependency) has an undeclared nested dependency on GLM3r that
+      # breaks pak's solve step. Pre-installing it directly via remotes (which
+      # just checks "is this installed" rather than solving the whole graph)
+      # works around it.
+      - name: Pre-install GLM3r
+        run: |
+          install.packages("remotes")
+          remotes::install_github("aemon-j/GLM3r@v3.3", upgrade = "never")
+        shell: Rscript {0}
+
+      # dependencies: "hard" skips Suggests (WETr/SelmaprotbasR/SimstratR/
+      # MyLakeR) -- pkgdown site building doesn't need those since vignette
+      # chunks are all eval=FALSE.
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
           dependencies: '"hard"'

@@ -61,4 +61,4 @@ Remotes:
     aemon-j/SimstratR@v3.05-lerwq,
     aemon-j/gotmtools,
     aemon-j/LakeEnsemblR,
-    GLEON/glmtools
+    USGS-R/glmtools@ggplot_overhaul

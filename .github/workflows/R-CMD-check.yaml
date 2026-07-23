@@ -3,23 +3,29 @@
 # if a full R CMD check NOTE/WARNING buries them.
 #
 # NOTE: several Suggests (GLM3r, WETr, SelmaprotbasR, SimstratR, MyLakeR) are
-# GitHub-only wrappers around external model binaries. GLM3r in particular is
-# unresolvable via pak's dependency SOLVE step (not just install) because
-# glmtools -- a hard Imports dependency we need regardless -- declares GLM3r
-# under its own Depends: with no Remotes: entry of its own, and our Remotes:
-# entry for GLM3r doesn't propagate to satisfy glmtools' separate nested need
-# for it (a pak/remotes limitation, not something fixable from this repo).
-# That made `pak::lockfile_create()` fail outright ("dependency conflict")
-# when it tried to resolve the full Suggests set. Since none of our tests
-# actually exercise the real model-runner packages, `dependencies: '"hard"'`
+# GitHub-only wrappers around external model binaries. `dependencies: '"hard"'`
 # below tells pak to resolve only Depends/Imports/LinkingTo and skip Suggests
 # entirely -- test/build tooling (testthat/knitr/rmarkdown) is added back
-# explicitly via extra-packages instead. _R_CHECK_FORCE_SUGGESTS_: false
-# then tells R CMD check itself not to require the skipped Suggests either.
-# Hard Imports (LakeEnsemblR, glmtools, gotmtools, etc.) still need to
-# install successfully for the package to load at all -- if this workflow
-# fails at the "Install dependencies"/"Query dependencies" step, check
-# whether one of those needs its own Remotes: entry in DESCRIPTION.
+# explicitly via extra-packages instead. _R_CHECK_FORCE_SUGGESTS_: false then
+# tells R CMD check itself not to require the skipped Suggests either.
+#
+# GLM3r still needs a separate workaround even with Suggests skipped: glmtools
+# (a HARD Imports dependency we need regardless of which model you run)
+# declares GLM3r under its own Depends: with no Remotes: entry of its own, and
+# our Remotes: entry for GLM3r doesn't propagate to satisfy glmtools' separate
+# nested need for it (a pak/remotes limitation, not fixable from this repo).
+# That makes pak's dependency SOLVE step fail outright ("Can't find package
+# called GLM3r"), regardless of Suggests-skipping, since glmtools->GLM3r is a
+# hard edge. Fix: pre-install GLM3r directly via remotes (which just checks
+# "is this installed" rather than solving the whole graph) BEFORE the pak-based
+# setup-r-dependencies step runs -- once GLM3r is already present locally, pak
+# accepts it as satisfying glmtools' dependency instead of needing a resolvable
+# source for it.
+#
+# If this workflow fails at "Install dependencies"/"Query dependencies" for a
+# DIFFERENT package, check whether that one needs its own Remotes: entry in
+# DESCRIPTION, or (if it's a hard dependency of one of our dependencies rather
+# than of this package directly) its own pre-install step below.
 on:
   push:
     branches: [main, master]
@@ -44,6 +50,12 @@ jobs:
       - uses: r-lib/actions/setup-r@v2
         with:
           use-public-rspm: true
+
+      - name: Pre-install GLM3r (see NOTE above -- works around glmtools' undeclared nested dependency)
+        run: |
+          install.packages("remotes")
+          remotes::install_github("aemon-j/GLM3r@v3.3", upgrade = "never")
+        shell: Rscript {0}
 
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
