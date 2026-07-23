@@ -2,7 +2,7 @@ Package: LakeEnsemblR.WQ
 Type: Package
 Title: Run Ensembles of Water Quality 1D Lake Models
 Version: 0.0.1
-Date: 2021-03-19
+Date: 2026-07-23
 URL: https://github.com/aemon-j/LakeEnsemblR.WQ,
     https://aemon-j.github.io/LakeEnsemblR.WQ
 Authors@R: c(
@@ -23,30 +23,42 @@ Imports:
      ncdf4,
      rLakeAnalyzer,
      reshape2,
-     tidyverse,
      yaml,
      LakeEnsemblR,
      configr,
      data.tree,
      glmtools,
      plyr,
-     stringr, 
+     stringr,
      stats,
      zoo,
      utils,
      readr,
-     MyLakeR,
      tidyr,
      purrr,
      ggtext,
-     GLM3r,
      lhs
 Suggests:
     knitr,
     rmarkdown,
-    pkgdown
+    pkgdown,
+    testthat (>= 3.0.0),
+    GLM3r,
+    WETr,
+    SelmaprotbasR,
+    SimstratR,
+    jsonlite
 VignetteBuilder: knitr
 Encoding: UTF-8
 LazyData: true
 LazyLoad: true
 Config/roxygen2/version: 8.0.0
+Config/testthat/edition: 3
+Remotes:
+    aemon-j/GLM3r@v3.3,
+    aemon-j/WETr@v2.3-lerwq,
+    aemon-j/SelmaprotbasR@v1.2.2-lerwq,
+    aemon-j/SimstratR@v3.05-lerwq,
+    aemon-j/gotmtools,
+    aemon-j/LakeEnsemblR,
+    GLEON/glmtools
