@@ -29,9 +29,15 @@ jobs:
         with:
           use-public-rspm: true
 
+      # dependencies: "hard" skips Suggests (GLM3r/WETr/SelmaprotbasR/SimstratR/
+      # MyLakeR) -- resolving them pulls in glmtools' undeclared nested GLM3r
+      # dependency and breaks pak's solve step. See R-CMD-check.yaml for the
+      # full explanation. pkgdown site building doesn't need those packages
+      # since vignette chunks are all eval=FALSE.
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
-          extra-packages: any::pkgdown, local::.
+          dependencies: '"hard"'
+          extra-packages: any::pkgdown, any::knitr, any::rmarkdown, local::.
           needs: website
 
       - name: Build site
