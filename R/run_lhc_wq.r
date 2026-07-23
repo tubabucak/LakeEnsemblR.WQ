@@ -1,4 +1,48 @@
 # ---------------------------------------------------------------------------
+# Internal helper: turn a completed DEoptim result into a one-row
+# best_parameter_set data.frame in the same shape run_lhc_wq() produces for
+# the LHC phase (sample_index, n_stats, n_obs_vars, n_obs_vars_with_stats,
+# best_metric, objective_score, objective_value, <one column per param>).
+#
+# Pulled out of run_lhc_wq()'s DE block as a pure function -- both so it's
+# unit-testable without running an actual model, and because getting the
+# metric sign convention right here matters: DEoptim always minimizes, so
+# .make_de_objective() flips the sign for KGE/NSE (maximize) vs RMSE/NRMSE
+# (already minimize) vs PBIAS (minimizes mean(abs(.)), no flip). This
+# un-flips that back to the metric's natural value for reporting, matching
+# the LHC phase's objective_value convention.
+# ---------------------------------------------------------------------------
+.de_best_parameter_set <- function(de_result, param_names, best_metric) {
+  best_metric_upper <- toupper(as.character(best_metric[1]))
+
+  if (best_metric_upper == "PBIAS") {
+    objective_value <- de_result$optim$bestval
+  } else {
+    score_sign <- if (best_metric_upper %in% c("RMSE", "NRMSE")) 1 else -1
+    objective_value <- de_result$optim$bestval * score_sign
+  }
+
+  best_params_df <- as.data.frame(
+    as.list(stats::setNames(de_result$optim$bestmem, param_names)),
+    stringsAsFactors = FALSE
+  )
+
+  cbind(
+    data.frame(
+      sample_index = NA_integer_,
+      n_stats = NA_integer_,
+      n_obs_vars = NA_integer_,
+      n_obs_vars_with_stats = NA_integer_,
+      best_metric = best_metric_upper,
+      objective_score = de_result$optim$bestval,
+      objective_value = objective_value,
+      stringsAsFactors = FALSE
+    ),
+    best_params_df
+  )
+}
+
+# ---------------------------------------------------------------------------
 # Internal helper: compare simulated vs. observed and return statistics.
 # Simulated output from get_output_wq() is already in global units
 # (conversion_factor has been applied: model_units * CF = global_units).
@@ -621,7 +665,16 @@ model_key <- names(cfg$model_folders)[toupper(names(cfg$model_folders)) == toupp
 #'   is supplied, returns a flattened data frame with sampled parameters and
 #'   summary statistics. In \code{obs_file} mode and when \code{return_best = TRUE},
 #'   the returned data.frame includes column \code{is_best}, and attributes
-#'   \code{best_parameter_set} and \code{best_metric}.
+#'   \code{best_parameter_set} and \code{best_metric} (identifying the best LHC
+#'   iteration). When \code{use_de = TRUE} is also set, \code{best_parameter_set}
+#'   and \code{best_metric} are overwritten with DE's refined optimum (DE runs
+#'   after and improves on the LHC seed) -- this is the attribute read by
+#'   \code{write_best_calib_to_par_files()} and by
+#'   \code{cali_ensemble_wq()$best_parameter_sets}, so both automatically use
+#'   the DE result when DE was run. The original LHC-phase best is preserved
+#'   under attribute \code{lhc_best_parameter_set} for comparison. The DEoptim
+#'   object itself and its raw best member are always available via attributes
+#'   \code{de_phase} and \code{de_best_params}.
 #' @export
 
 run_lhc_wq <- function(model,
@@ -1088,19 +1141,32 @@ run_lhc_wq <- function(model,
   }
 
 
-    # ------------------------------------------------------------------
-# Create baseline copy of the model directory (for DE stability)
-# ------------------------------------------------------------------
-
-
-baseline_dir <- file.path(tempdir(), "model_baseline_copy")
-
-if (!dir.exists(baseline_dir)) {
+  # ------------------------------------------------------------------
+  # Snapshot model_dir before the LHC loop starts mutating it in place, and
+  # restore those files via on.exit once this call returns -- including on
+  # error/interrupt, since on.exit(add = TRUE) handlers still fire then.
+  # tempfile() gives each call its own baseline dir; the previous version
+  # used one fixed path (tempdir()/model_baseline_copy) reused across the
+  # whole R session, so after the first call it silently stopped snapshotting
+  # anything for subsequent calls/models and was never read back regardless.
+  # ------------------------------------------------------------------
+  baseline_dir <- tempfile("lhc_baseline_")
   dir.create(baseline_dir, recursive = TRUE)
-  file.copy(model_dir, baseline_dir,
-            recursive = TRUE,
-            overwrite = TRUE)
-}
+  file.copy(
+    from = list.files(model_dir, full.names = TRUE),
+    to   = baseline_dir,
+    recursive = TRUE,
+    overwrite = TRUE
+  )
+  on.exit({
+    file.copy(
+      from = list.files(baseline_dir, full.names = TRUE),
+      to   = model_dir,
+      recursive = TRUE,
+      overwrite = TRUE
+    )
+    unlink(baseline_dir, recursive = TRUE, force = TRUE)
+  }, add = TRUE)
   # Pre-collect bounds for each parameter
   bounds <- lapply(param_names, function(p) {
 
@@ -1738,11 +1804,23 @@ if (!dir.exists(baseline_dir)) {
           as.list(de_result$optim$bestmem),
           param_names
         )
-        
+
+        # `best_parameter_set` (read by write_best_calib_to_par_files() and by
+        # cali_ensemble_wq()$best_parameter_sets) was set above from the LHC
+        # phase only -- DE runs *after* that and refines on top of it, so
+        # leaving the attribute untouched would silently report the LHC seed
+        # as "best" even though DE found something better. Overwrite it with
+        # DE's actual optimum here; keep the LHC-phase one under a different
+        # name in case it's still wanted for comparison.
+        attr(results, "lhc_best_parameter_set") <- attr(results, "best_parameter_set")
+
+        attr(results, "best_parameter_set") <- .de_best_parameter_set(de_result, param_names, best_metric)
+        attr(results, "best_metric") <- toupper(as.character(best_metric[1]))
+
         if (isTRUE(verbose)) {
           message("[DE] Best parameters from DE:")
           for (i in seq_along(param_names)) {
-            message("  ", param_names[i], " = ", 
+            message("  ", param_names[i], " = ",
                     round(de_result$optim$bestmem[i], 6))
           }
         }
