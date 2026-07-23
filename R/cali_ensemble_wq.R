@@ -38,10 +38,34 @@
 #' @param stats_by_depth Logical. Passed to \code{run_lhc_wq()}.
 #' @param return_best Logical. Passed to \code{run_lhc_wq()}.
 #' @param best_metric Character. Passed to \code{run_lhc_wq()}.
-#' @param parallel Logical. Passed to \code{run_lhc_wq()}.
+#' @param parallel Logical. Passed to \code{run_lhc_wq()} (parallelizes LHC
+#'   samples \emph{within} a single model's run).
 #' @param n_workers Integer or \code{NULL}. Passed to \code{run_lhc_wq()}.
 #' @param parallel_dir Character. Passed to \code{run_lhc_wq()}.
 #' @param keep_worker_dirs Logical. Passed to \code{run_lhc_wq()}.
+#' @param use_de Logical. Passed to \code{run_lhc_wq()}. Scalar, length
+#'   \code{length(models)}, or named by model.
+#' @param de_iterations Integer. Passed to \code{run_lhc_wq()}.
+#' @param de_popsize Integer or \code{NULL}. Passed to \code{run_lhc_wq()}.
+#' @param de_f Numeric. Passed to \code{run_lhc_wq()}.
+#' @param de_cr Numeric. Passed to \code{run_lhc_wq()}.
+#' @param de_seed_from_lhc Logical. Passed to \code{run_lhc_wq()}.
+#' @param de_parallel Logical. Passed to \code{run_lhc_wq()} (parallelizes DE
+#'   evaluations \emph{within} a single model's run).
+#' @param de_n_workers Integer or \code{NULL}. Passed to \code{run_lhc_wq()}.
+#' @param parallel_models Logical. If \code{TRUE}, calibrate all requested
+#'   \code{models} concurrently (one worker process per model) instead of
+#'   sequentially. Each model has its own \code{model_dir}, so running them
+#'   concurrently does not risk the in-place file collisions that apply to
+#'   \code{parallel}/\code{de_parallel} workers sharing a single model_dir.
+#'   NOTE: this stacks with \code{parallel}/\code{de_parallel} -- if those are
+#'   also enabled, total worker processes can multiply
+#'   (\code{n_model_workers * n_workers} or \code{n_model_workers *
+#'   de_n_workers}). Size worker counts to stay within available CPU cores.
+#'   Default \code{FALSE} (sequential, matching prior behavior).
+#' @param n_model_workers Integer or \code{NULL}. Number of concurrent worker
+#'   processes used when \code{parallel_models = TRUE}. Defaults to
+#'   \code{min(length(models), detectCores(logical = FALSE) - 1)}.
 #' @param verbose Logical. Print progress messages.
 #' @param on_error Character. One of \code{"skip"} or \code{"stop"}.
 #' @param save_results Logical. If \code{TRUE}, save each model result as RDS.
@@ -85,6 +109,16 @@ cali_ensemble_wq <- function(models = c("GLM-AED2", "GOTM-WET", "GOTM-Selmaprotb
                              n_workers = NULL,
                              parallel_dir = tempdir(),
                              keep_worker_dirs = FALSE,
+                             use_de = FALSE,
+                             de_iterations = 50,
+                             de_popsize = NULL,
+                             de_f = 0.8,
+                             de_cr = 0.9,
+                             de_seed_from_lhc = TRUE,
+                             de_parallel = FALSE,
+                             de_n_workers = NULL,
+                             parallel_models = FALSE,
+                             n_model_workers = NULL,
                              verbose = TRUE,
                              on_error = c("skip", "stop"),
                              save_results = FALSE,
@@ -94,27 +128,61 @@ cali_ensemble_wq <- function(models = c("GLM-AED2", "GOTM-WET", "GOTM-Selmaprotb
                              write_target = c("par_file", "config"),
                              config_file = NULL) {
 
+  # Force every argument now. R arguments are lazily-evaluated promises whose
+  # defining environment is the *caller's* frame; .calibrate_one_model below
+  # may be shipped whole (closure + environment) to a separate worker process
+  # when parallel_models = TRUE, and an unforced promise for e.g. obs_file
+  # would then try to evaluate against a caller frame that doesn't exist on
+  # the worker, failing with "object 'obs_file' not found". Forcing here
+  # (before any code path might skip touching a given argument, e.g. the
+  # obs_file check below is short-circuited when write_best = FALSE) converts
+  # every argument into a plain, already-evaluated value that serializes
+  # cleanly.
+  force(models); force(calib_setup); force(yaml_file); force(folder); force(model_dirs)
+  force(param_names); force(model_filter); force(wq_config_file); force(n_samples)
+  force(yaml_file_model); force(par_file); force(obs_file); force(obs_to_model_units)
+  force(spin_up_days); force(stats_by_depth); force(return_best); force(best_metric)
+  force(parallel); force(n_workers); force(parallel_dir); force(keep_worker_dirs)
+  force(use_de); force(de_iterations); force(de_popsize); force(de_f); force(de_cr)
+  force(de_seed_from_lhc); force(de_parallel); force(de_n_workers)
+  force(parallel_models); force(n_model_workers); force(verbose); force(on_error)
+  force(save_results); force(output_dir); force(output_prefix); force(write_best)
+  force(write_target); force(config_file)
+
   `%||%` <- function(x, y) if (!is.null(x) && length(x) > 0) x else y
   msg <- function(...) if (isTRUE(verbose)) message(...)
 
   on_error <- match.arg(on_error)
   write_target <- match.arg(write_target)
 
+  .normalize_model_key <- function(x) {
+    x <- trimws(as.character(x))
+    x <- gsub("[_ ]", "-", x)
+    x <- gsub("[^A-Za-z0-9]+", "-", x)
+    x <- gsub("-+", "-", x)
+    toupper(x)
+  }
+
   .canon_model <- function(x) {
-    x0 <- toupper(gsub("[_ ]", "-", trimws(as.character(x))))
-    map <- c(
+    x0 <- .normalize_model_key(x)
+    normalized_map <- c(
       "GLM-AED2" = "GLM-AED2",
       "GOTM-WET" = "GOTM-WET",
       "GOTM-SELMAPROTBAS" = "GOTM-Selmaprotbas",
       "GOTM-SELMA" = "GOTM-Selmaprotbas",
       "SIMSTRAT-AED2" = "Simstrat-AED2"
     )
-    out <- unname(map[x0])
-    ifelse(is.na(out), as.character(x), out)
+    key_map <- stats::setNames(unname(normalized_map), vapply(names(normalized_map), .normalize_model_key, character(1)))
+    out <- key_map[x0]
+    if (is.null(out) || length(out) == 0L || is.na(out[1])) {
+      as.character(x)
+    } else {
+      unname(out[1])
+    }
   }
 
   .model_key <- function(x) {
-    toupper(gsub("[_ ]", "-", trimws(as.character(x))))
+    .normalize_model_key(x)
   }
 
   .resolve_by_model <- function(x, models, arg_name) {
@@ -202,6 +270,15 @@ cali_ensemble_wq <- function(models = c("GLM-AED2", "GOTM-WET", "GOTM-Selmaprotb
   yaml_model_by_model <- .resolve_by_model(yaml_file_model, models, "yaml_file_model")
   par_file_by_model <- .resolve_by_model(par_file, models, "par_file")
 
+  use_de_by_model <- .resolve_by_model(use_de, models, "use_de")
+  de_iterations_by_model <- .resolve_by_model(de_iterations, models, "de_iterations")
+  de_popsize_by_model <- .resolve_by_model(de_popsize, models, "de_popsize")
+  de_f_by_model <- .resolve_by_model(de_f, models, "de_f")
+  de_cr_by_model <- .resolve_by_model(de_cr, models, "de_cr")
+  de_seed_by_model <- .resolve_by_model(de_seed_from_lhc, models, "de_seed_from_lhc")
+  de_parallel_by_model <- .resolve_by_model(de_parallel, models, "de_parallel")
+  de_n_workers_by_model <- .resolve_by_model(de_n_workers, models, "de_n_workers")
+
   if (is.null(model_dirs)) {
     model_dirs <- stats::setNames(file.path(folder, models), models)
   }
@@ -250,8 +327,67 @@ cali_ensemble_wq <- function(models = c("GLM-AED2", "GOTM-WET", "GOTM-Selmaprotb
   write_back <- stats::setNames(vector("list", length(models)), models)
   summary_rows <- vector("list", length(models))
 
-  for (i in seq_along(models)) {
-    m <- models[i]
+  .call_run_lhc_wq <- function(model_name, param_names_i, calib_setup_i,
+                               yaml_i, model_dir_i, model_filter_i,
+                               wq_cfg_i, yaml_model_i, par_file_i,
+                               parallel_i, n_workers_i, use_de_i,
+                               de_iterations_i, de_popsize_i, de_f_i,
+                               de_cr_i, de_seed_i, de_parallel_i,
+                               de_n_workers_i) {
+    run_lhc_fn <- get("run_lhc_wq", mode = "function", inherits = TRUE)
+    run_lhc_formals <- names(formals(run_lhc_fn))
+
+    args_to_pass <- list(
+      model = model_name,
+      param_names = param_names_i,
+      calib_setup = calib_setup_i,
+      yaml_file = yaml_i,
+      model_dir = model_dir_i,
+      n_samples = n_samples,
+      model_filter = model_filter_i,
+      wq_config_file = wq_cfg_i,
+      yaml_file_model = yaml_model_i,
+      par_file = par_file_i,
+      verbose = verbose,
+      save_results = FALSE,
+      output_file = "",
+      obs_file = obs_file,
+      obs_to_model_units = obs_to_model_units,
+      spin_up_days = spin_up_days,
+      stats_by_depth = stats_by_depth,
+      return_best = return_best,
+      best_metric = best_metric,
+      parallel = parallel_i,
+      n_workers = n_workers_i,
+      parallel_dir = parallel_dir,
+      keep_worker_dirs = keep_worker_dirs,
+      use_de = use_de_i,
+      de_iterations = de_iterations_i,
+      de_popsize = de_popsize_i,
+      de_f = de_f_i,
+      de_cr = de_cr_i,
+      de_seed_from_lhc = de_seed_i
+    )
+
+    if ("de_parallel" %in% run_lhc_formals) {
+      args_to_pass$de_parallel <- de_parallel_i
+    }
+    if ("de_n_workers" %in% run_lhc_formals) {
+      args_to_pass$de_n_workers <- de_n_workers_i
+    }
+
+    supported_args <- intersect(names(args_to_pass), run_lhc_formals)
+    do.call(run_lhc_fn, args_to_pass[supported_args])
+  }
+
+  # ------------------------------------------------------------------------
+  # Per-model calibration worker. Encapsulated as a closure so it can be
+  # executed either sequentially (lapply) or concurrently across models
+  # (parLapply on a small cluster, one worker process per model). It reads
+  # only from the *_by_model lookups resolved above and never touches shared
+  # mutable state, so it is safe to run in parallel.
+  # ------------------------------------------------------------------------
+  .calibrate_one_model <- function(m) {
     cs <- setup_by_model[[m]]
     ps <- param_by_model[[m]]
     mdir <- model_dir_by_model[[m]]
@@ -264,41 +400,19 @@ cali_ensemble_wq <- function(models = c("GLM-AED2", "GOTM-WET", "GOTM-Selmaprotb
     }
 
     if (is.null(cs) || nrow(cs) == 0L) {
-      msg("[cali_ensemble_wq] Skipping ", m, ": no calib_setup rows.")
-      summary_rows[[i]] <- data.frame(
-        model = m,
-        success = FALSE,
-        message = "No calib_setup rows for model",
-        n_rows = NA_integer_,
-        n_stats = NA_integer_,
-        sample_index_best = NA_integer_,
-        stringsAsFactors = FALSE
-      )
-      if (on_error == "stop") {
-        stop("No calib_setup rows for model: ", m)
-      }
-      next
+      return(list(model = m, success = FALSE,
+                  message = "No calib_setup rows for model", one_result = NULL))
     }
 
     if (length(ps) == 0L) {
-      msg("[cali_ensemble_wq] Skipping ", m, ": no parameter names.")
-      summary_rows[[i]] <- data.frame(
-        model = m,
-        success = FALSE,
-        message = "No parameter names for model",
-        n_rows = NA_integer_,
-        n_stats = NA_integer_,
-        sample_index_best = NA_integer_,
-        stringsAsFactors = FALSE
-      )
-      if (on_error == "stop") {
-        stop("No parameter names for model: ", m)
-      }
-      next
+      return(list(model = m, success = FALSE,
+                  message = "No parameter names for model", one_result = NULL))
     }
 
-    msg("[cali_ensemble_wq] Running model: ", m,
-        " (", length(ps), " parameters, n_samples=", n_samples, ")")
+    if (isTRUE(verbose)) {
+      message("[cali_ensemble_wq] Running model: ", m,
+              " (", length(ps), " parameters, n_samples=", n_samples, ")")
+    }
 
     # GLM/SIMSTRAT parameter files are edited in-place during each LHC run.
     # Running parallel workers against one shared model_dir can cause file
@@ -309,8 +423,10 @@ cali_ensemble_wq <- function(models = c("GLM-AED2", "GOTM-WET", "GOTM-Selmaprotb
     parallel_i <- isTRUE(parallel)
     n_workers_i <- n_workers
     if (parallel_i && m %in% c("GLM-AED2", "Simstrat-AED2")) {
-      msg("[cali_ensemble_wq] Parallel disabled for ", m,
-          " to avoid in-place file write collisions. Running sequentially.")
+      if (isTRUE(verbose)) {
+        message("[cali_ensemble_wq] Parallel disabled for ", m,
+                " to avoid in-place file write collisions. Running sequentially.")
+      }
       parallel_i <- FALSE
       n_workers_i <- NULL
     }
@@ -338,52 +454,136 @@ cali_ensemble_wq <- function(models = c("GLM-AED2", "GOTM-WET", "GOTM-Selmaprotb
     par_file_i <- par_file_by_model[[m]] %||% par_file[1]
     par_file_i <- as.character(par_file_i[1])
 
+    use_de_i <- isTRUE(use_de_by_model[[m]])
+    de_iterations_i <- de_iterations_by_model[[m]] %||% de_iterations
+    de_popsize_i <- de_popsize_by_model[[m]]
+    de_f_i <- de_f_by_model[[m]] %||% de_f
+    de_cr_i <- de_cr_by_model[[m]] %||% de_cr
+    de_seed_i <- if (is.null(de_seed_by_model[[m]])) de_seed_from_lhc else isTRUE(de_seed_by_model[[m]])
+    de_parallel_i <- isTRUE(de_parallel_by_model[[m]])
+    de_n_workers_i <- de_n_workers_by_model[[m]]
+
     one_result <- tryCatch(
-      run_lhc_wq(
-        model = m,
-        param_names = ps,
-        calib_setup = cs,
-        yaml_file = yaml_i,
-        model_dir = mdir,
-        n_samples = n_samples,
-        model_filter = model_filter_i,
-        wq_config_file = wq_cfg_i,
-        yaml_file_model = yaml_model_i,
-        par_file = par_file_i,
-        verbose = verbose,
-        save_results = FALSE,
-        output_file = "",
-        obs_file = obs_file,
-        obs_to_model_units = obs_to_model_units,
-        spin_up_days = spin_up_days,
-        stats_by_depth = stats_by_depth,
-        return_best = return_best,
-        best_metric = best_metric,
-        parallel = parallel_i,
-        n_workers = n_workers_i,
-        parallel_dir = parallel_dir,
-        keep_worker_dirs = keep_worker_dirs
+      .call_run_lhc_wq(
+        model_name = m,
+        param_names_i = ps,
+        calib_setup_i = cs,
+        yaml_i = yaml_i,
+        model_dir_i = mdir,
+        model_filter_i = model_filter_i,
+        wq_cfg_i = wq_cfg_i,
+        yaml_model_i = yaml_model_i,
+        par_file_i = par_file_i,
+        parallel_i = parallel_i,
+        n_workers_i = n_workers_i,
+        use_de_i = use_de_i,
+        de_iterations_i = de_iterations_i,
+        de_popsize_i = de_popsize_i,
+        de_f_i = de_f_i,
+        de_cr_i = de_cr_i,
+        de_seed_i = de_seed_i,
+        de_parallel_i = de_parallel_i,
+        de_n_workers_i = de_n_workers_i
       ),
       error = function(e) e
     )
 
     if (inherits(one_result, "error")) {
-      msg("[cali_ensemble_wq] Model failed: ", m, " -> ", conditionMessage(one_result))
+      return(list(model = m, success = FALSE,
+                  message = conditionMessage(one_result), one_result = NULL))
+    }
+
+    list(model = m, success = TRUE, message = "ok", one_result = one_result)
+  }
+
+  # ------------------------------------------------------------------------
+  # Run models one worker process each on a small cluster. Kept as a
+  # standalone function (rather than inline) so the cluster handle ('cl')
+  # never becomes part of .calibrate_one_model's closure -- that closure gets
+  # shipped to every worker, and a live cluster object has no business being
+  # serialized into itself.
+  # ------------------------------------------------------------------------
+  .run_models_in_parallel <- function(worker_fn, models_to_run, n_workers_pool, log_file = "") {
+    # PSOCK workers have no console attached, so message()/cat() output from
+    # inside worker_fn (and from run_lhc_wq()/DEoptim's own progress logging)
+    # is silently discarded by default. Passing a real file path as `outfile`
+    # redirects every worker's stdout/stderr there so progress is visible
+    # while the ensemble runs (tail the file, or open it after each check).
+    cl <- parallel::makeCluster(n_workers_pool, outfile = log_file)
+    on.exit(parallel::stopCluster(cl), add = TRUE)
+
+    parallel::clusterEvalQ(cl, {
+      for (pkg in c("lhs", "readr", "yaml", "dplyr", "glmtools", "gotmtools",
+                    "configr", "ncdf4", "lubridate", "reshape2", "DEoptim",
+                    "GLM3r", "WETr", "SelmaprotbasR", "SimstratR")) {
+        suppressMessages(try(require(pkg, character.only = TRUE), silent = TRUE))
+      }
+      NULL
+    })
+
+    parallel::clusterExport(
+      cl,
+      varlist = c("run_lhc_wq", "run_lhc_wq_parallel", ".cal_lhc_obs_stats",
+                  "cal_metrics", "cal_stats", "load_config", "get_output_wq",
+                  "expand_templates", ".load_metrics_dictionary_wq"),
+      envir = environment(worker_fn)
+    )
+
+    parallel::parLapply(cl, models_to_run, worker_fn)
+  }
+
+  if (isTRUE(parallel_models) && length(models) > 1L) {
+    if (is.null(n_model_workers)) {
+      n_model_workers <- min(length(models), max(1L, parallel::detectCores(logical = FALSE) - 1L))
+    }
+    n_model_workers <- max(1L, min(as.integer(n_model_workers[1]), length(models)))
+
+    if ((isTRUE(parallel) || isTRUE(de_parallel)) ) {
+      msg("[cali_ensemble_wq] parallel_models=TRUE together with parallel/de_parallel ",
+          "stacks worker processes (n_model_workers x n_workers/de_n_workers). ",
+          "Make sure this does not exceed available CPU cores.")
+    }
+
+    log_dir <- if (!is.null(output_dir)) output_dir else folder
+    if (!dir.exists(log_dir)) {
+      dir.create(log_dir, recursive = TRUE, showWarnings = FALSE)
+    }
+    log_file <- file.path(log_dir, "cali_ensemble_wq_workers.log")
+    # Truncate any previous run's log so tailing it doesn't show stale output.
+    try(writeLines(character(0), log_file), silent = TRUE)
+
+    msg("[cali_ensemble_wq] Running ", length(models),
+        " model(s) concurrently across ", n_model_workers, " worker process(es). ",
+        "Worker progress messages (per-model + DE eval logs) are written to: ", log_file)
+
+    model_outcomes <- .run_models_in_parallel(.calibrate_one_model, models, n_model_workers, log_file)
+  } else {
+    model_outcomes <- lapply(models, .calibrate_one_model)
+  }
+
+  for (i in seq_along(models)) {
+    m <- models[i]
+    cs <- setup_by_model[[m]]
+    outcome <- model_outcomes[[i]]
+
+    if (!isTRUE(outcome$success)) {
+      msg("[cali_ensemble_wq] Skipping/failed ", m, ": ", outcome$message)
       summary_rows[[i]] <- data.frame(
         model = m,
         success = FALSE,
-        message = conditionMessage(one_result),
+        message = outcome$message,
         n_rows = NA_integer_,
         n_stats = NA_integer_,
         sample_index_best = NA_integer_,
         stringsAsFactors = FALSE
       )
       if (on_error == "stop") {
-        stop("Calibration failed for model ", m, ": ", conditionMessage(one_result))
+        stop("Calibration failed for model ", m, ": ", outcome$message)
       }
       next
     }
 
+    one_result <- outcome$one_result
     results[[m]] <- one_result
 
     best_row <- attr(one_result, "best_parameter_set")
