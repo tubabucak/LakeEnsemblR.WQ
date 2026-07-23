@@ -1,0 +1,754 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+
+
+<title>LakeEnsemblR.WQ Full Workflow</title>
+
+<script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
+// be compatible with the behavior of Pandoc < 2.8).
+document.addEventListener('DOMContentLoaded', function(e) {
+  var hs = document.querySelectorAll("div.section[class*='level'] > :first-child");
+  var i, h, a;
+  for (i = 0; i < hs.length; i++) {
+    h = hs[i];
+    if (!/^h[1-6]$/i.test(h.tagName)) continue;  // it should be a header h1-h6
+    a = h.attributes;
+    while (a.length > 0) h.removeAttribute(a[0].name);
+  }
+});
+</script>
+
+<style type="text/css">
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+span.underline{text-decoration: underline;}
+div.column{display: inline-block; vertical-align: top; width: 50%;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+</style>
+
+
+
+<style type="text/css">
+code {
+white-space: pre;
+}
+.sourceCode {
+overflow: visible;
+}
+</style>
+<style type="text/css" data-origin="pandoc">
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+{ counter-reset: source-line 0; }
+pre.numberSource code > span
+{ position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+{ content: counter(source-line);
+position: relative; left: -1em; text-align: right; vertical-align: baseline;
+border: none; display: inline-block;
+-webkit-touch-callout: none; -webkit-user-select: none;
+-khtml-user-select: none; -moz-user-select: none;
+-ms-user-select: none; user-select: none;
+padding: 0 4px; width: 4em;
+color: #aaaaaa;
+}
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa; padding-left: 4px; }
+div.sourceCode
+{ }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } 
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.at { color: #7d9029; } 
+code span.bn { color: #40a070; } 
+code span.bu { color: #008000; } 
+code span.cf { color: #007020; font-weight: bold; } 
+code span.ch { color: #4070a0; } 
+code span.cn { color: #880000; } 
+code span.co { color: #60a0b0; font-style: italic; } 
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.do { color: #ba2121; font-style: italic; } 
+code span.dt { color: #902000; } 
+code span.dv { color: #40a070; } 
+code span.er { color: #ff0000; font-weight: bold; } 
+code span.ex { } 
+code span.fl { color: #40a070; } 
+code span.fu { color: #06287e; } 
+code span.im { color: #008000; font-weight: bold; } 
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.kw { color: #007020; font-weight: bold; } 
+code span.op { color: #666666; } 
+code span.ot { color: #007020; } 
+code span.pp { color: #bc7a00; } 
+code span.sc { color: #4070a0; } 
+code span.ss { color: #bb6688; } 
+code span.st { color: #4070a0; } 
+code span.va { color: #19177c; } 
+code span.vs { color: #4070a0; } 
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } 
+</style>
+<script>
+// apply pandoc div.sourceCode style to pre.sourceCode instead
+(function() {
+  var sheets = document.styleSheets;
+  for (var i = 0; i < sheets.length; i++) {
+    if (sheets[i].ownerNode.dataset["origin"] !== "pandoc") continue;
+    try { var rules = sheets[i].cssRules; } catch (e) { continue; }
+    var j = 0;
+    while (j < rules.length) {
+      var rule = rules[j];
+      // check if there is a div.sourceCode rule
+      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") {
+        j++;
+        continue;
+      }
+      var style = rule.style.cssText;
+      // check if color or background-color is set
+      if (rule.style.color === '' && rule.style.backgroundColor === '') {
+        j++;
+        continue;
+      }
+      // replace div.sourceCode by a pre.sourceCode rule
+      sheets[i].deleteRule(j);
+      sheets[i].insertRule('pre.sourceCode{' + style + '}', j);
+    }
+  }
+})();
+</script>
+
+
+
+
+<style type="text/css">body {
+background-color: #fff;
+margin: 1em auto;
+max-width: 700px;
+overflow: visible;
+padding-left: 2em;
+padding-right: 2em;
+font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+font-size: 14px;
+line-height: 1.35;
+}
+#TOC {
+clear: both;
+margin: 0 0 10px 10px;
+padding: 4px;
+width: 400px;
+border: 1px solid #CCCCCC;
+border-radius: 5px;
+background-color: #f6f6f6;
+font-size: 13px;
+line-height: 1.3;
+}
+#TOC .toctitle {
+font-weight: bold;
+font-size: 15px;
+margin-left: 5px;
+}
+#TOC ul {
+padding-left: 40px;
+margin-left: -1.5em;
+margin-top: 5px;
+margin-bottom: 5px;
+}
+#TOC ul ul {
+margin-left: -2em;
+}
+#TOC li {
+line-height: 16px;
+}
+table {
+margin: 1em auto;
+border-width: 1px;
+border-color: #DDDDDD;
+border-style: outset;
+border-collapse: collapse;
+}
+table th {
+border-width: 2px;
+padding: 5px;
+border-style: inset;
+}
+table td {
+border-width: 1px;
+border-style: inset;
+line-height: 18px;
+padding: 5px 5px;
+}
+table, table th, table td {
+border-left-style: none;
+border-right-style: none;
+}
+table thead, table tr.even {
+background-color: #f7f7f7;
+}
+p {
+margin: 0.5em 0;
+}
+blockquote {
+background-color: #f6f6f6;
+padding: 0.25em 0.75em;
+}
+hr {
+border-style: solid;
+border: none;
+border-top: 1px solid #777;
+margin: 28px 0;
+}
+dl {
+margin-left: 0;
+}
+dl dd {
+margin-bottom: 13px;
+margin-left: 13px;
+}
+dl dt {
+font-weight: bold;
+}
+ul {
+margin-top: 0;
+}
+ul li {
+list-style: circle outside;
+}
+ul ul {
+margin-bottom: 0;
+}
+pre, code {
+background-color: #f7f7f7;
+border-radius: 3px;
+color: #333;
+white-space: pre-wrap; 
+}
+pre {
+border-radius: 3px;
+margin: 5px 0px 10px 0px;
+padding: 10px;
+}
+pre:not([class]) {
+background-color: #f7f7f7;
+}
+code {
+font-family: Consolas, Monaco, 'Courier New', monospace;
+font-size: 85%;
+}
+p > code, li > code {
+padding: 2px 0px;
+}
+div.figure {
+text-align: center;
+}
+img {
+background-color: #FFFFFF;
+padding: 2px;
+border: 1px solid #DDDDDD;
+border-radius: 3px;
+border: 1px solid #CCCCCC;
+margin: 0 5px;
+}
+h1 {
+margin-top: 0;
+font-size: 35px;
+line-height: 40px;
+}
+h2 {
+border-bottom: 4px solid #f7f7f7;
+padding-top: 10px;
+padding-bottom: 2px;
+font-size: 145%;
+}
+h3 {
+border-bottom: 2px solid #f7f7f7;
+padding-top: 10px;
+font-size: 120%;
+}
+h4 {
+border-bottom: 1px solid #f7f7f7;
+margin-left: 8px;
+font-size: 105%;
+}
+h5, h6 {
+border-bottom: 1px solid #ccc;
+font-size: 105%;
+}
+a {
+color: #0033dd;
+text-decoration: none;
+}
+a:hover {
+color: #6666ff; }
+a:visited {
+color: #800080; }
+a:visited:hover {
+color: #BB00BB; }
+a[href^="http:"] {
+text-decoration: underline; }
+a[href^="https:"] {
+text-decoration: underline; }
+
+code > span.kw { color: #555; font-weight: bold; } 
+code > span.dt { color: #902000; } 
+code > span.dv { color: #40a070; } 
+code > span.bn { color: #d14; } 
+code > span.fl { color: #d14; } 
+code > span.ch { color: #d14; } 
+code > span.st { color: #d14; } 
+code > span.co { color: #888888; font-style: italic; } 
+code > span.ot { color: #007020; } 
+code > span.al { color: #ff0000; font-weight: bold; } 
+code > span.fu { color: #900; font-weight: bold; } 
+code > span.er { color: #a61717; background-color: #e3d2d2; } 
+</style>
+
+
+
+
+</head>
+
+<body>
+
+
+
+
+<h1 class="title toc-ignore">LakeEnsemblR.WQ Full Workflow</h1>
+
+
+
+<div id="purpose" class="section level2">
+<h2>Purpose</h2>
+<p>This vignette provides an end-to-end workflow for
+LakeEnsemblR.WQ:</p>
+<ol style="list-style-type: decimal">
+<li>Configure coupled model inputs.</li>
+<li>Validate model setups.</li>
+<li>Run model ensembles.</li>
+<li>Compute harmonized metrics.</li>
+<li>Prepare and run calibration – single-model LHC, optional DE
+refinement, writing best parameters back, and calibrating all coupled
+models at once (sequentially or concurrently) with
+<code>cali_ensemble_wq()</code>.</li>
+<li>Run sensitivity analysis.</li>
+<li>Compare and visualize model outputs against each other and
+observations.</li>
+</ol>
+</div>
+<div id="prerequisites" class="section level2">
+<h2>Prerequisites</h2>
+<ul>
+<li>A physical LakeEnsemblR setup already exported.</li>
+<li>A water-quality config file: LakeEnsemblR_WQ.yaml.</li>
+<li>A metrics config file: Output.yaml.</li>
+<li>Supported model folders, for example:
+<ul>
+<li>GLM-AED2</li>
+<li>GOTM-WET</li>
+<li>GOTM-Selmaprotbas</li>
+<li>SIMSTRAT-AED2</li>
+</ul></li>
+<li>For calibration against observations (Section 5): an observed-data
+CSV with columns <code>datetime</code>, <code>depth</code>,
+<code>variable_global_name</code>, <code>value</code>.</li>
+</ul>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="fu">library</span>(LakeEnsemblR)</span>
+<span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a><span class="fu">library</span>(LakeEnsemblR.WQ)</span></code></pre></div>
+</div>
+<div id="export-wq-configuration-and-inputs" class="section level2">
+<h2>1) Export WQ configuration and inputs</h2>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a><span class="fu">export_config_wq</span>(<span class="st">&quot;LakeEnsemblR_WQ.yaml&quot;</span>)</span></code></pre></div>
+</div>
+<div id="validate-model-setups" class="section level2">
+<h2>2) Validate model setups</h2>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a><span class="fu">validate_glm_aed</span>(<span class="at">config_file =</span> <span class="st">&quot;LakeEnsemblR_WQ.yaml&quot;</span>, <span class="at">folder =</span> <span class="st">&quot;.&quot;</span>)</span>
+<span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a><span class="fu">validate_gotm_wet</span>(<span class="at">config_file =</span> <span class="st">&quot;LakeEnsemblR_WQ.yaml&quot;</span>, <span class="at">folder =</span> <span class="st">&quot;.&quot;</span>)</span>
+<span id="cb3-3"><a href="#cb3-3" tabindex="-1"></a><span class="fu">validate_simstrat</span>(<span class="at">config_file =</span> <span class="st">&quot;LakeEnsemblR_WQ.yaml&quot;</span>, <span class="at">folder =</span> <span class="st">&quot;.&quot;</span>)</span></code></pre></div>
+<p><code>run_ensemble_wq()</code> (next section) can also run these
+automatically via its own <code>validate = TRUE</code> argument –
+calling them directly here is useful when you want validation errors
+surfaced before committing to a full ensemble run.</p>
+</div>
+<div id="run-ensemble-simulations" class="section level2">
+<h2>3) Run ensemble simulations</h2>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a>run_res <span class="ot">&lt;-</span> <span class="fu">run_ensemble_wq</span>(</span>
+<span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a>  <span class="at">config_file =</span> <span class="st">&quot;LakeEnsemblR_WQ.yaml&quot;</span>,</span>
+<span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a>  <span class="at">models =</span> <span class="fu">c</span>(<span class="st">&quot;GLM-AED2&quot;</span>, <span class="st">&quot;GOTM-WET&quot;</span>, <span class="st">&quot;GOTM-Selmaprotbas&quot;</span>, <span class="st">&quot;SIMSTRAT-AED2&quot;</span>),</span>
+<span id="cb4-4"><a href="#cb4-4" tabindex="-1"></a>  <span class="at">folder =</span> <span class="st">&quot;.&quot;</span>,</span>
+<span id="cb4-5"><a href="#cb4-5" tabindex="-1"></a>  <span class="at">validate =</span> <span class="cn">TRUE</span>,</span>
+<span id="cb4-6"><a href="#cb4-6" tabindex="-1"></a>  <span class="at">verbose =</span> <span class="cn">TRUE</span></span>
+<span id="cb4-7"><a href="#cb4-7" tabindex="-1"></a>)</span></code></pre></div>
+</div>
+<div id="compute-metrics-and-statistics" class="section level2">
+<h2>4) Compute metrics and statistics</h2>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a>metric_out <span class="ot">&lt;-</span> <span class="fu">cal_metrics</span>(</span>
+<span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a>  <span class="at">metric_yaml_file =</span> <span class="st">&quot;Output.yaml&quot;</span>,</span>
+<span id="cb5-3"><a href="#cb5-3" tabindex="-1"></a>  <span class="at">model_filter =</span> <span class="st">&quot;all&quot;</span>,</span>
+<span id="cb5-4"><a href="#cb5-4" tabindex="-1"></a>  <span class="at">wq_config_file =</span> <span class="st">&quot;LakeEnsemblR_WQ.yaml&quot;</span></span>
+<span id="cb5-5"><a href="#cb5-5" tabindex="-1"></a>)</span></code></pre></div>
+</div>
+<div id="calibration-workflow" class="section level2">
+<h2>5) Calibration workflow</h2>
+<div id="generate-calibration-tables" class="section level3">
+<h3>5.1 Generate calibration tables</h3>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a><span class="fu">create_calibration_tables</span>(</span>
+<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a>  <span class="at">folder =</span> <span class="st">&quot;.&quot;</span>,</span>
+<span id="cb6-3"><a href="#cb6-3" tabindex="-1"></a>  <span class="at">config_file =</span> <span class="st">&quot;LakeEnsemblR_WQ.yaml&quot;</span>,</span>
+<span id="cb6-4"><a href="#cb6-4" tabindex="-1"></a>  <span class="at">folder_out =</span> <span class="st">&quot;calibration&quot;</span>,</span>
+<span id="cb6-5"><a href="#cb6-5" tabindex="-1"></a>  <span class="at">models_coupled =</span> <span class="fu">c</span>(<span class="st">&quot;GLM-AED2&quot;</span>, <span class="st">&quot;GOTM-WET&quot;</span>, <span class="st">&quot;GOTM-Selmaprotbas&quot;</span>, <span class="st">&quot;SIMSTRAT-AED2&quot;</span>),</span>
+<span id="cb6-6"><a href="#cb6-6" tabindex="-1"></a>  <span class="at">bounds_factor =</span> <span class="fl">0.2</span></span>
+<span id="cb6-7"><a href="#cb6-7" tabindex="-1"></a>)</span></code></pre></div>
+<p>Edit module files in the calibration folder: - set include = TRUE for
+selected parameters - adjust lower, upper, and initial as needed</p>
+</div>
+<div id="build-calib_setup-from-edited-tables" class="section level3">
+<h3>5.2 Build calib_setup from edited tables</h3>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a>cs_all <span class="ot">&lt;-</span> <span class="fu">calib_setup_from_tables</span>(</span>
+<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a>  <span class="at">folder_in =</span> <span class="st">&quot;calibration-test&quot;</span>,</span>
+<span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a>  <span class="at">model_coupled =</span> <span class="fu">c</span>(<span class="st">&quot;GLM-AED2&quot;</span>, <span class="st">&quot;GOTM-WET&quot;</span>, <span class="st">&quot;GOTM-Selmaprotbas&quot;</span>, <span class="st">&quot;SIMSTRAT-AED2&quot;</span>)</span>
+<span id="cb7-4"><a href="#cb7-4" tabindex="-1"></a>)</span></code></pre></div>
+</div>
+<div id="run-small-lhc-test-per-model" class="section level3">
+<h3>5.3 Run small LHC test per model</h3>
+<p>Run one model at a time. <code>run_lhc_wq()</code> samples the
+parameter space with Latin Hypercube Sampling and, for each sample,
+edits the model’s own config files in <code>model_dir</code> in place,
+runs the model, and scores it. If <code>obs_file</code> is supplied it
+returns a long-format data frame (one row per iteration x observed
+variable) with NSE/RMSE/NRMSE/PBIAS/KGE; otherwise it falls back to
+<code>cal_metrics()</code>-derived metrics only.</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a>cs_glm <span class="ot">&lt;-</span> <span class="fu">subset</span>(cs_all, model_coupled <span class="sc">==</span> <span class="st">&quot;GLM-AED2&quot;</span>)</span>
+<span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a></span>
+<span id="cb8-3"><a href="#cb8-3" tabindex="-1"></a>res_glm <span class="ot">&lt;-</span> <span class="fu">run_lhc_wq</span>(</span>
+<span id="cb8-4"><a href="#cb8-4" tabindex="-1"></a>  <span class="at">model          =</span> <span class="st">&quot;GLM-AED2&quot;</span>,</span>
+<span id="cb8-5"><a href="#cb8-5" tabindex="-1"></a>  <span class="at">param_names    =</span> <span class="fu">unique</span>(cs_glm<span class="sc">$</span>pars),</span>
+<span id="cb8-6"><a href="#cb8-6" tabindex="-1"></a>  <span class="at">calib_setup    =</span> cs_glm,</span>
+<span id="cb8-7"><a href="#cb8-7" tabindex="-1"></a>  <span class="at">yaml_file      =</span> <span class="st">&quot;Output.yaml&quot;</span>,</span>
+<span id="cb8-8"><a href="#cb8-8" tabindex="-1"></a>  <span class="at">model_dir      =</span> <span class="st">&quot;GLM-AED2&quot;</span>,</span>
+<span id="cb8-9"><a href="#cb8-9" tabindex="-1"></a>  <span class="at">n_samples      =</span> <span class="dv">3</span>,</span>
+<span id="cb8-10"><a href="#cb8-10" tabindex="-1"></a>  <span class="at">wq_config_file =</span> <span class="st">&quot;LakeEnsemblR_WQ.yaml&quot;</span>,</span>
+<span id="cb8-11"><a href="#cb8-11" tabindex="-1"></a>  <span class="at">obs_file       =</span> <span class="st">&quot;obs_data.csv&quot;</span>,   <span class="co"># datetime, depth, variable_global_name, value</span></span>
+<span id="cb8-12"><a href="#cb8-12" tabindex="-1"></a>  <span class="at">best_metric    =</span> <span class="st">&quot;KGE&quot;</span>,</span>
+<span id="cb8-13"><a href="#cb8-13" tabindex="-1"></a>  <span class="at">verbose        =</span> <span class="cn">TRUE</span></span>
+<span id="cb8-14"><a href="#cb8-14" tabindex="-1"></a>)</span>
+<span id="cb8-15"><a href="#cb8-15" tabindex="-1"></a></span>
+<span id="cb8-16"><a href="#cb8-16" tabindex="-1"></a><span class="co"># Note: model_dir&#39;s config files are restored to their pre-calibration state</span></span>
+<span id="cb8-17"><a href="#cb8-17" tabindex="-1"></a><span class="co"># once run_lhc_wq() returns (including on error) -- the function snapshots</span></span>
+<span id="cb8-18"><a href="#cb8-18" tabindex="-1"></a><span class="co"># model_dir before sampling and copies that snapshot back via on.exit(). Your</span></span>
+<span id="cb8-19"><a href="#cb8-19" tabindex="-1"></a><span class="co"># working files are not left mutated at the last-tried parameter set.</span></span>
+<span id="cb8-20"><a href="#cb8-20" tabindex="-1"></a></span>
+<span id="cb8-21"><a href="#cb8-21" tabindex="-1"></a><span class="fu">head</span>(res_glm)</span>
+<span id="cb8-22"><a href="#cb8-22" tabindex="-1"></a><span class="fu">attr</span>(res_glm, <span class="st">&quot;best_parameter_set&quot;</span>)   <span class="co"># winning parameter set for this model</span></span></code></pre></div>
+</div>
+<div id="optional-refine-with-differential-evolution-de" class="section level3">
+<h3>5.4 Optional: refine with Differential Evolution (DE)</h3>
+<p>Set <code>use_de = TRUE</code> to run DEoptim after the LHC phase,
+seeded from the best LHC results. When DE is used,
+<code>attr(res_glm, &quot;best_parameter_set&quot;)</code> is overwritten with
+DE’s refined optimum (DE improves on the LHC seed) – the original
+LHC-phase best is still available under
+<code>attr(res_glm, &quot;lhc_best_parameter_set&quot;)</code> for comparison.</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" tabindex="-1"></a>res_glm_de <span class="ot">&lt;-</span> <span class="fu">run_lhc_wq</span>(</span>
+<span id="cb9-2"><a href="#cb9-2" tabindex="-1"></a>  <span class="at">model            =</span> <span class="st">&quot;GLM-AED2&quot;</span>,</span>
+<span id="cb9-3"><a href="#cb9-3" tabindex="-1"></a>  <span class="at">param_names      =</span> <span class="fu">unique</span>(cs_glm<span class="sc">$</span>pars),</span>
+<span id="cb9-4"><a href="#cb9-4" tabindex="-1"></a>  <span class="at">calib_setup      =</span> cs_glm,</span>
+<span id="cb9-5"><a href="#cb9-5" tabindex="-1"></a>  <span class="at">yaml_file        =</span> <span class="st">&quot;Output.yaml&quot;</span>,</span>
+<span id="cb9-6"><a href="#cb9-6" tabindex="-1"></a>  <span class="at">model_dir        =</span> <span class="st">&quot;GLM-AED2&quot;</span>,</span>
+<span id="cb9-7"><a href="#cb9-7" tabindex="-1"></a>  <span class="at">n_samples        =</span> <span class="dv">20</span>,</span>
+<span id="cb9-8"><a href="#cb9-8" tabindex="-1"></a>  <span class="at">wq_config_file   =</span> <span class="st">&quot;LakeEnsemblR_WQ.yaml&quot;</span>,</span>
+<span id="cb9-9"><a href="#cb9-9" tabindex="-1"></a>  <span class="at">obs_file         =</span> <span class="st">&quot;obs_data.csv&quot;</span>,</span>
+<span id="cb9-10"><a href="#cb9-10" tabindex="-1"></a>  <span class="at">best_metric      =</span> <span class="st">&quot;KGE&quot;</span>,</span>
+<span id="cb9-11"><a href="#cb9-11" tabindex="-1"></a>  <span class="at">use_de           =</span> <span class="cn">TRUE</span>,</span>
+<span id="cb9-12"><a href="#cb9-12" tabindex="-1"></a>  <span class="at">de_iterations    =</span> <span class="dv">30</span>,</span>
+<span id="cb9-13"><a href="#cb9-13" tabindex="-1"></a>  <span class="at">de_seed_from_lhc =</span> <span class="cn">TRUE</span>,</span>
+<span id="cb9-14"><a href="#cb9-14" tabindex="-1"></a>  <span class="at">verbose          =</span> <span class="cn">TRUE</span></span>
+<span id="cb9-15"><a href="#cb9-15" tabindex="-1"></a>)</span>
+<span id="cb9-16"><a href="#cb9-16" tabindex="-1"></a></span>
+<span id="cb9-17"><a href="#cb9-17" tabindex="-1"></a><span class="fu">attr</span>(res_glm_de, <span class="st">&quot;best_parameter_set&quot;</span>)   <span class="co"># DE-refined best (used for write-back below)</span></span></code></pre></div>
+</div>
+<div id="write-the-best-parameters-back" class="section level3">
+<h3>5.5 Write the best parameters back</h3>
+<p><code>write_best_calib_to_par_files()</code> takes the best row
+(LHC’s, or DE’s if <code>use_de = TRUE</code>) and writes it into the
+module <code>par_file</code> CSVs referenced by
+<code>LakeEnsemblR_WQ.yaml</code> (or directly into model config files
+with <code>write_target = &quot;config&quot;</code>). Re-run
+<code>export_config_wq()</code> afterward if you need those values
+pushed all the way into the model folders for a final verification
+run.</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" tabindex="-1"></a><span class="fu">write_best_calib_to_par_files</span>(</span>
+<span id="cb10-2"><a href="#cb10-2" tabindex="-1"></a>  <span class="at">lhc_results  =</span> res_glm_de,</span>
+<span id="cb10-3"><a href="#cb10-3" tabindex="-1"></a>  <span class="at">calib_setup  =</span> cs_glm,</span>
+<span id="cb10-4"><a href="#cb10-4" tabindex="-1"></a>  <span class="at">config_file  =</span> <span class="st">&quot;LakeEnsemblR_WQ.yaml&quot;</span>,</span>
+<span id="cb10-5"><a href="#cb10-5" tabindex="-1"></a>  <span class="at">folder       =</span> <span class="st">&quot;.&quot;</span>,</span>
+<span id="cb10-6"><a href="#cb10-6" tabindex="-1"></a>  <span class="at">metric       =</span> <span class="st">&quot;KGE&quot;</span>,</span>
+<span id="cb10-7"><a href="#cb10-7" tabindex="-1"></a>  <span class="at">write_target =</span> <span class="st">&quot;par_file&quot;</span></span>
+<span id="cb10-8"><a href="#cb10-8" tabindex="-1"></a>)</span></code></pre></div>
+</div>
+<div id="calibrate-all-coupled-models-with-cali_ensemble_wq" class="section level3">
+<h3>5.6 Calibrate all coupled models with cali_ensemble_wq()</h3>
+<p><code>cali_ensemble_wq()</code> is the multi-model wrapper around
+<code>run_lhc_wq()</code>: pass it the full <code>models</code> vector
+and the combined <code>cs_all</code> table (split automatically by
+<code>model_coupled</code>) and it runs, scores, and optionally writes
+back the best parameters for every model in one call.</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" tabindex="-1"></a>models_coupled <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">&quot;GLM-AED2&quot;</span>, <span class="st">&quot;GOTM-WET&quot;</span>, <span class="st">&quot;GOTM-Selmaprotbas&quot;</span>, <span class="st">&quot;Simstrat-AED2&quot;</span>)</span>
+<span id="cb11-2"><a href="#cb11-2" tabindex="-1"></a></span>
+<span id="cb11-3"><a href="#cb11-3" tabindex="-1"></a>result <span class="ot">&lt;-</span> <span class="fu">cali_ensemble_wq</span>(</span>
+<span id="cb11-4"><a href="#cb11-4" tabindex="-1"></a>  <span class="at">models         =</span> models_coupled,</span>
+<span id="cb11-5"><a href="#cb11-5" tabindex="-1"></a>  <span class="at">calib_setup    =</span> cs_all,</span>
+<span id="cb11-6"><a href="#cb11-6" tabindex="-1"></a>  <span class="at">yaml_file      =</span> <span class="st">&quot;Output.yaml&quot;</span>,</span>
+<span id="cb11-7"><a href="#cb11-7" tabindex="-1"></a>  <span class="at">folder         =</span> <span class="st">&quot;.&quot;</span>,</span>
+<span id="cb11-8"><a href="#cb11-8" tabindex="-1"></a>  <span class="at">n_samples      =</span> <span class="dv">20</span>,</span>
+<span id="cb11-9"><a href="#cb11-9" tabindex="-1"></a>  <span class="at">obs_file       =</span> <span class="st">&quot;obs_data.csv&quot;</span>,</span>
+<span id="cb11-10"><a href="#cb11-10" tabindex="-1"></a>  <span class="at">wq_config_file =</span> <span class="st">&quot;LakeEnsemblR_WQ.yaml&quot;</span>,</span>
+<span id="cb11-11"><a href="#cb11-11" tabindex="-1"></a>  <span class="at">best_metric    =</span> <span class="st">&quot;KGE&quot;</span>,</span>
+<span id="cb11-12"><a href="#cb11-12" tabindex="-1"></a>  <span class="at">use_de         =</span> <span class="cn">TRUE</span>,</span>
+<span id="cb11-13"><a href="#cb11-13" tabindex="-1"></a>  <span class="at">de_iterations  =</span> <span class="dv">30</span>,</span>
+<span id="cb11-14"><a href="#cb11-14" tabindex="-1"></a>  <span class="at">verbose        =</span> <span class="cn">TRUE</span>,</span>
+<span id="cb11-15"><a href="#cb11-15" tabindex="-1"></a>  <span class="at">on_error       =</span> <span class="st">&quot;skip&quot;</span>,       <span class="co"># a failing model doesn&#39;t stop the others</span></span>
+<span id="cb11-16"><a href="#cb11-16" tabindex="-1"></a>  <span class="at">save_results   =</span> <span class="cn">TRUE</span>,</span>
+<span id="cb11-17"><a href="#cb11-17" tabindex="-1"></a>  <span class="at">output_dir     =</span> <span class="st">&quot;calibration_results&quot;</span>,</span>
+<span id="cb11-18"><a href="#cb11-18" tabindex="-1"></a>  <span class="at">write_best     =</span> <span class="cn">TRUE</span>,</span>
+<span id="cb11-19"><a href="#cb11-19" tabindex="-1"></a>  <span class="at">write_target   =</span> <span class="st">&quot;par_file&quot;</span>,</span>
+<span id="cb11-20"><a href="#cb11-20" tabindex="-1"></a>  <span class="at">config_file    =</span> <span class="st">&quot;LakeEnsemblR_WQ.yaml&quot;</span></span>
+<span id="cb11-21"><a href="#cb11-21" tabindex="-1"></a>)</span>
+<span id="cb11-22"><a href="#cb11-22" tabindex="-1"></a></span>
+<span id="cb11-23"><a href="#cb11-23" tabindex="-1"></a>result<span class="sc">$</span>summary                              <span class="co"># one row per model: success, n_rows, n_stats</span></span>
+<span id="cb11-24"><a href="#cb11-24" tabindex="-1"></a>result<span class="sc">$</span>best_parameter_sets[[<span class="st">&quot;GLM-AED2&quot;</span>]]     <span class="co"># winning parameters for one model</span></span>
+<span id="cb11-25"><a href="#cb11-25" tabindex="-1"></a>result<span class="sc">$</span>write_back[[<span class="st">&quot;GLM-AED2&quot;</span>]]              <span class="co"># whether the write-back succeeded</span></span></code></pre></div>
+<p>By default the four models run sequentially. Since each model has its
+own <code>model_dir</code>, they can safely run
+<strong>concurrently</strong> instead, one worker process per model:</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" tabindex="-1"></a>result_parallel <span class="ot">&lt;-</span> <span class="fu">cali_ensemble_wq</span>(</span>
+<span id="cb12-2"><a href="#cb12-2" tabindex="-1"></a>  <span class="at">models          =</span> models_coupled,</span>
+<span id="cb12-3"><a href="#cb12-3" tabindex="-1"></a>  <span class="at">calib_setup     =</span> cs_all,</span>
+<span id="cb12-4"><a href="#cb12-4" tabindex="-1"></a>  <span class="at">yaml_file       =</span> <span class="st">&quot;Output.yaml&quot;</span>,</span>
+<span id="cb12-5"><a href="#cb12-5" tabindex="-1"></a>  <span class="at">folder          =</span> <span class="st">&quot;.&quot;</span>,</span>
+<span id="cb12-6"><a href="#cb12-6" tabindex="-1"></a>  <span class="at">n_samples       =</span> <span class="dv">20</span>,</span>
+<span id="cb12-7"><a href="#cb12-7" tabindex="-1"></a>  <span class="at">obs_file        =</span> <span class="st">&quot;obs_data.csv&quot;</span>,</span>
+<span id="cb12-8"><a href="#cb12-8" tabindex="-1"></a>  <span class="at">wq_config_file  =</span> <span class="st">&quot;LakeEnsemblR_WQ.yaml&quot;</span>,</span>
+<span id="cb12-9"><a href="#cb12-9" tabindex="-1"></a>  <span class="at">best_metric     =</span> <span class="st">&quot;KGE&quot;</span>,</span>
+<span id="cb12-10"><a href="#cb12-10" tabindex="-1"></a>  <span class="at">parallel_models =</span> <span class="cn">TRUE</span>,   <span class="co"># run all requested models at the same time</span></span>
+<span id="cb12-11"><a href="#cb12-11" tabindex="-1"></a>  <span class="at">n_model_workers =</span> <span class="dv">4</span>,      <span class="co"># one worker process per model</span></span>
+<span id="cb12-12"><a href="#cb12-12" tabindex="-1"></a>  <span class="at">verbose         =</span> <span class="cn">TRUE</span>,</span>
+<span id="cb12-13"><a href="#cb12-13" tabindex="-1"></a>  <span class="at">save_results    =</span> <span class="cn">TRUE</span>,</span>
+<span id="cb12-14"><a href="#cb12-14" tabindex="-1"></a>  <span class="at">output_dir      =</span> <span class="st">&quot;calibration_results&quot;</span>,</span>
+<span id="cb12-15"><a href="#cb12-15" tabindex="-1"></a>  <span class="at">write_best      =</span> <span class="cn">TRUE</span>,</span>
+<span id="cb12-16"><a href="#cb12-16" tabindex="-1"></a>  <span class="at">config_file     =</span> <span class="st">&quot;LakeEnsemblR_WQ.yaml&quot;</span></span>
+<span id="cb12-17"><a href="#cb12-17" tabindex="-1"></a>)</span></code></pre></div>
+<p><code>parallel_models</code> stacks with
+<code>parallel</code>/<code>de_parallel</code> (which parallelize LHC
+samples or DE evaluations <em>within</em> one model’s run) – if you turn
+multiple of these on together, size worker counts so
+<code>n_model_workers * n_workers</code> (or
+<code>* de_n_workers</code>) doesn’t oversubscribe your CPU cores.
+Worker processes have no attached console, so with
+<code>parallel_models = TRUE</code> progress messages are written to
+<code>&lt;output_dir&gt;/cali_ensemble_wq_workers.log</code> instead of
+printing live – tail that file to watch progress while it runs.</p>
+</div>
+</div>
+<div id="sensitivity-analysis" class="section level2">
+<h2>6) Sensitivity analysis</h2>
+<div class="sourceCode" id="cb13"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" tabindex="-1"></a>res_sens <span class="ot">&lt;-</span> <span class="fu">run_sensitivity</span>(</span>
+<span id="cb13-2"><a href="#cb13-2" tabindex="-1"></a>  <span class="at">param_name =</span> <span class="st">&quot;theta_sed_oxy&quot;</span>,</span>
+<span id="cb13-3"><a href="#cb13-3" tabindex="-1"></a>  <span class="at">calib_setup =</span> cs_glm,</span>
+<span id="cb13-4"><a href="#cb13-4" tabindex="-1"></a>  <span class="at">yaml_file =</span> <span class="st">&quot;Output.yaml&quot;</span>,</span>
+<span id="cb13-5"><a href="#cb13-5" tabindex="-1"></a>  <span class="at">model_dir =</span> <span class="st">&quot;GLM-AED2&quot;</span>,</span>
+<span id="cb13-6"><a href="#cb13-6" tabindex="-1"></a>  <span class="at">n_steps =</span> <span class="dv">10</span>,</span>
+<span id="cb13-7"><a href="#cb13-7" tabindex="-1"></a>  <span class="at">model_filter =</span> <span class="st">&quot;GLM&quot;</span></span>
+<span id="cb13-8"><a href="#cb13-8" tabindex="-1"></a>)</span></code></pre></div>
+</div>
+<div id="compare-and-visualize-model-outputs" class="section level2">
+<h2>7) Compare and visualize model outputs</h2>
+<p>The functions below all plug directly into outputs you’ve already
+produced earlier in this vignette: <code>cal_metrics()</code>’s nested
+list (Section 4) and the NetCDF file from
+<code>create_netcdf_output()</code>.</p>
+<div id="compare-one-metric-across-models" class="section level3">
+<h3>7.1 Compare one metric across models</h3>
+<p><code>compare_models_metric()</code> takes the list returned by
+<code>cal_metrics()</code> directly and line-plots one metric across all
+coupled models (auto-detecting the depth/value columns from that
+structure).</p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" tabindex="-1"></a>metric_out <span class="ot">&lt;-</span> <span class="fu">cal_metrics</span>(</span>
+<span id="cb14-2"><a href="#cb14-2" tabindex="-1"></a>  <span class="at">metric_yaml_file =</span> <span class="st">&quot;Output.yaml&quot;</span>,</span>
+<span id="cb14-3"><a href="#cb14-3" tabindex="-1"></a>  <span class="at">model_filter =</span> <span class="st">&quot;all&quot;</span>,</span>
+<span id="cb14-4"><a href="#cb14-4" tabindex="-1"></a>  <span class="at">wq_config_file =</span> <span class="st">&quot;LakeEnsemblR_WQ.yaml&quot;</span></span>
+<span id="cb14-5"><a href="#cb14-5" tabindex="-1"></a>)</span>
+<span id="cb14-6"><a href="#cb14-6" tabindex="-1"></a></span>
+<span id="cb14-7"><a href="#cb14-7" tabindex="-1"></a>cmp <span class="ot">&lt;-</span> <span class="fu">compare_models_metric</span>(</span>
+<span id="cb14-8"><a href="#cb14-8" tabindex="-1"></a>  <span class="at">metric_out =</span> metric_out,</span>
+<span id="cb14-9"><a href="#cb14-9" tabindex="-1"></a>  <span class="at">metric     =</span> <span class="st">&quot;Temp_degreeCelcius&quot;</span>,</span>
+<span id="cb14-10"><a href="#cb14-10" tabindex="-1"></a>  <span class="at">depth      =</span> <span class="dv">1</span></span>
+<span id="cb14-11"><a href="#cb14-11" tabindex="-1"></a>)</span>
+<span id="cb14-12"><a href="#cb14-12" tabindex="-1"></a>cmp<span class="sc">$</span>plot</span></code></pre></div>
+<p><code>compare_models_metric_netcdf()</code> does the same comparison
+but reads straight from a NetCDF file (see 7.3) instead of a
+<code>cal_metrics()</code> list – useful when you want to compare a
+variable that wasn’t included in <code>Output.yaml</code>.</p>
+<div class="sourceCode" id="cb15"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" tabindex="-1"></a>cmp_nc <span class="ot">&lt;-</span> <span class="fu">compare_models_metric_netcdf</span>(</span>
+<span id="cb15-2"><a href="#cb15-2" tabindex="-1"></a>  <span class="at">nc_file =</span> <span class="st">&quot;output.nc&quot;</span>,</span>
+<span id="cb15-3"><a href="#cb15-3" tabindex="-1"></a>  <span class="at">metric  =</span> <span class="st">&quot;Temp_degreeCelcius&quot;</span>,</span>
+<span id="cb15-4"><a href="#cb15-4" tabindex="-1"></a>  <span class="at">depth   =</span> <span class="dv">1</span></span>
+<span id="cb15-5"><a href="#cb15-5" tabindex="-1"></a>)</span>
+<span id="cb15-6"><a href="#cb15-6" tabindex="-1"></a>cmp_nc<span class="sc">$</span>plot</span></code></pre></div>
+</div>
+<div id="stratification-metrics-across-models-and-years" class="section level3">
+<h3>7.2 Stratification metrics across models and years</h3>
+<p><code>plot_strat_metrics()</code> accepts the same
+<code>cal_metrics()</code> list (or a NetCDF path) and produces three
+plots per model: stratification duration, onset day of year, and mixing
+onset day of year.</p>
+<div class="sourceCode" id="cb16"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" tabindex="-1"></a>strat <span class="ot">&lt;-</span> <span class="fu">plot_strat_metrics</span>(metric_out, <span class="at">metric_name =</span> <span class="st">&quot;Duration_of_Stratification&quot;</span>)</span>
+<span id="cb16-2"><a href="#cb16-2" tabindex="-1"></a>strat<span class="sc">$</span>duration_plot</span>
+<span id="cb16-3"><a href="#cb16-3" tabindex="-1"></a>strat<span class="sc">$</span>onset_plot</span>
+<span id="cb16-4"><a href="#cb16-4" tabindex="-1"></a>strat<span class="sc">$</span>mixing_plot</span></code></pre></div>
+</div>
+<div id="depth-time-heatmap-from-the-ensemble-netcdf" class="section level3">
+<h3>7.3 Depth-time heatmap from the ensemble NetCDF</h3>
+<p><code>create_netcdf_output()</code> combines all coupled models’
+output into a single NetCDF for easier downstream analysis;
+<code>plot_heatmap_wq()</code> reads it directly to produce a depth-time
+heatmap faceted by model. Repeat the <code>plot_heatmap_wq()</code> call
+for any metric name present in <code>Output.yaml</code>
+(e.g. <code>DO_gramsPerCubicMeter</code>,
+<code>NH4_gramsPerCubicMeter</code>, <code>TP_gramsPerCubicMeter</code>,
+<code>Total_Chla_miligramsPerCubicMeter</code>).</p>
+<div class="sourceCode" id="cb17"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" tabindex="-1"></a><span class="fu">create_netcdf_output</span>(</span>
+<span id="cb17-2"><a href="#cb17-2" tabindex="-1"></a>  <span class="at">output_lists    =</span> metric_out,</span>
+<span id="cb17-3"><a href="#cb17-3" tabindex="-1"></a>  <span class="at">folder          =</span> <span class="st">&quot;.&quot;</span>,</span>
+<span id="cb17-4"><a href="#cb17-4" tabindex="-1"></a>  <span class="at">model           =</span> <span class="fu">c</span>(<span class="st">&quot;GLM&quot;</span>, <span class="st">&quot;SELMAPROTBAS&quot;</span>, <span class="st">&quot;WET&quot;</span>, <span class="st">&quot;SIMSTRAT&quot;</span>),</span>
+<span id="cb17-5"><a href="#cb17-5" tabindex="-1"></a>  <span class="at">ler_config_file =</span> <span class="st">&quot;LakeEnsemblR.yaml&quot;</span>,</span>
+<span id="cb17-6"><a href="#cb17-6" tabindex="-1"></a>  <span class="at">wq_config_file  =</span> <span class="st">&quot;LakeEnsemblR_WQ.yaml&quot;</span>,</span>
+<span id="cb17-7"><a href="#cb17-7" tabindex="-1"></a>  <span class="at">out_file        =</span> <span class="st">&quot;ensemble_output.nc&quot;</span></span>
+<span id="cb17-8"><a href="#cb17-8" tabindex="-1"></a>)</span>
+<span id="cb17-9"><a href="#cb17-9" tabindex="-1"></a></span>
+<span id="cb17-10"><a href="#cb17-10" tabindex="-1"></a><span class="fu">plot_heatmap_wq</span>(<span class="st">&quot;ensemble_output.nc&quot;</span>, <span class="st">&quot;Temp_degreeCelcius&quot;</span>, <span class="at">spin_up =</span> <span class="dv">30</span>)</span></code></pre></div>
+</div>
+<div id="anoxic-and-ice-metrics-across-models-and-years" class="section level3">
+<h3>7.4 Anoxic and ice metrics across models and years</h3>
+<p><code>plot_anoxic_metrics()</code> and
+<code>plot_ice_metrics()</code> follow the same flexible input as
+<code>plot_strat_metrics()</code> (7.2) – a <code>cal_metrics()</code>
+list or a NetCDF path – and plot their respective derived metrics per
+model per year.</p>
+<div class="sourceCode" id="cb18"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" tabindex="-1"></a><span class="fu">plot_anoxic_metrics</span>(<span class="st">&quot;ensemble_output.nc&quot;</span>)</span>
+<span id="cb18-2"><a href="#cb18-2" tabindex="-1"></a><span class="fu">plot_ice_metrics</span>(<span class="st">&quot;ensemble_output.nc&quot;</span>, <span class="at">metric_name =</span> <span class="st">&quot;Ice_Thickness_meter&quot;</span>)</span></code></pre></div>
+</div>
+<div id="per-model-time-series-and-scatter-plots-against-observations" class="section level3">
+<h3>7.5 Per-model time series and scatter plots against
+observations</h3>
+<p><code>compare_plot()</code> and <code>scat_plot()</code> work at a
+lower level than the functions above: instead of a
+<code>cal_metrics()</code> list, each takes one
+<strong>wide-format</strong> data frame per model (<code>datetime</code>
++ <code>Depth_&lt;n&gt;</code> columns – the shape
+<code>get_output_wq()</code> returns) plus one for observations, and
+compute <code>cal_stats()</code> against the observed values internally.
+They’re most useful once you already have per-model output pulled out
+via <code>get_output_wq()</code> (see <code>?compare_plot</code> and
+<code>?scat_plot</code> for the full column/argument requirements) – for
+example:</p>
+<div class="sourceCode" id="cb19"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" tabindex="-1"></a>data_glm <span class="ot">&lt;-</span> <span class="fu">get_output_wq</span>(</span>
+<span id="cb19-2"><a href="#cb19-2" tabindex="-1"></a>  <span class="at">config_file =</span> <span class="st">&quot;Output.yaml&quot;</span>,</span>
+<span id="cb19-3"><a href="#cb19-3" tabindex="-1"></a>  <span class="at">model       =</span> <span class="st">&quot;GLM&quot;</span>,</span>
+<span id="cb19-4"><a href="#cb19-4" tabindex="-1"></a>  <span class="at">vars        =</span> <span class="st">&quot;temp&quot;</span>,</span>
+<span id="cb19-5"><a href="#cb19-5" tabindex="-1"></a>  <span class="at">depth_01    =</span> <span class="dv">1</span></span>
+<span id="cb19-6"><a href="#cb19-6" tabindex="-1"></a>)[[<span class="dv">1</span>]]</span>
+<span id="cb19-7"><a href="#cb19-7" tabindex="-1"></a></span>
+<span id="cb19-8"><a href="#cb19-8" tabindex="-1"></a><span class="co"># ...similarly for data_wet, data_selma, data_simstrat, and data_obs</span></span>
+<span id="cb19-9"><a href="#cb19-9" tabindex="-1"></a></span>
+<span id="cb19-10"><a href="#cb19-10" tabindex="-1"></a>res <span class="ot">&lt;-</span> <span class="fu">compare_plot</span>(</span>
+<span id="cb19-11"><a href="#cb19-11" tabindex="-1"></a>  data_glm, data_wet, data_selma, data_simstrat, data_obs,</span>
+<span id="cb19-12"><a href="#cb19-12" tabindex="-1"></a>  <span class="at">depth   =</span> <span class="dv">1</span>,</span>
+<span id="cb19-13"><a href="#cb19-13" tabindex="-1"></a>  <span class="at">y_title =</span> <span class="st">&quot;Temperature (°C)&quot;</span></span>
+<span id="cb19-14"><a href="#cb19-14" tabindex="-1"></a>)</span>
+<span id="cb19-15"><a href="#cb19-15" tabindex="-1"></a>res[[<span class="dv">1</span>]]        <span class="co"># the plot</span></span>
+<span id="cb19-16"><a href="#cb19-16" tabindex="-1"></a>res[[<span class="dv">2</span>]]        <span class="co"># cal_stats() output for GLM at this depth</span></span></code></pre></div>
+</div>
+</div>
+<div id="troubleshooting" class="section level2">
+<h2>Troubleshooting</h2>
+<div id="no-metrics-found-for-selected-model" class="section level3">
+<h3>No metrics found for selected model</h3>
+<p>Use coupling-specific model_filter values in metrics extraction: -
+GLM-AED2 -&gt; GLM - GOTM-WET -&gt; WET - GOTM-Selmaprotbas -&gt;
+SELMAPROTBAS - SIMSTRAT-AED2 -&gt; SIMSTRAT</p>
+</div>
+<div id="unsupported-file-type-in-run_lhc_wq" class="section level3">
+<h3>Unsupported file type in run_lhc_wq</h3>
+<p>Calibration tables may store dictionary-style paths (for example,
+section/parameter) instead of physical filenames. Current run_lhc_wq
+updates those dictionary paths for GLM-AED2, GOTM-WET,
+GOTM-Selmaprotbas, and SIMSTRAT-AED2.</p>
+</div>
+<div id="unused-arguments-errors-after-editing-r-source-files" class="section level3">
+<h3>“unused arguments” errors after editing R/ source files</h3>
+<p>If you’re developing against a local clone and see errors like
+<code>unused arguments (de_parallel = ..., de_n_workers = ...)</code>
+for a parameter that clearly exists in the function’s source, your
+session is very likely running a stale <strong>installed</strong> copy
+of the package (loaded via <code>library(LakeEnsemblR.WQ)</code>) rather
+than your edited source. Reload from source instead:</p>
+<div class="sourceCode" id="cb20"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" tabindex="-1"></a>devtools<span class="sc">::</span><span class="fu">load_all</span>(<span class="st">&quot;.&quot;</span>)   <span class="co"># or source() the changed R/ files directly</span></span></code></pre></div>
+</div>
+<div id="no-progress-messages-with-parallel_models-true" class="section level3">
+<h3>No progress messages with parallel_models = TRUE</h3>
+<p>This is expected, not a hang – see the note at the end of Section
+5.6. Worker processes have no attached console, so check
+<code>&lt;output_dir&gt;/cali_ensemble_wq_workers.log</code>
+instead.</p>
+</div>
+</div>
+<div id="build-package-docs" class="section level2">
+<h2>Build package docs</h2>
+<div class="sourceCode" id="cb21"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" tabindex="-1"></a><span class="co"># Regenerate Rd files from roxygen comments</span></span>
+<span id="cb21-2"><a href="#cb21-2" tabindex="-1"></a>devtools<span class="sc">::</span><span class="fu">document</span>()</span>
+<span id="cb21-3"><a href="#cb21-3" tabindex="-1"></a></span>
+<span id="cb21-4"><a href="#cb21-4" tabindex="-1"></a><span class="co"># Build the website (in docs/)</span></span>
+<span id="cb21-5"><a href="#cb21-5" tabindex="-1"></a>pkgdown<span class="sc">::</span><span class="fu">build_site</span>()</span></code></pre></div>
+</div>
+
+
+
+<!-- code folding -->
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>

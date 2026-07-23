@@ -24,7 +24,16 @@ run_lhc_wq_parallel(
   stats_by_depth = FALSE,
   return_best = TRUE,
   best_metric = "KGE",
+  target_variables = NULL,
   n_workers = NULL,
+  use_de = FALSE,
+  de_parallel = FALSE,
+  de_n_workers = NULL,
+  de_iterations = 50,
+  de_popsize = NULL,
+  de_f = 0.8,
+  de_cr = 0.9,
+  de_seed_from_lhc = TRUE,
   parallel_dir = tempdir(),
   keep_worker_dirs = FALSE
 )

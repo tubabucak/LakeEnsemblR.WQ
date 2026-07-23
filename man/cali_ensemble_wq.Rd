@@ -26,6 +26,16 @@ cali_ensemble_wq(
   n_workers = NULL,
   parallel_dir = tempdir(),
   keep_worker_dirs = FALSE,
+  use_de = FALSE,
+  de_iterations = 50,
+  de_popsize = NULL,
+  de_f = 0.8,
+  de_cr = 0.9,
+  de_seed_from_lhc = TRUE,
+  de_parallel = FALSE,
+  de_n_workers = NULL,
+  parallel_models = FALSE,
+  n_model_workers = NULL,
   verbose = TRUE,
   on_error = c("skip", "stop"),
   save_results = FALSE,
@@ -86,13 +96,47 @@ returns the flattened stats data.frame from \code{run_lhc_wq()}.}
 
 \item{best_metric}{Character. Passed to \code{run_lhc_wq()}.}
 
-\item{parallel}{Logical. Passed to \code{run_lhc_wq()}.}
+\item{parallel}{Logical. Passed to \code{run_lhc_wq()} (parallelizes LHC
+samples \emph{within} a single model's run).}
 
 \item{n_workers}{Integer or \code{NULL}. Passed to \code{run_lhc_wq()}.}
 
 \item{parallel_dir}{Character. Passed to \code{run_lhc_wq()}.}
 
 \item{keep_worker_dirs}{Logical. Passed to \code{run_lhc_wq()}.}
+
+\item{use_de}{Logical. Passed to \code{run_lhc_wq()}. Scalar, length
+\code{length(models)}, or named by model.}
+
+\item{de_iterations}{Integer. Passed to \code{run_lhc_wq()}.}
+
+\item{de_popsize}{Integer or \code{NULL}. Passed to \code{run_lhc_wq()}.}
+
+\item{de_f}{Numeric. Passed to \code{run_lhc_wq()}.}
+
+\item{de_cr}{Numeric. Passed to \code{run_lhc_wq()}.}
+
+\item{de_seed_from_lhc}{Logical. Passed to \code{run_lhc_wq()}.}
+
+\item{de_parallel}{Logical. Passed to \code{run_lhc_wq()} (parallelizes DE
+evaluations \emph{within} a single model's run).}
+
+\item{de_n_workers}{Integer or \code{NULL}. Passed to \code{run_lhc_wq()}.}
+
+\item{parallel_models}{Logical. If \code{TRUE}, calibrate all requested
+\code{models} concurrently (one worker process per model) instead of
+sequentially. Each model has its own \code{model_dir}, so running them
+concurrently does not risk the in-place file collisions that apply to
+\code{parallel}/\code{de_parallel} workers sharing a single model_dir.
+NOTE: this stacks with \code{parallel}/\code{de_parallel} -- if those are
+also enabled, total worker processes can multiply
+(\code{n_model_workers * n_workers} or \code{n_model_workers *
+de_n_workers}). Size worker counts to stay within available CPU cores.
+Default \code{FALSE} (sequential, matching prior behavior).}
+
+\item{n_model_workers}{Integer or \code{NULL}. Number of concurrent worker
+processes used when \code{parallel_models = TRUE}. Defaults to
+\code{min(length(models), detectCores(logical = FALSE) - 1)}.}
 
 \item{verbose}{Logical. Print progress messages.}
 

@@ -24,12 +24,21 @@ run_lhc_wq(
   stats_by_depth = FALSE,
   return_best = TRUE,
   best_metric = "KGE",
+  target_variables = NULL,
   parallel = FALSE,
   n_workers = NULL,
   parallel_dir = tempdir(),
   keep_worker_dirs = FALSE,
   lhs_matrix = NULL,
-  sample_indices = NULL
+  sample_indices = NULL,
+  use_de = FALSE,
+  de_iterations = 50,
+  de_popsize = NULL,
+  de_f = 0.8,
+  de_cr = 0.9,
+  de_seed_from_lhc = TRUE,
+  de_parallel = FALSE,
+  de_n_workers = NULL
 )
 }
 \arguments{
@@ -95,6 +104,8 @@ when \code{return_best = TRUE}. One of \code{"KGE"}, \code{"NSE"},
 \code{"RMSE"}, \code{"NRMSE"}, or \code{"PBIAS"}. Default is
 \code{"KGE"}.}
 
+\item{target_variables}{Character. Vector of variables to be included in the objective function}
+
 \item{parallel}{Logical. If \code{TRUE}, run in parallel by delegating to
 \code{run_lhc_wq_parallel()}. Default is \code{FALSE}.}
 
@@ -106,14 +117,47 @@ when \code{return_best = TRUE}. One of \code{"KGE"}, \code{"NSE"},
 
 \item{keep_worker_dirs}{Logical. Keep worker directories after completion
 when \code{parallel = TRUE}. Passed to \code{run_lhc_wq_parallel()}.}
+
+\item{use_de}{Logical. If \code{TRUE}, run differential evolution after LHC
+initialization using LHC results as generation 1. Default is \code{FALSE}
+(LHC-only mode maintains backward compatibility).}
+
+\item{de_iterations}{Integer. Number of DE generations to run (default = 50).
+Ignored when \code{use_de = FALSE}.}
+
+\item{de_popsize}{Integer or \code{NULL}. DE population size. If \code{NULL}
+(default), uses \code{n_samples}. Must be >= 4 for DEoptim. Ignored when
+\code{use_de = FALSE}.}
+
+\item{de_f}{Numeric. Mutation scaling factor in range [0.2, 2.0]. Higher
+values increase mutation magnitude. Default is 0.8. Ignored when
+\code{use_de = FALSE}.}
+
+\item{de_cr}{Numeric. Crossover probability in range [0, 1]. Higher values
+increase parameter exchange probability. Default is 0.9. Ignored when
+\code{use_de = FALSE}.}
+
+\item{de_seed_from_lhc}{Logical. Initialize DE population from best LHC
+results (default = \code{TRUE}). If \code{FALSE}, DE starts from random
+population. Ignored when \code{use_de = FALSE}.}
 }
 \value{
 If \code{obs_file = NULL}, a list of length \code{n_samples} with
-  sampled parameters and metrics per run. If \code{obs_file} is supplied,
-  returns a flattened data frame with sampled parameters and summary
-  statistics. In \code{obs_file} mode and when \code{return_best = TRUE},
+  sampled parameters and metrics per run. When \code{use_de = TRUE}, includes
+  additional \code{de_phase} element with DEoptim results. If \code{obs_file}
+  is supplied, returns a flattened data frame with sampled parameters and
+  summary statistics. In \code{obs_file} mode and when \code{return_best = TRUE},
   the returned data.frame includes column \code{is_best}, and attributes
-  \code{best_parameter_set} and \code{best_metric}.
+  \code{best_parameter_set} and \code{best_metric} (identifying the best LHC
+  iteration). When \code{use_de = TRUE} is also set, \code{best_parameter_set}
+  and \code{best_metric} are overwritten with DE's refined optimum (DE runs
+  after and improves on the LHC seed) -- this is the attribute read by
+  \code{write_best_calib_to_par_files()} and by
+  \code{cali_ensemble_wq()$best_parameter_sets}, so both automatically use
+  the DE result when DE was run. The original LHC-phase best is preserved
+  under attribute \code{lhc_best_parameter_set} for comparison. The DEoptim
+  object itself and its raw best member are always available via attributes
+  \code{de_phase} and \code{de_best_params}.
 }
 \description{
 Performs Latin Hypercube Sampling (LHS) based parameter-space exploration
