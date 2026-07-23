@@ -31,7 +31,6 @@
 #'
 #' @importFrom lhs randomLHS
 #' @importFrom readr read_csv write_csv
-#' @importFrom GLM3r run_glm
 #' @export
 #'
 #' @examples
@@ -113,7 +112,10 @@ for (j in seq_along(param_names)) {
     }
 
     # Run the model and extract metrics
-    run_glm(model_dir)
+    if (!requireNamespace("GLM3r", quietly = TRUE)) {
+      stop("Package 'GLM3r' is required to run GLM-AED2.")
+    }
+    GLM3r::run_glm(sim_folder = model_dir)
     metrics <- cal_metrics(yaml_file, model_filter = model_filter)
     results[[i]] <- list(params = param_values, metrics = metrics)
     
