@@ -29,7 +29,6 @@
 #' @return Invisibly returns the master calibration table as a data frame.
 #'
 #' @importFrom configr read.config
-#' @importFrom plyr count
 #' @importFrom stringr str_extract
 #'
 #' @examples
@@ -70,7 +69,7 @@ create_calibration_tables <- function(folder = ".",
   calib_table <- LakeEnsemblR_WQ_dictionary
 
   # Replicate rows for models that appear multiple times
-  counts <- count(wq_models)
+  counts <- plyr::count(wq_models)
   counts$x <- as.character(counts$x)
   calib_table$dupl_freq <- sapply(calib_table$model,
                                    function(x) counts$freq[counts$x == x])

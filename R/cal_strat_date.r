@@ -12,7 +12,7 @@
 #' @return dataframe with starting date of stratification, start date of mixing and duration of stratification
 #' @importFrom rLakeAnalyzer ts.thermo.depth
 
-#' @import tidyverse
+#' @import dplyr
 #' @import lubridate
 
 #' @export

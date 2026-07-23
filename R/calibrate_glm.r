@@ -568,7 +568,10 @@ run_glm_optim_parallel <- function(p, glmcmd, var, scaling, metric, verbose, cal
   
   run_glmcmd <- function(glmcmd, path, verbose){
     if (is.null(glmcmd)){
-      run_glm(path, verbose = verbose)
+      if (!requireNamespace("GLM3r", quietly = TRUE)) {
+        stop("Package 'GLM3r' is required to run GLM-AED2.")
+      }
+      GLM3r::run_glm(sim_folder = path, verbose = verbose)
     } else{
       system(glmcmd,ignore.stdout=TRUE)
     }

@@ -11,7 +11,6 @@
 #'@param input character vector; for what parameters do you want to fill in values
 #'
 #'@importFrom configr read.config
-#'@importFrom plyr count
 #'@importFrom stringr str_extract
 #'
 #'@export
@@ -52,7 +51,7 @@ create_input_tables <- function(folder = ".", config_file, folder_out = folder, 
   # Note: This is long and hard-to-understand code for something rather simple.
   # If we can simplify this, or at least put it in a separate function, I think
   # that'd be good.
-  counts <- count(wq_models)
+  counts <- plyr::count(wq_models)
   counts$x <- as.character(counts$x)
 
   input_table$dupl_freq <- sapply(input_table$model,
