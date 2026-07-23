@@ -30,8 +30,6 @@
 #'
 #' @importFrom readr read_csv write_csv
 
-#' @importFrom GLM3r run_glm
-
 #' @examples
 #' \dontrun{
 #' results <- run_sensitivity("R_growth", calib_setup, yaml_file = "metrics.yaml",
@@ -106,7 +104,10 @@ run_sensitivity <- function(param_name, calib_setup, yaml_file, model_dir, n_ste
       stop("Unsupported file type: ", param_rows$file[1])
     }
     
-    run_glm(model_dir)
+    if (!requireNamespace("GLM3r", quietly = TRUE)) {
+      stop("Package 'GLM3r' is required to run GLM-AED2.")
+    }
+    GLM3r::run_glm(sim_folder = model_dir)
     metrics <- cal_metrics(yaml_file, model_filter = model_filter)
     results[[i]] <- list(param_value = param_values[i], metrics = metrics)
     
