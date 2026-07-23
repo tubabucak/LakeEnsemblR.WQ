@@ -1,0 +1,16 @@
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
+
+# Ignore inst folder
+inst/
+model_setups/
+inflows/
+.positai
+
+# pkgdown build output -- rebuilt by CI (.github/workflows/pkgdown.yaml), not tracked
+docs/
+
+# Microsoft Office lock files (created while a real .xlsx/.docx is open elsewhere)
+~$*

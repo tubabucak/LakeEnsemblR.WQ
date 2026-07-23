@@ -1,0 +1,48 @@
+# Runs `R CMD check` (build, install, examples, tests) on every push/PR to
+# main, plus a standalone testthat run so test failures show up clearly even
+# if a full R CMD check NOTE/WARNING buries them.
+#
+# NOTE: several Suggests (GLM3r, WETr, SelmaprotbasR, SimstratR, MyLakeR) are
+# GitHub-only wrappers around external model binaries -- they may not always
+# install cleanly on a bare CI runner. _R_CHECK_FORCE_SUGGESTS_: false means
+# R CMD check will WARN rather than FAIL if one of those can't be installed,
+# since run_lhc_wq()/run_ensemble_wq() all guard their use with
+# requireNamespace() and degrade to an informative stop() rather than a hard
+# dependency. Hard Imports (LakeEnsemblR, glmtools, gotmtools, etc.) still
+# need to install successfully for the package to load at all -- if this
+# workflow fails at the "Install dependencies" step, check whether one of
+# those needs its own Remotes: entry in DESCRIPTION.
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+name: R-CMD-check
+
+jobs:
+  R-CMD-check:
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+      R_KEEP_PKG_SOURCE: yes
+      _R_CHECK_FORCE_SUGGESTS_: false
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: r-lib/actions/setup-pandoc@v2
+
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          use-public-rspm: true
+
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          extra-packages: any::rcmdcheck
+          needs: check
+
+      - uses: r-lib/actions/check-r-package@v2
+        with:
+          args: 'c("--no-manual", "--as-cran")'
+          upload-snapshots: true

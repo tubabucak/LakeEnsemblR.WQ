@@ -1,38 +1,41 @@
+---
+output: github_document
+---
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
-
 <!-- then run devtools::build_readme() to regenerate README.md.    -->
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.path = "man/figures/README-",
+  out.width = "100%"
+)
+```
 
 # LakeEnsemblR.WQ
 
 <!-- badges: start -->
-
-[![Project Status: WIP – Initial development is in progress, but there
-has not yet been a stable, usable release suitable for the
-public.](https://www.repostatus.org/badges/latest/wip.svg)](https://www.repostatus.org/#wip)
-[![Lifecycle:
-experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html#experimental)
+[![Project Status: WIP – Initial development is in progress, but there has not yet been a stable, usable release suitable for the public.](https://www.repostatus.org/badges/latest/wip.svg)](https://www.repostatus.org/#wip)
+[![Lifecycle: experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html#experimental)
 [![R-CMD-check](https://github.com/tubabucak/LakeEnsemblR.WQ/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/tubabucak/LakeEnsemblR.WQ/actions/workflows/R-CMD-check.yaml)
-[![License: GPL (\>=
-2)](https://img.shields.io/badge/License-GPL%20(%3E%3D%202)-blue.svg)](https://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html)
+[![License: GPL (>= 2)](https://img.shields.io/badge/License-GPL%20(%3E%3D%202)-blue.svg)](https://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html)
 <!-- badges: end -->
 
-Run, harmonize, and compare water quality simulations across multiple 1D
-lake model frameworks.
+Run, harmonize, and compare water quality simulations across multiple 1D lake model frameworks.
 
 LakeEnsemblR.WQ extends LakeEnsemblR workflows with tools to:
 
 - configure model-specific WQ settings,
 - validate model setups before run,
 - run model ensembles,
-- calibrate model ensembles – Latin Hypercube sampling, optional
-  Differential Evolution refinement, and single-model or
-  all-coupled-models-at-once (sequential or concurrent) calibration via
-  `cali_ensemble_wq()`,
+- calibrate model ensembles -- Latin Hypercube sampling, optional Differential
+  Evolution refinement, and single-model or all-coupled-models-at-once
+  (sequential or concurrent) calibration via `cali_ensemble_wq()`,
 - extract and harmonize output variables,
 - calculate standardized ecosystem metrics and summary statistics,
-- compare and visualize model outputs against each other and
-  observations.
+- compare and visualize model outputs against each other and observations.
 
 Supported model frameworks:
 
@@ -43,7 +46,7 @@ Supported model frameworks:
 
 ## Installation
 
-``` r
+```r
 # install.packages("remotes")
 # Currently in development on tubabucak's fork; will move to the aemon-j
 # organization (https://github.com/aemon-j/LakeEnsemblR.WQ) after release.
@@ -51,29 +54,27 @@ remotes::install_github("tubabucak/LakeEnsemblR.WQ")
 ```
 
 Several dependencies are GitHub-only wrappers around external lake model
-binaries (`GLM3r`, `WETr`, `SelmaprotbasR`, `SimstratR`, `MyLakeR`) and
-are optional – you only need the ones matching the model(s) you actually
-run (`run_ensemble_wq()`/`run_lhc_wq()` check for them at call time and
-give an informative error if missing). They’re declared in `Remotes:` in
-`DESCRIPTION` so `remotes::install_github()` resolves them
-automatically.
+binaries (`GLM3r`, `WETr`, `SelmaprotbasR`, `SimstratR`, `MyLakeR`) and are
+optional -- you only need the ones matching the model(s) you actually run
+(`run_ensemble_wq()`/`run_lhc_wq()` check for them at call time and give an
+informative error if missing). They're declared in `Remotes:` in
+`DESCRIPTION` so `remotes::install_github()` resolves them automatically.
 
-`glmtools` (a hard dependency, needed regardless of which model you run)
-has a known upstream packaging gap: its own `DESCRIPTION` depends on
-`GLM3r` but doesn’t declare where to find it, which can make
-dependency-solving tools (`pak`, and by extension
-`devtools::install_deps()`/`build_vignettes()`) fail with
-`Can't find package called GLM3r` even though `GLM3r` is in this
-package’s own `Remotes:`. If you hit that, pre-install `GLM3r` first:
+`glmtools` (a hard dependency, needed regardless of which model you run) has
+a known upstream packaging gap: its own `DESCRIPTION` depends on `GLM3r` but
+doesn't declare where to find it, which can make dependency-solving tools
+(`pak`, and by extension `devtools::install_deps()`/`build_vignettes()`) fail
+with `Can't find package called GLM3r` even though `GLM3r` is in this
+package's own `Remotes:`. If you hit that, pre-install `GLM3r` first:
 
-``` r
+```r
 remotes::install_github("aemon-j/GLM3r@v3.3")
 remotes::install_github("tubabucak/LakeEnsemblR.WQ")
 ```
 
 ## Typical workflow
 
-``` r
+```{r eval = FALSE}
 library(LakeEnsemblR)
 
 # 0) Export model-specific configuration and inputs for physical setup
@@ -116,7 +117,7 @@ stat_out <- cal_stats(metric_out)
 
 ## Calibration
 
-``` r
+```{r eval = FALSE}
 # Build a calibration setup table from editable calibration CSVs
 # (see create_calibration_tables() to generate the templates first)
 cs_all <- calib_setup_from_tables(
@@ -143,10 +144,9 @@ result$summary                            # success/failure + row counts per mod
 result$best_parameter_sets[["GLM-AED2"]]  # winning parameters for one model
 ```
 
-See `vignette("full-workflow")` for the full calibration workflow,
-including single-model LHC/DE runs via `run_lhc_wq()`, writing best
-parameters back with `write_best_calib_to_par_files()`, and sensitivity
-analysis.
+See `vignette("full-workflow")` for the full calibration workflow, including
+single-model LHC/DE runs via `run_lhc_wq()`, writing best parameters back
+with `write_best_calib_to_par_files()`, and sensitivity analysis.
 
 ## Key functions
 
@@ -168,13 +168,12 @@ analysis.
   - export_all_stats()
 - Calibration:
   - create_calibration_tables() / calib_setup_from_tables()
-  - run_lhc_wq() – single-model LHC sampling, with optional DE
-    refinement (`use_de = TRUE`) and optional internal parallelism
-    (`parallel`/`de_parallel`)
-  - cali_ensemble_wq() – calibrate multiple coupled models at once,
+  - run_lhc_wq() -- single-model LHC sampling, with optional DE refinement
+    (`use_de = TRUE`) and optional internal parallelism (`parallel`/`de_parallel`)
+  - cali_ensemble_wq() -- calibrate multiple coupled models at once,
     sequentially or concurrently (`parallel_models = TRUE`)
-  - write_best_calib_to_par_files() – write the best parameter set back
-    to calibration files
+  - write_best_calib_to_par_files() -- write the best parameter set back to
+    calibration files
   - run_sensitivity() / run_multi_param_sensitivity()
 - Compare and visualize:
   - compare_models_metric() / compare_models_metric_netcdf()
@@ -203,13 +202,11 @@ Example from a typical setup:
 
 ## Output structure
 
-`cal_metrics()` returns a nested list by metric and model. For each
-metric/model combination, values are stored as data frames with
-`datetime` and depth/value columns.
+`cal_metrics()` returns a nested list by metric and model. For each metric/model combination, values are stored as data frames with `datetime` and depth/value columns.
 
 Example access:
 
-``` r
+```{r eval = FALSE}
 metric_out$GLM$TP_gramsPerCubicMeter
 ```
 
@@ -217,25 +214,21 @@ metric_out$GLM$TP_gramsPerCubicMeter
 
 If a model run succeeds but some metrics are missing:
 
-1.  Confirm the metric is enabled in Output.yaml.
-2.  Confirm the metric-variable mapping exists in the metrics
-    dictionary.
-3.  Confirm the model actually wrote that variable to output.
+1. Confirm the metric is enabled in Output.yaml.
+2. Confirm the metric-variable mapping exists in the metrics dictionary.
+3. Confirm the model actually wrote that variable to output.
 
-For Simstrat-AED2 specifically, missing derived metrics (for example
-total chlorophyll-a or total phosphorus) are often caused by missing
-output variables in the Simstrat/AED2 output configuration
-(OutputDiagnosticVars should be ‘true’ ), not by run failure.
+For Simstrat-AED2 specifically, missing derived metrics (for example total chlorophyll-a or total phosphorus) are often caused by missing output variables in the Simstrat/AED2 output configuration (OutputDiagnosticVars should be 'true' ), not by run failure.
 
-If you’re developing against a local clone and see errors like
+If you're developing against a local clone and see errors like
 `unused arguments (...)` for a parameter that clearly exists in the
-function’s source, your session is likely running a stale **installed**
-copy of the package rather than your edited source – reload with
+function's source, your session is likely running a stale **installed**
+copy of the package rather than your edited source -- reload with
 `devtools::load_all(".")` instead of `library(LakeEnsemblR.WQ)`.
 
 ## Development
 
-``` r
+```r
 devtools::load_all(".")     # load current source (not a stale install)
 devtools::document()        # regenerate NAMESPACE/man/ from roxygen tags
 devtools::test()            # run the tests/testthat suite
@@ -243,24 +236,23 @@ devtools::check()           # full R CMD check
 devtools::build_readme()    # regenerate README.md from this file
 ```
 
-CI (`.github/workflows/R-CMD-check.yaml`) runs the same check on every
-push and PR; `.github/workflows/pkgdown.yaml` rebuilds and publishes the
+CI (`.github/workflows/R-CMD-check.yaml`) runs the same check on every push
+and PR; `.github/workflows/pkgdown.yaml` rebuilds and publishes the
 documentation site to the `gh-pages` branch.
 
 ## Contributing
 
-1.  Fork this repository.
-2.  Clone your fork.
-3.  Add the original repository as `upstream`.
-4.  Pull latest changes from `upstream/main`.
-5.  Create a feature branch, commit changes, and push.
-6.  Run `devtools::test()` (and ideally `devtools::check()`) before
-    opening a PR.
-7.  Open a pull request.
+1. Fork this repository.
+2. Clone your fork.
+3. Add the original repository as `upstream`.
+4. Pull latest changes from `upstream/main`.
+5. Create a feature branch, commit changes, and push.
+6. Run `devtools::test()` (and ideally `devtools::check()`) before opening a PR.
+7. Open a pull request.
 
 Example git commands:
 
-``` bash
+```bash
 git clone git@github.com:<username>/LakeEnsemblR.WQ.git
 cd LakeEnsemblR.WQ
 git remote add upstream git@github.com:aemon-j/LakeEnsemblR.WQ.git

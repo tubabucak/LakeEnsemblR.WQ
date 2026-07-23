@@ -1,0 +1,16 @@
+^.*\.Rproj$
+^\.Rproj\.user$
+^\.positai$
+^\.claude$
+^README\.Rmd$
+^\.github$
+^docs$
+^data-raw$
+^calibration_test$
+^calibration_test2$
+^examples$
+^model_setups$
+^inflows$
+^benchmark_parallel_lhc_example\.R$
+^pkgdown-reference-draft\.md$
+^LERWQ_papernotes\.txt$
