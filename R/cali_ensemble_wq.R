@@ -25,23 +25,43 @@
 #' @param model_filter Optional model filter(s) passed to \code{run_lhc_wq()}.
 #'   Accepts scalar, length-\code{length(models)} vector, or named vector/list.
 #' @param wq_config_file Character scalar, vector, or named list of WQ config
-#'   path(s) passed to \code{run_lhc_wq()}.
+#'   path(s) (e.g. \code{"LakeEnsemblR_WQ.yaml"}). Passed to \code{run_lhc_wq()}
+#'   and, when \code{write_best = TRUE}, also used as the \code{config_file}
+#'   for \code{write_best_calib_to_par_files()}.
 #' @param n_samples Integer. Number of LHS samples per model.
-#' @param yaml_file_model Character scalar/vector/list. GOTM YAML file name(s)
-#'   passed to \code{run_lhc_wq()}.
-#' @param par_file Character scalar/vector/list. Simstrat \code{.par} file
-#'   name(s) passed to \code{run_lhc_wq()}.
+#' @param yaml_file_model Character scalar/vector/list, or \code{NULL}
+#'   (default). GOTM YAML file name(s) passed to \code{run_lhc_wq()}. If
+#'   \code{NULL}, auto-derived per model from \code{ler_config_file}.
+#' @param par_file Character scalar/vector/list, or \code{NULL} (default).
+#'   Simstrat \code{.par} file name(s) passed to \code{run_lhc_wq()}. If
+#'   \code{NULL}, auto-derived per model from \code{ler_config_file}.
+#' @param ler_config_file Character or \code{NULL}. Path to the LakeEnsemblR
+#'   config file (e.g. \code{"LakeEnsemblR.yaml"}), used to auto-derive
+#'   \code{yaml_file_model}/\code{par_file} per model when they are not
+#'   explicitly set. Passed through to \code{run_lhc_wq()}.
 #' @param obs_file Optional observed-data CSV path. When supplied, each model
 #'   returns the flattened stats data.frame from \code{run_lhc_wq()}.
 #' @param obs_to_model_units Logical. Passed to \code{run_lhc_wq()}.
+#' @param target_variables Character vector or \code{NULL}. Passed to
+#'   \code{run_lhc_wq()} -- restricts scoring to these \code{variable_global_name}
+#'   value(s) from \code{obs_file} (e.g. \code{"DO_gramsPerCubicMeter"}) instead
+#'   of averaging across every observed variable. \code{NULL} (default) uses all.
 #' @param spin_up_days Numeric or \code{NULL}. Passed to \code{run_lhc_wq()}.
 #' @param stats_by_depth Logical. Passed to \code{run_lhc_wq()}.
 #' @param return_best Logical. Passed to \code{run_lhc_wq()}.
 #' @param best_metric Character. Passed to \code{run_lhc_wq()}.
 #' @param parallel Logical. Passed to \code{run_lhc_wq()} (parallelizes LHC
 #'   samples \emph{within} a single model's run).
+#' @param force_parallel_glm_simstrat Logical. GLM-AED2 and Simstrat-AED2 edit
+#'   their config files in-place during each LHC sample; by default (\code{FALSE})
+#'   their LHC phase always runs sequentially even when \code{parallel = TRUE},
+#'   to avoid file write collisions. \code{run_lhc_wq_parallel()} isolates each
+#'   worker onto its own copy of \code{model_dir}, the same mechanism DE already
+#'   uses safely -- set \code{TRUE} to test parallel LHC for these two models too.
 #' @param n_workers Integer or \code{NULL}. Passed to \code{run_lhc_wq()}.
-#' @param parallel_dir Character. Passed to \code{run_lhc_wq()}.
+#' @param parallel_dir Character or \code{NULL}. Passed to \code{run_lhc_wq()},
+#'   which defaults it (when \code{NULL}) to a sibling of each model's own
+#'   directory under the project root rather than \code{tempdir()}.
 #' @param keep_worker_dirs Logical. Passed to \code{run_lhc_wq()}.
 #' @param use_de Logical. Passed to \code{run_lhc_wq()}. Scalar, length
 #'   \code{length(models)}, or named by model.
@@ -77,8 +97,6 @@
 #'   \code{write_best_calib_to_par_files()} for each successful model.
 #' @param write_target Character. Passed to
 #'   \code{write_best_calib_to_par_files()}.
-#' @param config_file Character. Required when \code{write_best = TRUE}; path to
-#'   the WQ master config used by \code{write_best_calib_to_par_files()}.
 #'
 #' @return A list with:
 #' \describe{
@@ -97,17 +115,20 @@ cali_ensemble_wq <- function(models = c("GLM-AED2", "GOTM-WET", "GOTM-Selmaprotb
                              model_filter = NULL,
                              wq_config_file = NULL,
                              n_samples = 50,
-                             yaml_file_model = "gotm.yaml",
-                             par_file = "simstrat.par",
+                             yaml_file_model = NULL,
+                             par_file = NULL,
+                             ler_config_file = NULL,
                              obs_file = NULL,
                              obs_to_model_units = TRUE,
+                             target_variables = NULL,
                              spin_up_days = NULL,
                              stats_by_depth = FALSE,
                              return_best = TRUE,
                              best_metric = "KGE",
                              parallel = FALSE,
+                             force_parallel_glm_simstrat = FALSE,
                              n_workers = NULL,
-                             parallel_dir = tempdir(),
+                             parallel_dir = NULL,
                              keep_worker_dirs = FALSE,
                              use_de = FALSE,
                              de_iterations = 50,
@@ -125,8 +146,7 @@ cali_ensemble_wq <- function(models = c("GLM-AED2", "GOTM-WET", "GOTM-Selmaprotb
                              output_dir = NULL,
                              output_prefix = "lhc_results",
                              write_best = FALSE,
-                             write_target = c("par_file", "config"),
-                             config_file = NULL) {
+                             write_target = c("par_file", "config")) {
 
   # Force every argument now. R arguments are lazily-evaluated promises whose
   # defining environment is the *caller's* frame; .calibrate_one_model below
@@ -140,14 +160,14 @@ cali_ensemble_wq <- function(models = c("GLM-AED2", "GOTM-WET", "GOTM-Selmaprotb
   # cleanly.
   force(models); force(calib_setup); force(yaml_file); force(folder); force(model_dirs)
   force(param_names); force(model_filter); force(wq_config_file); force(n_samples)
-  force(yaml_file_model); force(par_file); force(obs_file); force(obs_to_model_units)
+  force(yaml_file_model); force(par_file); force(ler_config_file); force(obs_file); force(obs_to_model_units); force(target_variables)
   force(spin_up_days); force(stats_by_depth); force(return_best); force(best_metric)
-  force(parallel); force(n_workers); force(parallel_dir); force(keep_worker_dirs)
+  force(parallel); force(force_parallel_glm_simstrat); force(n_workers); force(parallel_dir); force(keep_worker_dirs)
   force(use_de); force(de_iterations); force(de_popsize); force(de_f); force(de_cr)
   force(de_seed_from_lhc); force(de_parallel); force(de_n_workers)
   force(parallel_models); force(n_model_workers); force(verbose); force(on_error)
   force(save_results); force(output_dir); force(output_prefix); force(write_best)
-  force(write_target); force(config_file)
+  force(write_target)
 
   `%||%` <- function(x, y) if (!is.null(x) && length(x) > 0) x else y
   msg <- function(...) if (isTRUE(verbose)) message(...)
@@ -255,8 +275,8 @@ cali_ensemble_wq <- function(models = c("GLM-AED2", "GOTM-WET", "GOTM-Selmaprotb
     }
   }
 
-  if (isTRUE(write_best) && is.null(config_file)) {
-    stop("'config_file' must be provided when write_best = TRUE.")
+  if (isTRUE(write_best) && is.null(wq_config_file)) {
+    stop("'wq_config_file' must be provided when write_best = TRUE.")
   }
 
   if (isTRUE(write_best) && is.null(obs_file)) {
@@ -334,7 +354,19 @@ cali_ensemble_wq <- function(models = c("GLM-AED2", "GOTM-WET", "GOTM-Selmaprotb
                                de_iterations_i, de_popsize_i, de_f_i,
                                de_cr_i, de_seed_i, de_parallel_i,
                                de_n_workers_i) {
-    run_lhc_fn <- get("run_lhc_wq", mode = "function", inherits = TRUE)
+    # Resolved explicitly from the currently-loaded LakeEnsemblR.WQ namespace
+    # on WHATEVER process is executing this code, rather than via
+    # get(..., inherits = TRUE) (which walks .call_run_lhc_wq's own lexical
+    # scope chain first). That distinction matters when this closure has
+    # been shipped to a parallel_models = TRUE worker via parLapply(): the
+    # closure's inherited environment chain is captured from the *master*
+    # session's cali_ensemble_wq() call, so an inherits = TRUE lookup can
+    # resolve to whatever "run_lhc_wq" existed there at definition time --
+    # possibly stale -- before ever reaching the worker's own fresh
+    # library(LakeEnsemblR.WQ) load. getExportedValue() sidesteps that
+    # entirely by asking the namespace directly (see the analogous fix in
+    # run_lhc_wq_parallel.R's clusterEvalQ/library() switch).
+    run_lhc_fn <- getExportedValue("LakeEnsemblR.WQ", "run_lhc_wq")
     run_lhc_formals <- names(formals(run_lhc_fn))
 
     args_to_pass <- list(
@@ -348,11 +380,13 @@ cali_ensemble_wq <- function(models = c("GLM-AED2", "GOTM-WET", "GOTM-Selmaprotb
       wq_config_file = wq_cfg_i,
       yaml_file_model = yaml_model_i,
       par_file = par_file_i,
+      ler_config_file = ler_config_file,
       verbose = verbose,
       save_results = FALSE,
       output_file = "",
       obs_file = obs_file,
       obs_to_model_units = obs_to_model_units,
+      target_variables = target_variables,
       spin_up_days = spin_up_days,
       stats_by_depth = stats_by_depth,
       return_best = return_best,
@@ -415,17 +449,19 @@ cali_ensemble_wq <- function(models = c("GLM-AED2", "GOTM-WET", "GOTM-Selmaprotb
     }
 
     # GLM/SIMSTRAT parameter files are edited in-place during each LHC run.
-    # Running parallel workers against one shared model_dir can cause file
-    # collisions and intermittent parse failures (e.g., malformed .nml files).
-    # Keep GOTM models parallel, but force per-model sequential execution for
-    # GLM-AED2 and Simstrat-AED2 unless the user explicitly calls run_lhc_wq()
-    # with an isolated worker-copy workflow.
+    # run_lhc_wq_parallel() already isolates each worker onto its own copy of
+    # model_dir (the same mechanism DE already relies on safely), so this is
+    # conservative rather than a known-necessary restriction -- kept off by
+    # default (force_parallel_glm_simstrat = FALSE) since GLM-AED2/Simstrat-AED2
+    # parallel LHC hasn't been validated as thoroughly as GOTM's. Set
+    # force_parallel_glm_simstrat = TRUE to test parallel LHC for these models too.
     parallel_i <- isTRUE(parallel)
     n_workers_i <- n_workers
-    if (parallel_i && m %in% c("GLM-AED2", "Simstrat-AED2")) {
+    if (parallel_i && m %in% c("GLM-AED2", "Simstrat-AED2") && !isTRUE(force_parallel_glm_simstrat)) {
       if (isTRUE(verbose)) {
         message("[cali_ensemble_wq] Parallel disabled for ", m,
-                " to avoid in-place file write collisions. Running sequentially.")
+                " to avoid in-place file write collisions. Running sequentially. ",
+                "(set force_parallel_glm_simstrat = TRUE to test parallel LHC for this model)")
       }
       parallel_i <- FALSE
       n_workers_i <- NULL
@@ -512,22 +548,26 @@ cali_ensemble_wq <- function(models = c("GLM-AED2", "GOTM-WET", "GOTM-Selmaprotb
     cl <- parallel::makeCluster(n_workers_pool, outfile = log_file)
     on.exit(parallel::stopCluster(cl), add = TRUE)
 
+    # Load LakeEnsemblR.WQ itself via library() on each worker, rather than
+    # clusterExport()'ing run_lhc_wq()/run_lhc_wq_parallel() etc. as bare
+    # function objects. The latter risks a worker silently receiving a
+    # stale copy of the function -- confirmed directly while debugging
+    # run_lhc_wq_parallel()'s own cluster: clusterExport(cl, "run_lhc_wq",
+    # ...) shipped an outdated body() to the worker even though the master
+    # session's own "run_lhc_wq" was current, a devtools::load_all()-vs-
+    # clusterExport namespace resolution mismatch. library() gives every
+    # worker one canonical, independently-loaded copy of the *installed*
+    # package -- requires devtools::install() (not just load_all()) before
+    # testing parallel_models = TRUE after code changes.
     parallel::clusterEvalQ(cl, {
       for (pkg in c("lhs", "readr", "yaml", "dplyr", "glmtools", "gotmtools",
                     "configr", "ncdf4", "lubridate", "reshape2", "DEoptim",
-                    "GLM3r", "WETr", "SelmaprotbasR", "SimstratR")) {
+                    "GLM3r", "WETr", "SelmaprotbasR", "SimstratR",
+                    "LakeEnsemblR.WQ")) {
         suppressMessages(try(require(pkg, character.only = TRUE), silent = TRUE))
       }
       NULL
     })
-
-    parallel::clusterExport(
-      cl,
-      varlist = c("run_lhc_wq", "run_lhc_wq_parallel", ".cal_lhc_obs_stats",
-                  "cal_metrics", "cal_stats", "load_config", "get_output_wq",
-                  "expand_templates", ".load_metrics_dictionary_wq"),
-      envir = environment(worker_fn)
-    )
 
     parallel::parLapply(cl, models_to_run, worker_fn)
   }
@@ -565,6 +605,17 @@ cali_ensemble_wq <- function(models = c("GLM-AED2", "GOTM-WET", "GOTM-Selmaprotb
     m <- models[i]
     cs <- setup_by_model[[m]]
     outcome <- model_outcomes[[i]]
+
+    # Recompute wq_cfg_i for write-back below -- this loop post-processes
+    # .calibrate_one_model()'s *results*, it does not share that function's
+    # local scope (which may have run in a separate worker process entirely
+    # when parallel_models = TRUE), so wq_cfg_i has to be derived again here.
+    wq_cfg_i <- wq_cfg_by_model[[m]] %||% wq_config_file[1]
+    if (is.null(wq_cfg_i) || length(wq_cfg_i) == 0L || !nzchar(as.character(wq_cfg_i[1]))) {
+      wq_cfg_i <- NULL
+    } else {
+      wq_cfg_i <- as.character(wq_cfg_i[1])
+    }
 
     if (!isTRUE(outcome$success)) {
       msg("[cali_ensemble_wq] Skipping/failed ", m, ": ", outcome$message)
@@ -630,12 +681,14 @@ cali_ensemble_wq <- function(models = c("GLM-AED2", "GOTM-WET", "GOTM-Selmaprotb
     if (isTRUE(write_best)) {
       if (!is.data.frame(one_result) || nrow(one_result) == 0L) {
         write_back[[m]] <- list(ok = FALSE, message = "No obs/stats result to write best values")
+      } else if (is.null(wq_cfg_i)) {
+        write_back[[m]] <- list(ok = FALSE, message = "No 'wq_config_file' resolved for this model")
       } else {
         wb <- tryCatch({
           write_best_calib_to_par_files(
             lhc_results = one_result,
             calib_setup = cs,
-            config_file = config_file,
+            config_file = wq_cfg_i,
             folder = folder,
             metric = best_metric,
             minimize = toupper(best_metric[1]) %in% c("RMSE", "NRMSE", "PBIAS"),

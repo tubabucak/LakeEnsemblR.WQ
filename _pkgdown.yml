@@ -71,6 +71,7 @@ reference:
   - title: Visualization
     desc: Plot model outputs and derived metrics.
     contents:
+      - plot_model_vs_obs_wq
       - plot_heatmap_wq
       - plot_strat_metrics
       - plot_anoxic_metrics
@@ -93,3 +94,4 @@ articles:
     navbar: ~
     contents:
       - full-workflow
+      - function-map

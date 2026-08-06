@@ -37,7 +37,10 @@ Imports:
      tidyr,
      purrr,
      ggtext,
-     lhs
+     lhs,
+     DEoptim,
+     scales,
+     R.utils
 Suggests:
     knitr,
     rmarkdown,
@@ -47,7 +50,9 @@ Suggests:
     WETr,
     SelmaprotbasR,
     SimstratR,
-    jsonlite
+    jsonlite,
+    MyLakeR,
+    withr
 VignetteBuilder: knitr
 Encoding: UTF-8
 LazyData: true

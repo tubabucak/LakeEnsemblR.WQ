@@ -14,17 +14,20 @@ cali_ensemble_wq(
   model_filter = NULL,
   wq_config_file = NULL,
   n_samples = 50,
-  yaml_file_model = "gotm.yaml",
-  par_file = "simstrat.par",
+  yaml_file_model = NULL,
+  par_file = NULL,
+  ler_config_file = NULL,
   obs_file = NULL,
   obs_to_model_units = TRUE,
+  target_variables = NULL,
   spin_up_days = NULL,
   stats_by_depth = FALSE,
   return_best = TRUE,
   best_metric = "KGE",
   parallel = FALSE,
+  force_parallel_glm_simstrat = FALSE,
   n_workers = NULL,
-  parallel_dir = tempdir(),
+  parallel_dir = NULL,
   keep_worker_dirs = FALSE,
   use_de = FALSE,
   de_iterations = 50,
@@ -42,8 +45,7 @@ cali_ensemble_wq(
   output_dir = NULL,
   output_prefix = "lhc_results",
   write_best = FALSE,
-  write_target = c("par_file", "config"),
-  config_file = NULL
+  write_target = c("par_file", "config")
 )
 }
 \arguments{
@@ -73,20 +75,34 @@ or a named list/vector by model. If \code{NULL}, uses
 Accepts scalar, length-\code{length(models)} vector, or named vector/list.}
 
 \item{wq_config_file}{Character scalar, vector, or named list of WQ config
-path(s) passed to \code{run_lhc_wq()}.}
+path(s) (e.g. \code{"LakeEnsemblR_WQ.yaml"}). Passed to \code{run_lhc_wq()}
+and, when \code{write_best = TRUE}, also used as the \code{config_file}
+for \code{write_best_calib_to_par_files()}.}
 
 \item{n_samples}{Integer. Number of LHS samples per model.}
 
-\item{yaml_file_model}{Character scalar/vector/list. GOTM YAML file name(s)
-passed to \code{run_lhc_wq()}.}
+\item{yaml_file_model}{Character scalar/vector/list, or \code{NULL}
+(default). GOTM YAML file name(s) passed to \code{run_lhc_wq()}. If
+\code{NULL}, auto-derived per model from \code{ler_config_file}.}
 
-\item{par_file}{Character scalar/vector/list. Simstrat \code{.par} file
-name(s) passed to \code{run_lhc_wq()}.}
+\item{par_file}{Character scalar/vector/list, or \code{NULL} (default).
+Simstrat \code{.par} file name(s) passed to \code{run_lhc_wq()}. If
+\code{NULL}, auto-derived per model from \code{ler_config_file}.}
+
+\item{ler_config_file}{Character or \code{NULL}. Path to the LakeEnsemblR
+config file (e.g. \code{"LakeEnsemblR.yaml"}), used to auto-derive
+\code{yaml_file_model}/\code{par_file} per model when they are not
+explicitly set. Passed through to \code{run_lhc_wq()}.}
 
 \item{obs_file}{Optional observed-data CSV path. When supplied, each model
 returns the flattened stats data.frame from \code{run_lhc_wq()}.}
 
 \item{obs_to_model_units}{Logical. Passed to \code{run_lhc_wq()}.}
+
+\item{target_variables}{Character vector or \code{NULL}. Passed to
+\code{run_lhc_wq()} -- restricts scoring to these \code{variable_global_name}
+value(s) from \code{obs_file} (e.g. \code{"DO_gramsPerCubicMeter"}) instead
+of averaging across every observed variable. \code{NULL} (default) uses all.}
 
 \item{spin_up_days}{Numeric or \code{NULL}. Passed to \code{run_lhc_wq()}.}
 
@@ -99,9 +115,18 @@ returns the flattened stats data.frame from \code{run_lhc_wq()}.}
 \item{parallel}{Logical. Passed to \code{run_lhc_wq()} (parallelizes LHC
 samples \emph{within} a single model's run).}
 
+\item{force_parallel_glm_simstrat}{Logical. GLM-AED2 and Simstrat-AED2 edit
+their config files in-place during each LHC sample; by default (\code{FALSE})
+their LHC phase always runs sequentially even when \code{parallel = TRUE},
+to avoid file write collisions. \code{run_lhc_wq_parallel()} isolates each
+worker onto its own copy of \code{model_dir}, the same mechanism DE already
+uses safely -- set \code{TRUE} to test parallel LHC for these two models too.}
+
 \item{n_workers}{Integer or \code{NULL}. Passed to \code{run_lhc_wq()}.}
 
-\item{parallel_dir}{Character. Passed to \code{run_lhc_wq()}.}
+\item{parallel_dir}{Character or \code{NULL}. Passed to \code{run_lhc_wq()},
+which defaults it (when \code{NULL}) to a sibling of each model's own
+directory under the project root rather than \code{tempdir()}.}
 
 \item{keep_worker_dirs}{Logical. Passed to \code{run_lhc_wq()}.}
 
@@ -155,9 +180,6 @@ processes used when \code{parallel_models = TRUE}. Defaults to
 
 \item{write_target}{Character. Passed to
 \code{write_best_calib_to_par_files()}.}
-
-\item{config_file}{Character. Required when \code{write_best = TRUE}; path to
-the WQ master config used by \code{write_best_calib_to_par_files()}.}
 }
 \value{
 A list with:

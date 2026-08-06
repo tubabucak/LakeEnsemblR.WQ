@@ -103,9 +103,34 @@ set_value_config <- function(config_file, module, group_name = NULL, group_posit
     }
     
     if(is.null(group_position)){
-      group_position = 1L
+      # Resolve the group's array index from the section's own name array
+      # (e.g. pd%p_name = 'diatoms','cyanobacteria', or
+      # zoop_param%zoop_name = 'daphnia') instead of always defaulting to the
+      # first group -- otherwise every group's calibrated value silently
+      # overwrites the first group's slot regardless of which group was
+      # actually calibrated.
+      group_position <- 1L
+      if(!is.null(group_name) && !is.na(group_name) && nzchar(group_name)){
+        section_names <- names(aed_config[[path_parts[1]]])
+        name_key <- section_names[grepl("name$", section_names, ignore.case = TRUE)][1]
+        if(!is.na(name_key)){
+          name_vals <- aed_config[[path_parts[1]]][[name_key]]
+          # glmtools::read_nml() parses comma-separated quoted-string arrays
+          # (e.g. pd%p_name = 'diatoms','cyanobacteria') as a single
+          # comma-joined string rather than a multi-element vector, unlike
+          # numeric arrays -- split it out before matching.
+          if(length(name_vals) == 1L && grepl(",", name_vals, fixed = TRUE)){
+            name_vals <- strsplit(name_vals, ",", fixed = TRUE)[[1]]
+          }
+          name_vals <- gsub("^['\"]|['\"]$", "", trimws(as.character(name_vals)))
+          hit <- which(tolower(name_vals) == tolower(trimws(group_name)))
+          if(length(hit) > 0){
+            group_position <- hit[1]
+          }
+        }
+      }
     }
-    
+
     aed_config[[path_parts[1]]][[path_parts[2]]][group_position] <- (value)#as.numeric(value)
     write_nml(aed_config, aed_config_path)
     return(invisible(TRUE))

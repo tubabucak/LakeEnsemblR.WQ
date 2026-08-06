@@ -83,9 +83,9 @@ calibrate_glm <- function(var = 'temp',
     NP = pop_members
   }
   if (parallelMode == F){
-    glmOPT <- DEoptim(fn = run_glm_optim, lower = calib_setup$lb,
+    glmOPT <- DEoptim::DEoptim(fn = run_glm_optim, lower = calib_setup$lb,
                       upper = calib_setup$ub,
-                      DEoptim.control(itermax = target.iter, NP = NP),
+                      DEoptim::DEoptim.control(itermax = target.iter, NP = NP),
                       glmcmd = glmcmd, var = var,
                       scaling = scaling, metric = metric, verbose = verbose,
                       calib_setup = calib_setup, path = path, field_file = field_file,
@@ -93,9 +93,9 @@ calibrate_glm <- function(var = 'temp',
                       glm_file = glm_file,
                       aed_file = aed_file)
   } else {
-    glmOPT <- DEoptim(fn = run_glm_optim_parallel, lower = calib_setup$lb,
+    glmOPT <- DEoptim::DEoptim(fn = run_glm_optim_parallel, lower = calib_setup$lb,
                       upper = calib_setup$ub,
-                      DEoptim.control(itermax = target.iter, 
+                      DEoptim::DEoptim.control(itermax = target.iter,
                                       NP = NP, parallelType=1,
                                      packages = c('glmtools', 'dplyr', 'R.utils', 'fs', 'readr'),
                                      parVar = c('glmcmd', 'var', 'scaling', 'metric', 'verbose',
@@ -319,7 +319,7 @@ run_glm_optim <- function(p, glmcmd, var, scaling, metric, verbose, calib_setup,
 
   
   for (nml_file in unique(calib_setup$file)){
-    if (tools::file_ext(nml_file) == 'csv'){
+    if (tolower(tools::file_ext(nml_file)) == 'csv'){
       
       eg_nml = read_csv(paste0(path, nml_file))
       
@@ -542,7 +542,10 @@ wrapper_scales <- function(x, lb, ub){
 
 run_glmcmd <- function(glmcmd, path, verbose){
   if (is.null(glmcmd)){
-    run_glm(path, verbose = verbose)
+    if (!requireNamespace("GLM3r", quietly = TRUE)) {
+      stop("Package 'GLM3r' is required to run GLM-AED2.")
+    }
+    GLM3r::run_glm(sim_folder = path, verbose = verbose)
   } else{
     system(glmcmd,ignore.stdout=TRUE)
   }
@@ -597,7 +600,7 @@ run_glm_optim_parallel <- function(p, glmcmd, var, scaling, metric, verbose, cal
   file.copy(from = paste0(path,'aed/aed_zoop_pars.nml'), to = paste0(temp_folder,'aed_zoop_pars.nml'))
   
   for (nml_file in unique(calib_setup$file)){
-    if (tools::file_ext(nml_file) == 'csv'){
+    if (tolower(tools::file_ext(nml_file)) == 'csv'){
       
       eg_nml = read_csv(paste0(temp_folder, nml_file))
       
@@ -664,7 +667,10 @@ run_glm_optim_parallel <- function(p, glmcmd, var, scaling, metric, verbose, cal
   # })
   
   
-  error <- withTimeout(run_glmcmd(glmcmd, temp_folder, verbose), timeout = time_limit, silent = T)
+  if (!requireNamespace("R.utils", quietly = TRUE)) {
+    stop("Package 'R.utils' is required for run_glm_optim_parallel's timeout handling.")
+  }
+  error <- R.utils::withTimeout(run_glmcmd(glmcmd, temp_folder, verbose), timeout = time_limit, silent = T)
   
   # tryCatch({
   #   

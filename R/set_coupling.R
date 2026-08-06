@@ -639,8 +639,7 @@ if(j == "humus"){
                            POM_N_pool_sediment_PV = "POM/sNS_PV",
                            POM_DW_pool_sediment_PV = "POM/sDS_PV", 
                            POM_P_pool_sediment_PV = "POM/sPS_PV", 
-                           POM_C_pool_sediment_PV = "POM/sCS_PV",
-                          )
+                           POM_C_pool_sediment_PV = "POM/sCS_PV")
         }else if(wet_model == "wet/phytoplankton"){
           coupling <- list(PO4_pool_water = "abiotic_water/sPO4W",
                            NH4_pool_water = "abiotic_water/sNH4W",

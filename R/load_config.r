@@ -40,13 +40,18 @@ load_config <- function(config_path) {
   config <- yaml::read_yaml(config_path)
   
   # Ensure required top-level fields
-  required_fields <- c("folder", "files", "model_folders")
+  required_fields <- c("files", "model_folders")
   missing_fields <- setdiff(required_fields, names(config))
   if (length(missing_fields) > 0) {
     stop("Missing required fields in config: ", paste(missing_fields, collapse = ", "))
   }
-  
+
+  # If 'folder' is missing or left blank in the config, default to the
+  # directory containing the config file itself.
   folder <- config$folder
+  if (is.null(folder) || !nzchar(folder)) {
+    folder <- dirname(config_path)
+  }
   files <- config$files
   model_folders <- config$model_folders
   
@@ -87,6 +92,11 @@ load_config <- function(config_path) {
     if (!dir.exists(path)) stop(paste("Model folder for", model, "not found at:", path))
     model_folders[[model]] <- path
   }
+
+  # Normalize model_folders names to uppercase so downstream lookups
+  # (e.g. cfg$model_folders$GLM) work regardless of the case used in the
+  # YAML config, avoiding failures on case-sensitive filesystems (Linux).
+  names(model_folders) <- toupper(names(model_folders))
   
   return(list(
     folder = folder,

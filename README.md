@@ -129,13 +129,13 @@ result <- cali_ensemble_wq(
   calib_setup     = cs_all,
   yaml_file       = "Output.yaml",
   wq_config_file  = "LakeEnsemblR_WQ.yaml",
+  ler_config_file = "LakeEnsemblR.yaml",  # auto-derives gotm.yaml/simstrat.par filenames
   obs_file        = "obs_data.csv",   # datetime, depth, variable_global_name, value
   n_samples       = 20,
   best_metric     = "KGE",
   use_de          = TRUE,
   parallel_models = TRUE,   # one worker process per model, run concurrently
-  write_best      = TRUE,
-  config_file     = "LakeEnsemblR_WQ.yaml"
+  write_best      = TRUE
 )
 
 result$summary                            # success/failure + row counts per model

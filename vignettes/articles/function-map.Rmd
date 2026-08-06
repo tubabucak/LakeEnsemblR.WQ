@@ -1,0 +1,579 @@
+---
+title: "Function Map"
+output: html_document
+pkgdown:
+  as_is: true
+---
+
+```{=html}
+<style>
+  :root {
+    --paper: #f4f6f1;
+    --paper-raised: #ffffff;
+    --ink: #14231f;
+    --ink-soft: #48584f;
+    --line: #c9d3c8;
+    --line-soft: #dde3d8;
+    --accent-deep: #1f5c6e;
+    --accent-deep-soft: #e4eef0;
+    --accent-surface: #b5651d;
+    --accent-surface-soft: #f7e9da;
+    --accent-bloom: #55742f;
+    --accent-bloom-soft: #e9efdd;
+    --ruler: #9fb0a3;
+    --shadow: 0 1px 2px rgba(20,35,31,0.06), 0 6px 20px -8px rgba(20,35,31,0.18);
+    color-scheme: light;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --paper: #0e1613;
+      --paper-raised: #141f1b;
+      --ink: #e9efe9;
+      --ink-soft: #a9b7ac;
+      --line: #24352e;
+      --line-soft: #1b2822;
+      --accent-deep: #6bb8cc;
+      --accent-deep-soft: #16292d;
+      --accent-surface: #e0a866;
+      --accent-surface-soft: #2b2013;
+      --accent-bloom: #a7c97f;
+      --accent-bloom-soft: #1e2717;
+      --ruler: #3a4b42;
+      --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 8px 24px -10px rgba(0,0,0,0.5);
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper: #0e1613; --paper-raised: #141f1b; --ink: #e9efe9; --ink-soft: #a9b7ac;
+    --line: #24352e; --line-soft: #1b2822; --accent-deep: #6bb8cc; --accent-deep-soft: #16292d;
+    --accent-surface: #e0a866; --accent-surface-soft: #2b2013; --accent-bloom: #a7c97f;
+    --accent-bloom-soft: #1e2717; --ruler: #3a4b42;
+    --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 8px 24px -10px rgba(0,0,0,0.5);
+    color-scheme: dark;
+  }
+  :root[data-theme="light"] {
+    --paper: #f4f6f1; --paper-raised: #ffffff; --ink: #14231f; --ink-soft: #48584f;
+    --line: #c9d3c8; --line-soft: #dde3d8; --accent-deep: #1f5c6e; --accent-deep-soft: #e4eef0;
+    --accent-surface: #b5651d; --accent-surface-soft: #f7e9da; --accent-bloom: #55742f;
+    --accent-bloom-soft: #e9efdd; --ruler: #9fb0a3;
+    --shadow: 0 1px 2px rgba(20,35,31,0.06), 0 6px 20px -8px rgba(20,35,31,0.18);
+    color-scheme: light;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    font-size: 16px;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+  }
+  .display {
+    font-family: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Georgia, "Times New Roman", serif;
+    text-wrap: balance;
+  }
+  code, .mono {
+    font-family: ui-monospace, "SFMono-Regular", "Cascadia Mono", Consolas, "Liberation Mono", monospace;
+    font-variant-ligatures: none;
+  }
+
+  a { color: var(--accent-deep); }
+
+  .wrap { max-width: 960px; margin: 0 auto; padding: 3.5rem 1.5rem 6rem; }
+
+  /* ---------- Header ---------- */
+  header.intro { margin-bottom: 3rem; }
+  .kicker {
+    font-size: 0.72rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--accent-deep);
+    font-weight: 600;
+    margin: 0 0 0.6rem;
+  }
+  h1.display {
+    font-size: clamp(1.9rem, 4vw, 2.6rem);
+    font-weight: 500;
+    margin: 0 0 0.8rem;
+    letter-spacing: -0.01em;
+  }
+  header.intro p {
+    max-width: 62ch;
+    color: var(--ink-soft);
+    font-size: 1.02rem;
+    margin: 0 0 0.4rem;
+  }
+  header.intro .pkg {
+    font-size: 0.85rem;
+    color: var(--ink-soft);
+    margin-top: 1.1rem;
+  }
+  header.intro .pkg code {
+    background: var(--paper-raised);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 0.12em 0.45em;
+    color: var(--ink);
+  }
+
+  /* ---------- Legend ---------- */
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 1.4rem;
+    margin-top: 1.6rem;
+    padding-top: 1.4rem;
+    border-top: 1px solid var(--line);
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.82rem;
+    color: var(--ink-soft);
+  }
+  .swatch { width: 0.65rem; height: 0.65rem; border-radius: 2px; flex: none; }
+
+  /* ---------- Profile / ruler layout ---------- */
+  .profile {
+    position: relative;
+    display: grid;
+    grid-template-columns: 3.2rem 1fr;
+    column-gap: 0.4rem;
+  }
+  .ruler {
+    position: relative;
+    border-right: 1px solid var(--ruler);
+  }
+  .ruler::before {
+    content: "";
+    position: absolute;
+    left: -1px; top: 0.5rem; bottom: 0.5rem;
+    width: 1px;
+  }
+  .tick {
+    position: absolute;
+    right: -1px;
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    transform: translateY(-50%);
+  }
+  .tick .dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: var(--ruler);
+    border: 2px solid var(--paper);
+    box-shadow: 0 0 0 1px var(--ruler);
+  }
+  .tick .depth {
+    font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
+    font-size: 0.68rem;
+    color: var(--ink-soft);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+
+  .stages { display: flex; flex-direction: column; gap: 0; }
+
+  section.stage {
+    position: relative;
+    padding: 1.7rem 0 1.9rem 1.4rem;
+    border-bottom: 1px dashed var(--line);
+  }
+  section.stage:last-child { border-bottom: none; }
+
+  .stage-head {
+    display: flex;
+    align-items: baseline;
+    gap: 0.75rem;
+    margin-bottom: 0.3rem;
+    flex-wrap: wrap;
+  }
+  .stage-name {
+    font-family: "Iowan Old Style", "Palatino Linotype", Georgia, serif;
+    font-size: 1.28rem;
+    font-weight: 500;
+    margin: 0;
+    letter-spacing: -0.005em;
+  }
+  .stage-tag {
+    font-size: 0.68rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 0.18em 0.55em;
+    border-radius: 3px;
+    font-weight: 600;
+  }
+  .stage-desc {
+    color: var(--ink-soft);
+    font-size: 0.92rem;
+    max-width: 58ch;
+    margin: 0.15rem 0 1.1rem;
+  }
+
+  .cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(15.5rem, 1fr));
+    gap: 0.65rem;
+  }
+
+  .card {
+    background: var(--paper-raised);
+    border: 1px solid var(--line);
+    border-radius: 7px;
+    padding: 0.8rem 0.85rem 0.75rem;
+    box-shadow: var(--shadow);
+    transition: border-color 0.15s ease, transform 0.15s ease;
+  }
+  .card:hover, .card:focus-within { transform: translateY(-1px); }
+  .card summary {
+    cursor: pointer;
+    list-style: none;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.5rem;
+  }
+  .card summary::-webkit-details-marker { display: none; }
+  .card .fn-name {
+    font-size: 0.86rem;
+    font-weight: 600;
+    color: var(--ink);
+    word-break: break-word;
+  }
+  .card .chev {
+    flex: none;
+    color: var(--ink-soft);
+    font-size: 0.7rem;
+    margin-top: 0.15rem;
+    transition: transform 0.15s ease;
+  }
+  .card[open] .chev { transform: rotate(90deg); }
+  .card .one-liner {
+    font-size: 0.82rem;
+    color: var(--ink-soft);
+    margin: 0.35rem 0 0;
+    line-height: 1.45;
+  }
+  .card .detail {
+    margin-top: 0.6rem;
+    padding-top: 0.6rem;
+    border-top: 1px solid var(--line-soft);
+    font-size: 0.8rem;
+    color: var(--ink-soft);
+    line-height: 1.5;
+  }
+  .card .detail b { color: var(--ink); font-weight: 600; }
+
+  /* stage accent variants */
+  .stage[data-tone="deep"]    .stage-tag { background: var(--accent-deep-soft); color: var(--accent-deep); }
+  .stage[data-tone="surface"] .stage-tag { background: var(--accent-surface-soft); color: var(--accent-surface); }
+  .stage[data-tone="bloom"]   .stage-tag { background: var(--accent-bloom-soft); color: var(--accent-bloom); }
+  .stage[data-tone="deep"]    .card:hover { border-color: var(--accent-deep); }
+  .stage[data-tone="surface"] .card:hover { border-color: var(--accent-surface); }
+  .stage[data-tone="bloom"]   .card:hover { border-color: var(--accent-bloom); }
+
+  /* under the hood */
+  .hood {
+    margin-top: 1rem;
+    font-size: 0.8rem;
+    color: var(--ink-soft);
+    background: var(--paper);
+    border: 1px dashed var(--line);
+    border-radius: 6px;
+    padding: 0.65rem 0.85rem;
+  }
+  .hood b { color: var(--ink); font-weight: 600; }
+  .hood .mono { color: var(--ink); }
+
+  footer.note {
+    margin-top: 3rem;
+    padding-top: 1.4rem;
+    border-top: 1px solid var(--line);
+    font-size: 0.82rem;
+    color: var(--ink-soft);
+  }
+  footer.note code { color: var(--ink); }
+
+  @media (max-width: 640px) {
+    .wrap { padding: 2.2rem 1.1rem 4rem; }
+    .profile { grid-template-columns: 1.6rem 1fr; }
+    .tick .depth { display: none; }
+    section.stage { padding-left: 1rem; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; }
+  }
+
+  :focus-visible { outline: 2px solid var(--accent-deep); outline-offset: 2px; }
+</style>
+
+<div class="wrap">
+
+  <header class="intro">
+    <p class="kicker">LakeEnsemblR.WQ &middot; package map</p>
+    <h1 class="display">Where each function sits in the workflow</h1>
+    <p>
+      The package mirrors a lake profile: work starts at the surface with
+      configuration, passes through the calibration layer where most of the
+      complexity lives, and settles into comparison and visualization at the
+      bottom. This map follows that order &mdash; each depth is one stage of
+      the pipeline, each card is one exported function.
+    </p>
+    <p class="pkg">Companion to the <code>full-workflow</code> vignette &middot; read top to bottom for a first run-through</p>
+
+    <div class="legend">
+      <span class="legend-item"><span class="swatch" style="background:var(--accent-surface)"></span>Setup &amp; execution</span>
+      <span class="legend-item"><span class="swatch" style="background:var(--accent-deep)"></span>Measurement &amp; calibration</span>
+      <span class="legend-item"><span class="swatch" style="background:var(--accent-bloom)"></span>Analysis &amp; visualization</span>
+      <span class="legend-item">Click a card for what it takes in / hands off</span>
+    </div>
+  </header>
+
+  <div class="profile">
+    <div class="ruler" id="ruler"><!-- ticks injected to align with stage tops --></div>
+
+    <div class="stages" id="stages">
+
+      <section class="stage" data-tone="surface" data-depth="0 m">
+        <div class="stage-head">
+          <h2 class="stage-name display">Configure</h2>
+          <span class="stage-tag">stage 1</span>
+        </div>
+        <p class="stage-desc">Turn one master YAML into every coupled model's native config files.</p>
+        <div class="cards">
+          <details class="card">
+            <summary><span class="fn-name mono">export_config_wq()</span><span class="chev">&#9654;</span></summary>
+            <p class="one-liner">Distributes LakeEnsemblR_WQ.yaml settings &mdash; module activation, parameter defaults, coupling &mdash; into GLM/GOTM/Simstrat's own config files.</p>
+            <p class="detail"><b>Takes in</b> LakeEnsemblR_WQ.yaml (+ LakeEnsemblR.yaml if converting).<br><b>Hands off</b> populated model folders, ready for <span class="mono">run_ensemble_wq()</span>.</p>
+          </details>
+          <details class="card">
+            <summary><span class="fn-name mono">load_config()</span><span class="chev">&#9654;</span></summary>
+            <p class="one-liner">Reads and validates an Output-style YAML &mdash; bathymetry, metric dictionary, model output folders &mdash; into resolved paths.</p>
+            <p class="detail"><b>Takes in</b> Output.yaml.<br><b>Hands off</b> a config list used internally by nearly every function below.</p>
+          </details>
+        </div>
+        <div class="hood">
+          <b>Under the hood &mdash;</b> <span class="mono">export_config_wq()</span> calls
+          <span class="mono">set_up_configs()</span>, <span class="mono">set_coupling()</span>,
+          <span class="mono">export_inputs()</span>, <span class="mono">export_pclake_physics()</span>,
+          and <span class="mono">convert_ler_to_lerwq()</span> for you &mdash; rarely called directly.
+        </div>
+      </section>
+
+      <section class="stage" data-tone="surface" data-depth="4 m">
+        <div class="stage-head">
+          <h2 class="stage-name display">Validate</h2>
+          <span class="stage-tag">stage 2</span>
+        </div>
+        <p class="stage-desc">Catch a broken config before spending minutes on a run that was always going to fail.</p>
+        <div class="cards">
+          <details class="card">
+            <summary><span class="fn-name mono">validate_glm_aed()</span><span class="chev">&#9654;</span></summary>
+            <p class="one-liner">Checks a GLM-AED2 folder's glm3.nml / aed2.nml for required sections.</p>
+          </details>
+          <details class="card">
+            <summary><span class="fn-name mono">validate_gotm_wet()</span><span class="chev">&#9654;</span></summary>
+            <p class="one-liner">Same check for GOTM-WET / GOTM-Selmaprotbas's gotm.yaml + fabm.yaml.</p>
+          </details>
+          <details class="card">
+            <summary><span class="fn-name mono">validate_simstrat()</span><span class="chev">&#9654;</span></summary>
+            <p class="one-liner">Same check for Simstrat-AED2's simstrat.par.</p>
+          </details>
+        </div>
+        <div class="hood">Also runs automatically inside <span class="mono">run_ensemble_wq(validate = TRUE)</span> &mdash; call these directly only when you want failures surfaced earlier.</div>
+      </section>
+
+      <section class="stage" data-tone="surface" data-depth="9 m">
+        <div class="stage-head">
+          <h2 class="stage-name display">Run the ensemble</h2>
+          <span class="stage-tag">stage 3</span>
+        </div>
+        <p class="stage-desc">Execute each coupled model through its own runner package.</p>
+        <div class="cards">
+          <details class="card">
+            <summary><span class="fn-name mono">run_ensemble_wq()</span><span class="chev">&#9654;</span></summary>
+            <p class="one-liner">Runs the requested models via GLM3r / WETr / SelmaprotbasR / SimstratR, skipping or stopping on failure per <span class="mono">on_error</span>.</p>
+            <p class="detail"><b>Takes in</b> exported model folders.<br><b>Hands off</b> each model's <span class="mono">output.nc</span>, ready for metrics.</p>
+          </details>
+        </div>
+      </section>
+
+      <section class="stage" data-tone="deep" data-depth="14 m">
+        <div class="stage-head">
+          <h2 class="stage-name display">Measure</h2>
+          <span class="stage-tag">stage 4</span>
+        </div>
+        <p class="stage-desc">Pull harmonized variables and standard limnological metrics out of each model's output.</p>
+        <div class="cards">
+          <details class="card">
+            <summary><span class="fn-name mono">get_output_wq()</span><span class="chev">&#9654;</span></summary>
+            <p class="one-liner">Reads output.nc and returns harmonized-unit variables at requested depths &mdash; the shared extraction engine behind calibration scoring and plotting.</p>
+          </details>
+          <details class="card">
+            <summary><span class="fn-name mono">cal_metrics()</span><span class="chev">&#9654;</span></summary>
+            <p class="one-liner">Computes every metric listed in Output.yaml, for one model or all of them.</p>
+          </details>
+          <details class="card">
+            <summary><span class="fn-name mono">cal_stats()</span><span class="chev">&#9654;</span></summary>
+            <p class="one-liner">NSE / RMSE / NRMSE / PBIAS / KGE between observed and predicted vectors &mdash; the scoring primitive used everywhere else.</p>
+          </details>
+          <details class="card">
+            <summary><span class="fn-name mono">extract_variable_list()</span><span class="chev">&#9654;</span></summary>
+            <p class="one-liner">Batch-extracts and caches variables across models for a metrics dictionary.</p>
+          </details>
+          <details class="card">
+            <summary><span class="fn-name mono">integrate_depths()</span><span class="chev">&#9654;</span></summary>
+            <p class="one-liner">Depth-integrates a profile variable into a single water-column value.</p>
+          </details>
+          <details class="card">
+            <summary><span class="fn-name mono">create_netcdf_output() / create_netcdf_wq()</span><span class="chev">&#9654;</span></summary>
+            <p class="one-liner">Builds harmonized NetCDF output from extracted variables.</p>
+          </details>
+          <details class="card">
+            <summary><span class="fn-name mono">cal_epi_depth(), cal_meta_depth(), cal_strat_date() &hellip;</span><span class="chev">&#9654;</span></summary>
+            <p class="one-liner">Metric-specific calculators (anoxic days, ice duration, stratification onset, DO exceedance, nitrification, temperature difference) referenced by the dictionary's <span class="mono">function_name</span> column.</p>
+          </details>
+        </div>
+      </section>
+
+      <section class="stage" data-tone="deep" data-depth="20 m">
+        <div class="stage-head">
+          <h2 class="stage-name display">Calibrate</h2>
+          <span class="stage-tag">stage 5 &middot; core</span>
+        </div>
+        <p class="stage-desc">The deepest and busiest layer &mdash; sample parameters, edit configs, run, score, repeat, then commit the winner.</p>
+        <div class="cards">
+          <details class="card">
+            <summary><span class="fn-name mono">create_calibration_tables()</span><span class="chev">&#9654;</span></summary>
+            <p class="one-liner">Generates editable per-module calibration CSVs (bounds, include flags) from the parameter dictionary.</p>
+            <p class="detail"><b>Hands off</b> CSVs you edit by hand &mdash; set <span class="mono">include = TRUE</span>, adjust bounds.</p>
+          </details>
+          <details class="card">
+            <summary><span class="fn-name mono">calib_setup_from_tables()</span><span class="chev">&#9654;</span></summary>
+            <p class="one-liner">Reads the edited CSVs into the <span class="mono">calib_setup</span> table every calibration function below consumes.</p>
+          </details>
+          <details class="card">
+            <summary><span class="fn-name mono">run_lhc_wq()</span><span class="chev">&#9654;</span></summary>
+            <p class="one-liner">Latin Hypercube sampling (+ optional DE refinement) for one model: edits config files, runs, scores against <span class="mono">obs_file</span>, restores originals on exit.</p>
+            <p class="detail"><b>Takes in</b> <span class="mono">calib_setup</span>, observed CSV.<br><b>Hands off</b> a results table with <span class="mono">attr(., "best_parameter_set")</span>.</p>
+          </details>
+          <details class="card">
+            <summary><span class="fn-name mono">run_lhc_wq_parallel()</span><span class="chev">&#9654;</span></summary>
+            <p class="one-liner">Same sampling, distributed across worker processes.</p>
+          </details>
+          <details class="card">
+            <summary><span class="fn-name mono">cali_ensemble_wq()</span><span class="chev">&#9654;</span></summary>
+            <p class="one-liner">Multi-model wrapper &mdash; runs <span class="mono">run_lhc_wq()</span> per coupled model, sequentially or concurrently, one call.</p>
+          </details>
+          <details class="card">
+            <summary><span class="fn-name mono">write_best_calib_to_par_files()</span><span class="chev">&#9654;</span></summary>
+            <p class="one-liner">Writes the winning parameter set back &mdash; into par_file CSVs, or directly into model configs with <span class="mono">write_target = "config"</span>.</p>
+            <p class="detail"><b>Takes in</b> LHC/DE results + <span class="mono">calib_setup</span>.<br><b>Hands off</b> an updated model config &mdash; re-run <span class="mono">run_ensemble_wq()</span> to see it take effect.</p>
+          </details>
+          <details class="card">
+            <summary><span class="fn-name mono">set_value_config()</span><span class="chev">&#9654;</span></summary>
+            <p class="one-liner">Writes one parameter value into a model's native config, resolved via the dictionary &mdash; the mechanism behind <span class="mono">write_target = "config"</span>.</p>
+          </details>
+        </div>
+      </section>
+
+      <section class="stage" data-tone="deep" data-depth="27 m">
+        <div class="stage-head">
+          <h2 class="stage-name display">Test sensitivity</h2>
+          <span class="stage-tag">stage 6</span>
+        </div>
+        <p class="stage-desc">See which parameters actually move the outcome, before or after calibrating.</p>
+        <div class="cards">
+          <details class="card">
+            <summary><span class="fn-name mono">run_sensitivity()</span><span class="chev">&#9654;</span></summary>
+            <p class="one-liner">Sweeps a single parameter across its bounds and records the response.</p>
+          </details>
+          <details class="card">
+            <summary><span class="fn-name mono">run_multi_param_sensitivity()</span><span class="chev">&#9654;</span></summary>
+            <p class="one-liner">Same, across several parameters in one pass.</p>
+          </details>
+        </div>
+      </section>
+
+      <section class="stage" data-tone="bloom" data-depth="33 m">
+        <div class="stage-head">
+          <h2 class="stage-name display">Compare &amp; visualize</h2>
+          <span class="stage-tag">stage 7</span>
+        </div>
+        <p class="stage-desc">Read whatever's currently sitting in output.nc against observations, or across models.</p>
+        <div class="cards">
+          <details class="card">
+            <summary><span class="fn-name mono">plot_model_vs_obs_wq()</span><span class="chev">&#9654;</span></summary>
+            <p class="one-liner">Plots one model's existing output against observed data at matching depths, KGE/RMSE per depth. Reads output.nc &mdash; doesn't run the model.</p>
+          </details>
+          <details class="card">
+            <summary><span class="fn-name mono">compare_plot() / scat_plot()</span><span class="chev">&#9654;</span></summary>
+            <p class="one-liner">Multi-model (GLM, WET, SELMAPROTBAS, Simstrat) comparison against observations, with stats annotated.</p>
+          </details>
+          <details class="card">
+            <summary><span class="fn-name mono">compare_models_metric() / _netcdf()</span><span class="chev">&#9654;</span></summary>
+            <p class="one-liner">Cross-model metric comparison tables and plots.</p>
+          </details>
+          <details class="card">
+            <summary><span class="fn-name mono">plot_heatmap_wq()</span><span class="chev">&#9654;</span></summary>
+            <p class="one-liner">Depth&ndash;time heatmap of a single variable.</p>
+          </details>
+          <details class="card">
+            <summary><span class="fn-name mono">plot_anoxic_metrics(), plot_ice_metrics(), plot_strat_metrics()</span><span class="chev">&#9654;</span></summary>
+            <p class="one-liner">Metric-specific comparison plots across years and models.</p>
+          </details>
+          <details class="card">
+            <summary><span class="fn-name mono">visualise_dictionary()</span><span class="chev">&#9654;</span></summary>
+            <p class="one-liner">Renders the parameter dictionary itself for browsing.</p>
+          </details>
+        </div>
+      </section>
+
+    </div>
+  </div>
+
+  <footer class="note">
+    Generated by hand from the package's exported <code>NAMESPACE</code> &mdash; not auto-synced.
+    Update this file if functions are renamed or added.
+  </footer>
+
+</div>
+
+<script>
+  // Position ruler ticks to align with each stage's top, and label with its depth.
+  (function () {
+    var ruler = document.getElementById('ruler');
+    var stages = document.querySelectorAll('.stage');
+
+    function place() {
+      ruler.innerHTML = '';
+      var base = document.getElementById('stages').getBoundingClientRect();
+      stages.forEach(function (s) {
+        var r = s.getBoundingClientRect();
+        var top = r.top - base.top;
+        var tick = document.createElement('div');
+        tick.className = 'tick';
+        tick.style.top = top + 'px';
+        var dot = document.createElement('span');
+        dot.className = 'dot';
+        var depth = document.createElement('span');
+        depth.className = 'depth';
+        depth.textContent = s.getAttribute('data-depth');
+        tick.appendChild(dot);
+        tick.appendChild(depth);
+        ruler.appendChild(tick);
+      });
+      ruler.style.height = document.getElementById('stages').offsetHeight + 'px';
+    }
+    place();
+    window.addEventListener('resize', place);
+    document.addEventListener('toggle', function () { setTimeout(place, 0); }, true);
+    setTimeout(place, 200);
+  })();
+</script>
+```

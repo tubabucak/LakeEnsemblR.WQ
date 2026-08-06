@@ -13,8 +13,9 @@ run_lhc_wq(
   n_samples = 50,
   model_filter = NULL,
   wq_config_file = NULL,
-  yaml_file_model = "gotm.yaml",
-  par_file = "simstrat.par",
+  yaml_file_model = NULL,
+  par_file = NULL,
+  ler_config_file = NULL,
   verbose = TRUE,
   save_results = FALSE,
   output_file = "lhc_results.rds",
@@ -27,7 +28,7 @@ run_lhc_wq(
   target_variables = NULL,
   parallel = FALSE,
   n_workers = NULL,
-  parallel_dir = tempdir(),
+  parallel_dir = NULL,
   keep_worker_dirs = FALSE,
   lhs_matrix = NULL,
   sample_indices = NULL,
@@ -38,7 +39,8 @@ run_lhc_wq(
   de_cr = 0.9,
   de_seed_from_lhc = TRUE,
   de_parallel = FALSE,
-  de_n_workers = NULL
+  de_n_workers = NULL,
+  precomputed_lhc_results = NULL
 )
 }
 \arguments{
@@ -63,11 +65,22 @@ CSV updates.}
 
 \item{wq_config_file}{Character or \code{NULL}. Path to WQ config file.}
 
-\item{yaml_file_model}{Character. GOTM yaml filename (default
-\code{"gotm.yaml"}).}
+\item{yaml_file_model}{Character or \code{NULL}. GOTM yaml filename. If
+\code{NULL} (default), derived from \code{ler_config_file}'s
+\code{config_files$GOTM} entry when available, else falls back to
+\code{"gotm.yaml"}.}
 
-\item{par_file}{Character. Simstrat par filename (default
-\code{"simstrat.par"}).}
+\item{par_file}{Character or \code{NULL}. Simstrat par filename. If
+\code{NULL} (default), derived from \code{ler_config_file}'s
+\code{config_files$Simstrat} entry when available, else falls back to
+\code{"simstrat.par"}.}
+
+\item{ler_config_file}{Character or \code{NULL}. Path to the LakeEnsemblR
+(physical-model) config file, e.g. \code{"LakeEnsemblR.yaml"}. When
+supplied and \code{yaml_file_model}/\code{par_file} are not explicitly
+set, they are auto-derived from its \code{config_files} section instead
+of requiring the user to duplicate those filenames here. If relative,
+resolved against \code{dirname(model_dir)}.}
 
 \item{verbose}{Logical. Print progress messages.}
 
@@ -112,8 +125,10 @@ when \code{return_best = TRUE}. One of \code{"KGE"}, \code{"NSE"},
 \item{n_workers}{Integer or \code{NULL}. Number of workers used when
 \code{parallel = TRUE}. Passed to \code{run_lhc_wq_parallel()}.}
 
-\item{parallel_dir}{Character. Parent directory for worker copies when
-\code{parallel = TRUE}. Passed to \code{run_lhc_wq_parallel()}.}
+\item{parallel_dir}{Character or \code{NULL}. Parent directory for worker
+copies when \code{parallel = TRUE}. Passed to \code{run_lhc_wq_parallel()},
+which defaults it (when \code{NULL}) to a sibling of \code{model_dir}
+under the project root rather than \code{tempdir()} -- see its docs.}
 
 \item{keep_worker_dirs}{Logical. Keep worker directories after completion
 when \code{parallel = TRUE}. Passed to \code{run_lhc_wq_parallel()}.}
@@ -140,6 +155,14 @@ increase parameter exchange probability. Default is 0.9. Ignored when
 \item{de_seed_from_lhc}{Logical. Initialize DE population from best LHC
 results (default = \code{TRUE}). If \code{FALSE}, DE starts from random
 population. Ignored when \code{use_de = FALSE}.}
+
+\item{precomputed_lhc_results}{Data frame or \code{NULL}. Internal use --
+when supplied (already in the shape \code{run_lhc_wq()}'s own LHC phase
+would produce, including the \code{attr(., "best_parameter_set")}
+attribute when applicable), the LHC sampling loop is skipped entirely and
+these results are used directly to seed the DE phase. Used by
+\code{run_lhc_wq_parallel()} to seed DE from its already-computed
+parallel LHC results instead of re-running LHC sequentially.}
 }
 \value{
 If \code{obs_file = NULL}, a list of length \code{n_samples} with

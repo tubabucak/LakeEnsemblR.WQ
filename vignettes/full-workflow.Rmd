@@ -46,6 +46,7 @@ library(LakeEnsemblR.WQ)
 ## 1) Export WQ configuration and inputs
 
 ```{r eval = FALSE}
+
 export_config_wq("LakeEnsemblR_WQ.yaml")
 
 
@@ -54,9 +55,10 @@ export_config_wq("LakeEnsemblR_WQ.yaml")
 ## 2) Validate model setups
 
 ```{r eval = FALSE}
-validate_glm_aed(config_file = "LakeEnsemblR_WQ.yaml", folder = ".")
-validate_gotm_wet(config_file = "LakeEnsemblR_WQ.yaml", folder = ".")
-validate_simstrat(config_file = "LakeEnsemblR_WQ.yaml", folder = ".")
+validate_glm_aed(sim_folder = "GLM-AED2", file = "glm3.nml", verbose = TRUE)
+validate_gotm_wet(sim_folder = "GOTM-WET", file = "gotm.yaml", verbose = TRUE)
+validate_gotm_wet(sim_folder = "GOTM-SELMAPROTBAS", file = "gotm.yaml", verbose = TRUE)
+validate_simstrat(sim_folder = "SIMSTRAT-AED2", file = "simstrat.par", verbose = TRUE)
 ```
 
 `run_ensemble_wq()` (next section) can also run these automatically via its
@@ -75,7 +77,7 @@ run_res <- run_ensemble_wq(
 )
 ```
 
-## 4) Compute metrics and statistics
+## 4) Compute metrics and statistics - this step can be done after calibration to calculate the CSPS metrics.
 
 ```{r eval = FALSE}
 metric_out <- cal_metrics(
@@ -109,7 +111,7 @@ Edit module files in the calibration folder:
 
 ```{r eval = FALSE}
 cs_all <- calib_setup_from_tables(
-  folder_in = "calibration-test",
+  folder_in = "calibration",
   model_coupled = c("GLM-AED2", "GOTM-WET", "GOTM-Selmaprotbas", "SIMSTRAT-AED2")
 )
 ```
@@ -120,21 +122,22 @@ Run one model at a time. `run_lhc_wq()` samples the parameter space with Latin
 Hypercube Sampling and, for each sample, edits the model's own config files in
 `model_dir` in place, runs the model, and scores it. If `obs_file` is supplied
 it returns a long-format data frame (one row per iteration x observed
-variable) with NSE/RMSE/NRMSE/PBIAS/KGE; otherwise it falls back to
+variable) with NSE/RMSE/NRMSE/PBIAS/KGE; otherwise it is
 `cal_metrics()`-derived metrics only.
 
 ```{r eval = FALSE}
 cs_glm <- subset(cs_all, model_coupled == "GLM-AED2")
 
+param_glm <- unique(cs_glm$pars)
 res_glm <- run_lhc_wq(
   model          = "GLM-AED2",
-  param_names    = unique(cs_glm$pars),
+  param_names    = param_glm,
   calib_setup    = cs_glm,
   yaml_file      = "Output.yaml",
   model_dir      = "GLM-AED2",
-  n_samples      = 3,
+  n_samples      = 4,
   wq_config_file = "LakeEnsemblR_WQ.yaml",
-  obs_file       = "obs_data.csv",   # datetime, depth, variable_global_name, value
+  obs_file       = "standart_observed_DO.csv",   # datetime, depth, variable_global_name, value
   best_metric    = "KGE",
   verbose        = TRUE
 )
@@ -148,6 +151,8 @@ head(res_glm)
 attr(res_glm, "best_parameter_set")   # winning parameter set for this model
 ```
 
+
+
 ### 5.4 Optional: refine with Differential Evolution (DE)
 
 Set `use_de = TRUE` to run DEoptim after the LHC phase, seeded from the best
@@ -157,23 +162,34 @@ original LHC-phase best is still available under
 `attr(res_glm, "lhc_best_parameter_set")` for comparison.
 
 ```{r eval = FALSE}
-res_glm_de <- run_lhc_wq(
-  model            = "GLM-AED2",
-  param_names      = unique(cs_glm$pars),
-  calib_setup      = cs_glm,
-  yaml_file        = "Output.yaml",
-  model_dir        = "GLM-AED2",
-  n_samples        = 20,
-  wq_config_file   = "LakeEnsemblR_WQ.yaml",
-  obs_file         = "obs_data.csv",
-  best_metric      = "KGE",
-  use_de           = TRUE,
-  de_iterations    = 30,
-  de_seed_from_lhc = TRUE,
-  verbose          = TRUE
-)
+    res <- run_lhc_wq(
+        model          = "GLM-AED2",
+        param_names    = param_glm,
+        calib_setup    = cs_glm,
+        yaml_file      = "Output.yaml",
+        model_dir      = "GLM-AED2",
+        obs_file       = "standart_observed_DO.csv",
+        wq_config_file = "LakeEnsemblR_WQ.yaml",
+        verbose        = TRUE,
+        save_results   = FALSE,
+        stats_by_depth = TRUE,
+        return_best    = TRUE,
+        best_metric    = "KGE",
+        
+        parallel       = TRUE,
+        n_workers      = 2,
+        n_samples      = 4,
+        
+       use_de         = TRUE,
+       de_parallel    = TRUE,
+       de_n_workers   = 2,
+       de_popsize     = 4,
+       de_iterations  = 1,
+      target_variables = c("DO_gramsPerCubicMeter")
+    )
 
-attr(res_glm_de, "best_parameter_set")   # DE-refined best (used for write-back below)
+attr(res, "best_parameter_set")   # DE-refined best (used for write-back below)
+
 ```
 
 ### 5.5 Write the best parameters back
@@ -187,14 +203,55 @@ verification run.
 
 ```{r eval = FALSE}
 write_best_calib_to_par_files(
-  lhc_results  = res_glm_de,
+  lhc_results  = res_glm,
   calib_setup  = cs_glm,
   config_file  = "LakeEnsemblR_WQ.yaml",
   folder       = ".",
   metric       = "KGE",
-  write_target = "par_file"
+  write_target = "config"
 )
+
 ```
+
+
+
+# Re-run the model so output.nc reflects those parameters
+
+
+```{r eval = FALSE}
+run_ensemble_wq(
+  config_file = "LakeEnsemblR_WQ.yaml",
+  models = c("GLM-AED2"),
+  folder = ".",
+  validate = TRUE,
+  verbose = TRUE
+)
+
+```
+
+# Plot the best parameters (main config folder)
+
+```{r eval = FALSE}
+result <- plot_model_vs_obs_wq(
+    config_file           = "Output.yaml",
+    model                 = "GLM-AED2",
+    vars                  = "temp",              # GLM-native variable name
+    obs_data              = "standart_observed_data.csv",
+    variable_global_name  = "Temp_degreeCelcius", # matches obs_data's variable_global_name column
+    y_title               = "DO (mmol/m3)"
+)
+
+result <- plot_model_vs_obs_wq(
+    config_file           = "Output.yaml",
+    model                 = "GLM-AED2",
+    vars                  = "OXY_oxy",              # GLM-native variable name
+    obs_data              = "standart_observed_data.csv",
+    variable_global_name  = "DO_gramsPerCubicMeter", # matches obs_data's variable_global_name column
+    y_title               = "DO (g/m3)"
+)
+
+```
+
 
 ### 5.6 Calibrate all coupled models with cali_ensemble_wq()
 
@@ -203,55 +260,36 @@ the full `models` vector and the combined `cs_all` table (split automatically
 by `model_coupled`) and it runs, scores, and optionally writes back the best
 parameters for every model in one call.
 
-```{r eval = FALSE}
-models_coupled <- c("GLM-AED2", "GOTM-WET", "GOTM-Selmaprotbas", "Simstrat-AED2")
-
-result <- cali_ensemble_wq(
-  models         = models_coupled,
-  calib_setup    = cs_all,
-  yaml_file      = "Output.yaml",
-  folder         = ".",
-  n_samples      = 20,
-  obs_file       = "obs_data.csv",
-  wq_config_file = "LakeEnsemblR_WQ.yaml",
-  best_metric    = "KGE",
-  use_de         = TRUE,
-  de_iterations  = 30,
-  verbose        = TRUE,
-  on_error       = "skip",       # a failing model doesn't stop the others
-  save_results   = TRUE,
-  output_dir     = "calibration_results",
-  write_best     = TRUE,
-  write_target   = "par_file",
-  config_file    = "LakeEnsemblR_WQ.yaml"
-)
-
-result$summary                              # one row per model: success, n_rows, n_stats
-result$best_parameter_sets[["GLM-AED2"]]     # winning parameters for one model
-result$write_back[["GLM-AED2"]]              # whether the write-back succeeded
-```
-
 By default the four models run sequentially. Since each model has its own
 `model_dir`, they can safely run **concurrently** instead, one worker process
 per model:
 
 ```{r eval = FALSE}
-result_parallel <- cali_ensemble_wq(
-  models          = models_coupled,
+
+result_all <- cali_ensemble_wq(
+  models          = c("GOTM-WET", "GOTM-Selmaprotbas"),
   calib_setup     = cs_all,
   yaml_file       = "Output.yaml",
   folder          = ".",
-  n_samples       = 20,
-  obs_file        = "obs_data.csv",
+  n_samples       = 4,
+  obs_file        = "standart_observed_DO.csv",
   wq_config_file  = "LakeEnsemblR_WQ.yaml",
+  ler_config_file = "LakeEnsemblR.yaml",
   best_metric     = "KGE",
-  parallel_models = TRUE,   # run all requested models at the same time
-  n_model_workers = 4,      # one worker process per model
+  parallel        = TRUE,
+  force_parallel_glm_simstrat = TRUE,
+  parallel_models = FALSE,
+  use_de          = TRUE,
+  de_parallel     = TRUE,
+  de_n_workers    = 4,
+  de_popsize      = 4,
+  de_iterations   = 3,
   verbose         = TRUE,
+  on_error        = "skip",
   save_results    = TRUE,
   output_dir      = "calibration_results",
   write_best      = TRUE,
-  config_file     = "LakeEnsemblR_WQ.yaml"
+  write_target    = "config"
 )
 ```
 

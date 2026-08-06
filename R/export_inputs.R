@@ -112,7 +112,7 @@ export_inputs <- function(config_file, folder = ".",
     phys_model <- model_name_parsed[1L]
     wq_model <- tolower(model_name_parsed[length(model_name_parsed)])
     
-    if(phys_model == "GOTM"){
+    if(toupper(phys_model) == "GOTM"){
       gotmyaml <- read.config(file.path(folder, i, "gotm.yaml"))
       name_file <- "LERWQ_inflow_chem.dat"
       
@@ -176,12 +176,14 @@ export_inputs <- function(config_file, folder = ".",
       write.table(df_inflow_gotm, file.path(folder, i, name_file),
                   row.names = FALSE, quote = FALSE, sep = "\t")
       
-    }else if(phys_model == "GLM"){
+    }else if(toupper(phys_model) == "GLM"){
       # GLM: add nutrient concentrations to the inflow file.
       # Needs to be the same frequency as the inflow file
-      
+
+      glm_cfg_key <- names(lst_config_ler[["config_files"]])[
+        toupper(names(lst_config_ler[["config_files"]])) == "GLM"][1]
       glm_nml <- read_nml(file.path(folder, i,
-                                    basename(lst_config_ler[["config_files"]][["GLM"]])))
+                                    basename(lst_config_ler[["config_files"]][[glm_cfg_key]])))
       
       for(j in seq_len(ncol(df_inflow))){
         if(!grepl("wq_", names(df_inflow)[j])) next
@@ -238,9 +240,9 @@ export_inputs <- function(config_file, folder = ".",
       }
       
       write_nml(glm_nml, file.path(folder, i,
-                                   basename(lst_config_ler[["config_files"]][["GLM"]])))
-      
-    }else if(phys_model == "Simstrat"){
+                                   basename(lst_config_ler[["config_files"]][[glm_cfg_key]])))
+
+    }else if(toupper(phys_model) == "SIMSTRAT"){
       # Not sure, but the LakeZurich example suggests that the 
       # times and number of columns need to be the same as discharge
       # We use LakeEnsemblR:::format_flow_simstrat()
@@ -305,7 +307,9 @@ export_inputs <- function(config_file, folder = ".",
                                     config_file = file.path(folder, ler_config_file))
         
         # Prepare other arguments for the format_flow_simstrat functions
-        sim_par <- file.path(folder, lst_config_ler[["config_files"]][["Simstrat"]])
+        sim_cfg_key <- names(lst_config_ler[["config_files"]])[
+          toupper(names(lst_config_ler[["config_files"]])) == "SIMSTRAT"][1]
+        sim_par <- file.path(folder, lst_config_ler[["config_files"]][[sim_cfg_key]])
         lvl_inflows <- rep(-1, num_inflows) # 2022-03-31: this is always -1 in LER
         
         qin_file <- LakeEnsemblR:::format_flow_simstrat(flow_file = sim_inflow,
@@ -322,7 +326,7 @@ export_inputs <- function(config_file, folder = ".",
         qin_file[1L] <- paste0("Time [d]\t", col_header, " [", col_unit,"]")
         writeLines(qin_file, file.path(folder, i, paste0(col_header, "_inflow.dat")))
       }
-    }else if(phys_model == "MyLake"){
+    }else if(toupper(phys_model) == "MYLAKE"){
       # Average DOP/TP concentration over all inflows must be computed,
       # so discharges are required as well
       if(!is.null(lst_config_ler$scaling_factors$MyLake$inflow)){
@@ -408,10 +412,17 @@ export_inputs <- function(config_file, folder = ".",
                                    names(mylake_inflow))
       
       # Step 3: Enter values in the MyLake config file
-      path_mylake_config <- file.path(folder,
-                                      get_yaml_value(ler_config_file,
-                                                     "config_files",
-                                                     "MyLake"))
+      mylake_cfg_rel <- NULL
+      for(mylake_cfg_key in c("MyLake", "MYLAKE", "mylake")){
+        mylake_cfg_rel <- tryCatch({
+          get_yaml_value(ler_config_file, "config_files", mylake_cfg_key)
+        }, error = function(e) NULL)
+        if(!is.null(mylake_cfg_rel)) break
+      }
+      if(is.null(mylake_cfg_rel)){
+        stop("Could not find MyLake entry in LER config 'config_files'.")
+      }
+      path_mylake_config <- file.path(folder, mylake_cfg_rel)
       load(path_mylake_config)
       
       inflw_matrix <- mylake_config[["Inflw"]]
@@ -422,7 +433,7 @@ export_inputs <- function(config_file, folder = ".",
       
       temp_fil <- gsub(".*/", "", path_mylake_config)
       save(mylake_config, file = file.path(folder, "MyLake", temp_fil))
-    }else if(phys_model == "PCLake"){
+    }else if(toupper(phys_model) == "PCLAKE"){
       # Total loads must be computed, so discharges are required as well
       if(!is.null(lst_config_ler$scaling_factors$PCLake$inflow)){
         scale_param_tmp <- lst_config_ler$scaling_factors$PCLake$inflow
@@ -481,7 +492,9 @@ export_inputs <- function(config_file, folder = ".",
           inp_lst_pclake[[k]] <- 1
         }
         
-        path_pclake_config <- lst_config[["config_files"]][["PCLake"]]
+        pclake_cfg_key <- names(lst_config[["config_files"]])[
+          toupper(names(lst_config[["config_files"]])) == "PCLAKE"][1]
+        path_pclake_config <- lst_config[["config_files"]][[pclake_cfg_key]]
         
         input_pclakeconfig(path_pclake_config, inp_lst_pclake,
                            verbose = verbose)

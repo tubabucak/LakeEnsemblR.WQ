@@ -13,8 +13,9 @@ run_lhc_wq_parallel(
   n_samples = 50,
   model_filter = NULL,
   wq_config_file = NULL,
-  yaml_file_model = "gotm.yaml",
-  par_file = "simstrat.par",
+  yaml_file_model = NULL,
+  par_file = NULL,
+  ler_config_file = NULL,
   verbose = TRUE,
   save_results = FALSE,
   output_file = "lhc_results.rds",
@@ -34,7 +35,7 @@ run_lhc_wq_parallel(
   de_f = 0.8,
   de_cr = 0.9,
   de_seed_from_lhc = TRUE,
-  parallel_dir = tempdir(),
+  parallel_dir = NULL,
   keep_worker_dirs = FALSE
 )
 }
@@ -57,9 +58,15 @@ run_lhc_wq_parallel(
 
 \item{wq_config_file}{Character or \code{NULL}. Path to WQ config file.}
 
-\item{yaml_file_model}{Character. GOTM yaml filename.}
+\item{yaml_file_model}{Character or \code{NULL}. GOTM yaml filename. If
+\code{NULL}, derived from \code{ler_config_file} (see \code{run_lhc_wq()}).}
 
-\item{par_file}{Character. Simstrat par filename.}
+\item{par_file}{Character or \code{NULL}. Simstrat par filename. If
+\code{NULL}, derived from \code{ler_config_file} (see \code{run_lhc_wq()}).}
+
+\item{ler_config_file}{Character or \code{NULL}. Path to the LakeEnsemblR
+config file, used to auto-derive \code{yaml_file_model}/\code{par_file}
+when they are not explicitly set. Passed through to \code{run_lhc_wq()}.}
 
 \item{verbose}{Logical. Print progress messages.}
 
@@ -90,12 +97,50 @@ comparison in \code{obs_file} mode.}
 \code{return_best = TRUE}. One of \code{"KGE"}, \code{"NSE"},
 \code{"RMSE"}, \code{"NRMSE"}, or \code{"PBIAS"}.}
 
+\item{target_variables}{Character vector or \code{NULL}. Passed to
+\code{run_lhc_wq()} -- restricts scoring to these
+\code{variable_global_name} value(s) from \code{obs_file} instead of
+averaging across every observed variable. \code{NULL} (default) uses all.}
+
 \item{n_workers}{Integer. Number of parallel workers. Defaults to all
 physical cores minus one, capped at \code{n_samples}.}
 
-\item{parallel_dir}{Character. Ignored (for backward compatibility).}
+\item{use_de}{Logical. If \code{TRUE}, run a Differential Evolution
+refinement phase (via \code{run_lhc_wq()}) after the parallel LHC phase
+completes, seeded from the LHC results already computed here.}
 
-\item{keep_worker_dirs}{Logical. Ignored (for backward compatibility).}
+\item{de_parallel}{Logical. Passed to \code{run_lhc_wq()}'s DE phase --
+parallelizes DE evaluations across workers.}
+
+\item{de_n_workers}{Integer or \code{NULL}. Number of workers for the DE
+phase when \code{de_parallel = TRUE}.}
+
+\item{de_iterations}{Integer. Number of DE generations. Passed to
+\code{run_lhc_wq()}'s DE phase.}
+
+\item{de_popsize}{Integer or \code{NULL}. DE population size. Passed to
+\code{run_lhc_wq()}'s DE phase.}
+
+\item{de_f}{Numeric. DE differential weight. Passed to \code{run_lhc_wq()}'s
+DE phase.}
+
+\item{de_cr}{Numeric. DE crossover probability. Passed to
+\code{run_lhc_wq()}'s DE phase.}
+
+\item{de_seed_from_lhc}{Logical. If \code{TRUE} (default), seed the DE
+population from the best parallel-LHC results instead of re-sampling.}
+
+\item{parallel_dir}{Character or \code{NULL}. Parent directory for the
+isolated \code{worker_<pid>_<timestamp>_N/} sandbox copies of
+\code{model_dir}. If \code{NULL} (default), uses
+\code{dirname(model_dir)} -- a sibling of \code{model_dir} under the
+project root, so relative parent-path references in model config files
+(e.g. shared meteo forcing files) still resolve correctly.}
+
+\item{keep_worker_dirs}{Logical. If \code{TRUE}, worker sandbox
+directories are left on disk after the run instead of being deleted --
+useful for debugging, but accumulates disk usage across repeated runs.
+Default \code{FALSE} (deleted automatically).}
 }
 \value{
 Same structure as \code{run_lhc_wq()}, with results combined across
@@ -103,6 +148,7 @@ Same structure as \code{run_lhc_wq()}, with results combined across
 }
 \description{
 Runs \code{run_lhc_wq()} in parallel by distributing LHS samples across
-multiple workers. Each worker executes its assigned samples sequentially
-on the shared model directory.
+multiple workers. Each worker gets its own isolated sandbox copy of
+\code{model_dir} (under \code{parallel_dir}) and runs/scores its assigned
+samples there -- \code{model_dir} itself is never written to.
 }

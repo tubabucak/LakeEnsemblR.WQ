@@ -41,12 +41,43 @@ get_output_wq <- function(config_file,
     
     if (depth_01 == 1) {
       for (variable_model_name in vars) {
-      glm_nml_rel <- gotmtools::get_yaml_value(cfg$LER_config_file, "config_files", "GLM")
+      glm_nml_rel <- NULL
+      for (glm_cfg_key in c("GLM", "glm", "Glm")) {
+        glm_nml_rel <- tryCatch({
+          gotmtools::get_yaml_value(cfg$LER_config_file, "config_files", glm_cfg_key)
+        }, error = function(e) {
+          NULL
+        })
+        if (!is.null(glm_nml_rel)) {
+          break
+        }
+      }
+      if (is.null(glm_nml_rel)) {
+        stop("Could not find GLM entry in LER config 'config_files'.")
+      }
+      # glm_nml_rel (e.g. "GLM/glm3.nml") is used here as-is, assuming the
+      # standard LakeEnsemblR layout (a "GLM/" folder next to the LER
+      # config file). Projects with a differently-named model folder and
+      # no such nesting (e.g. glm3.nml living directly in "GLM-AED2/",
+      # this project's actual layout) get a nonexistent path here -- and
+      # it breaks worse inside a parallel worker sandbox, which has no
+      # project-root "GLM/" folder to fall back into at all. Derive from
+      # cfg$model_folders$GLM instead (already known-correct -- it's what
+      # this same function successfully reads output.nc from, including
+      # inside worker sandboxes) rather than re-deriving a second,
+      # independent (and convention-dependent) path from the LER config.
       nml_file <- if (!grepl("^([A-Za-z]:|/)", glm_nml_rel)) {
-      file.path(dirname(cfg$LER_config_file), glm_nml_rel)
+        nml_candidates <- c(file.path(dirname(cfg$model_folders$GLM), basename(glm_nml_rel)),
+                            file.path(cfg$model_folders$GLM, basename(glm_nml_rel)))
+        found <- nml_candidates[file.exists(nml_candidates)][1]
+        if (is.na(found)) {
+          stop("Could not find GLM nml file '", basename(glm_nml_rel),
+               "' near model_folders entry: ", cfg$model_folders$GLM)
+        }
+        found
       } else {
-      glm_nml_rel
-}
+        glm_nml_rel
+      }
 
 depth <- suppressWarnings(get_nml_value(
   nml_file = nml_file,
@@ -131,9 +162,30 @@ depth <- suppressWarnings(get_nml_value(
     }
     sim_folder <- cfg$model_folders[[sim_folder_key]]
 
-    # Get reference year and timestep from Simstrat par (JSON) file
-    sim_par <- file.path(dirname(cfg$LER_config_file),
-                         sim_cfg_rel)
+    # Get reference year and timestep from Simstrat par (JSON) file.
+    # sim_cfg_rel (from LER config's config_files.Simstrat, e.g.
+    # "Simstrat/simstrat.par") is used here WITHOUT basename() -- unlike
+    # .derive_ler_config_filename(), which strips it -- so combining it
+    # with dirname(cfg$LER_config_file) assumes the standard LakeEnsemblR
+    # layout (a "Simstrat/" folder next to the LER config file). Projects
+    # that don't follow that convention (e.g. par file living directly in
+    # a differently-named model folder, with no "Simstrat/" nesting at
+    # all) get a nonexistent path here, and it silently breaks worse
+    # inside a parallel worker sandbox where there's no project-root
+    # "Simstrat/" folder to fall back into at all. model_folders$SIMSTRAT
+    # (sim_folder) is already known-correct (it's what everything else in
+    # this function successfully reads output from, including inside
+    # worker sandboxes) and the par file lives directly alongside it, one
+    # level up from wherever model_folders points -- so derive sim_par
+    # from THAT instead of re-deriving a second, independent (and
+    # convention-dependent) path from the LER config.
+    sim_par_candidates <- c(file.path(dirname(sim_folder), basename(sim_cfg_rel)),
+                            file.path(sim_folder, basename(sim_cfg_rel)))
+    sim_par <- sim_par_candidates[file.exists(sim_par_candidates)][1]
+    if (is.na(sim_par)) {
+      stop("Could not find Simstrat par file '", basename(sim_cfg_rel),
+           "' near model_folders entry: ", sim_folder)
+    }
     timestep <- get_json_value(sim_par, "Simulation", "Timestep s")
     reference_year <- get_json_value(sim_par, "Simulation", "Reference year")
 

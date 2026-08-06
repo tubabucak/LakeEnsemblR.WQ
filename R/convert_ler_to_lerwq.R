@@ -42,7 +42,8 @@ convert_ler_to_lerwq <- function(ler_config_file = "LakeEnsemblR.yaml",
   for(i in seq_len(length(models_coupled))){
     phys_model <- phys_models[i]
     
-    if(!(phys_model %in% names(ler_models))){
+    ler_model_key <- names(ler_models)[toupper(names(ler_models)) == toupper(phys_model)][1]
+    if(is.na(ler_model_key)){
       if(verbose){
         message("Skipped copying LakeEnsemblR folder for ", models_coupled[i],
                 ": ", phys_model, " not found in ", file.path(folder,
@@ -50,8 +51,8 @@ convert_ler_to_lerwq <- function(ler_config_file = "LakeEnsemblR.yaml",
       }
       next
     }
-    
-    ler_folder <- dirname(lst_config_ler[["config_files"]][[phys_model]])
+
+    ler_folder <- dirname(lst_config_ler[["config_files"]][[ler_model_key]])
     lerwq_folder <- dirname(lst_config_wq[["config_files"]][[models_coupled[i]]])
     
     ### Part 1: Copy folder contents
@@ -97,8 +98,8 @@ convert_ler_to_lerwq <- function(ler_config_file = "LakeEnsemblR.yaml",
     if(activate_wq){
       # Not needed for PCLake and MyLake; these models always run with
       # water quality
-      if(phys_model == "GOTM"){
-        filename <- basename(lst_config_ler[["config_files"]][["GOTM"]])
+      if(toupper(phys_model) == "GOTM"){
+        filename <- basename(lst_config_ler[["config_files"]][[ler_model_key]])
         
         input_yaml_multiple(file.path(folder, lerwq_folder, filename),
                             "true",
@@ -110,8 +111,8 @@ convert_ler_to_lerwq <- function(ler_config_file = "LakeEnsemblR.yaml",
                                                         filename),
                                verbose = verbose,
                                settings_section = settings_section)
-      }else if(phys_model == "Simstrat"){
-        filename <- basename(lst_config_ler[["config_files"]][["Simstrat"]])
+      }else if(toupper(phys_model) == "SIMSTRAT"){
+        filename <- basename(lst_config_ler[["config_files"]][[ler_model_key]])
         
         # Set CoupleAED2 to true, 
         input_json(file.path(folder, lerwq_folder, filename),
@@ -124,8 +125,8 @@ convert_ler_to_lerwq <- function(ler_config_file = "LakeEnsemblR.yaml",
                                                            filename),
                                   verbose = verbose,
                                   settings_section = settings_section)
-      }else if(phys_model == "GLM"){
-        filename <- basename(lst_config_ler[["config_files"]][["GLM"]])
+      }else if(toupper(phys_model) == "GLM"){
+        filename <- basename(lst_config_ler[["config_files"]][[ler_model_key]])
         
         nml <- read_nml(file.path(folder, lerwq_folder, filename))
         

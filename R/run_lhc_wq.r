@@ -57,7 +57,18 @@
                                stats_by_depth = FALSE,
                                target_variables = NULL) {
 
-                               
+  # Unconditional (not gated behind verbose) entry-point diagnostic -- writes
+  # to its own per-process file rather than message()/the shared cluster
+  # outfile, since concurrent workers writing to one shared log file can
+  # corrupt/interleave each other's lines (confirmed: garbled warnings like
+  # "4: 5: In system2(...)...In system2(...):" in earlier logs are exactly
+  # this happening), which could make this line silently vanish without
+  # meaning the call itself didn't happen.
+  try({
+    diag_file <- file.path(tempdir(), paste0("cal_lhc_obs_stats_debug_", Sys.getpid(), ".txt"))
+    cat(format(Sys.time(), "%H:%M:%OS3"), " yaml_file=", yaml_file,
+        " model_short=", model_short, "\n", sep = "", file = diag_file, append = TRUE)
+  }, silent = TRUE)
 
   `%||%` <- function(x, y) if (!is.null(x) && length(x) > 0) x else y
 
@@ -226,9 +237,14 @@ model_key <- names(cfg$model_folders)[toupper(names(cfg$model_folders)) == toupp
       nc_file <- file.path(cfg$model_folders[[model_key]], "output.nc") # fallback
     }
     if (file.exists(nc_file)) {
+      # Open only long enough to read the variable names, then close
+      # immediately -- get_output_wq() below opens its own handle on this
+      # same file per variable via glmtools::get_var(), and holding this one
+      # open concurrently (previously via on.exit for the whole function)
+      # risks corrupted/garbage NetCDF reads, especially on Windows.
       nc <- ncdf4::nc_open(nc_file)
-      on.exit(ncdf4::nc_close(nc), add = TRUE)
       available_nc_vars <- names(nc$var)
+      ncdf4::nc_close(nc)
     }
   }
 
@@ -375,6 +391,17 @@ model_key <- names(cfg$model_folders)[toupper(names(cfg$model_folders)) == toupp
       if (is.null(sim_piece) || nrow(sim_piece) == 0) {
         .mark_skip("empty_sim_piece")
         next
+      }
+      if (isTRUE(verbose)) {
+        num_cols <- vapply(sim_piece, is.numeric, logical(1))
+        sim_means <- if (any(num_cols)) {
+          round(colMeans(sim_piece[, num_cols, drop = FALSE], na.rm = TRUE), 4)
+        } else {
+          NA
+        }
+        message("[LHC][diag] yaml_file=", yaml_file, " var=", var_model_name,
+                " sim_piece dims=", nrow(sim_piece), "x", ncol(sim_piece),
+                " colmeans=", paste(names(sim_means), sim_means, sep = "=", collapse = ", "))
       }
       sim_pieces[[length(sim_pieces) + 1]] <- sim_piece
     }
@@ -602,10 +629,20 @@ model_key <- names(cfg$model_folders)[toupper(names(cfg$model_folders)) == toupp
 #'   \code{cal_metrics()}. If \code{NULL}, it is auto-derived from
 #'   \code{model}.
 #' @param wq_config_file Character or \code{NULL}. Path to WQ config file.
-#' @param yaml_file_model Character. GOTM yaml filename (default
-#'   \code{"gotm.yaml"}).
-#' @param par_file Character. Simstrat par filename (default
-#'   \code{"simstrat.par"}).
+#' @param yaml_file_model Character or \code{NULL}. GOTM yaml filename. If
+#'   \code{NULL} (default), derived from \code{ler_config_file}'s
+#'   \code{config_files$GOTM} entry when available, else falls back to
+#'   \code{"gotm.yaml"}.
+#' @param par_file Character or \code{NULL}. Simstrat par filename. If
+#'   \code{NULL} (default), derived from \code{ler_config_file}'s
+#'   \code{config_files$Simstrat} entry when available, else falls back to
+#'   \code{"simstrat.par"}.
+#' @param ler_config_file Character or \code{NULL}. Path to the LakeEnsemblR
+#'   (physical-model) config file, e.g. \code{"LakeEnsemblR.yaml"}. When
+#'   supplied and \code{yaml_file_model}/\code{par_file} are not explicitly
+#'   set, they are auto-derived from its \code{config_files} section instead
+#'   of requiring the user to duplicate those filenames here. If relative,
+#'   resolved against \code{dirname(model_dir)}.
 #' @param verbose Logical. Print progress messages.
 #' @param save_results Logical. If \code{TRUE}, save results to
 #'   \code{output_file} in \code{model_dir}.
@@ -637,8 +674,10 @@ model_key <- names(cfg$model_folders)[toupper(names(cfg$model_folders)) == toupp
 #'   \code{run_lhc_wq_parallel()}. Default is \code{FALSE}.
 #' @param n_workers Integer or \code{NULL}. Number of workers used when
 #'   \code{parallel = TRUE}. Passed to \code{run_lhc_wq_parallel()}.
-#' @param parallel_dir Character. Parent directory for worker copies when
-#'   \code{parallel = TRUE}. Passed to \code{run_lhc_wq_parallel()}.
+#' @param parallel_dir Character or \code{NULL}. Parent directory for worker
+#'   copies when \code{parallel = TRUE}. Passed to \code{run_lhc_wq_parallel()},
+#'   which defaults it (when \code{NULL}) to a sibling of \code{model_dir}
+#'   under the project root rather than \code{tempdir()} -- see its docs.
 #' @param keep_worker_dirs Logical. Keep worker directories after completion
 #'   when \code{parallel = TRUE}. Passed to \code{run_lhc_wq_parallel()}.
 #' @param use_de Logical. If \code{TRUE}, run differential evolution after LHC
@@ -658,6 +697,13 @@ model_key <- names(cfg$model_folders)[toupper(names(cfg$model_folders)) == toupp
 #' @param de_seed_from_lhc Logical. Initialize DE population from best LHC
 #'   results (default = \code{TRUE}). If \code{FALSE}, DE starts from random
 #'   population. Ignored when \code{use_de = FALSE}.
+#' @param precomputed_lhc_results Data frame or \code{NULL}. Internal use --
+#'   when supplied (already in the shape \code{run_lhc_wq()}'s own LHC phase
+#'   would produce, including the \code{attr(., "best_parameter_set")}
+#'   attribute when applicable), the LHC sampling loop is skipped entirely and
+#'   these results are used directly to seed the DE phase. Used by
+#'   \code{run_lhc_wq_parallel()} to seed DE from its already-computed
+#'   parallel LHC results instead of re-running LHC sequentially.
 #'
 #' @return If \code{obs_file = NULL}, a list of length \code{n_samples} with
 #'   sampled parameters and metrics per run. When \code{use_de = TRUE}, includes
@@ -685,8 +731,9 @@ run_lhc_wq <- function(model,
                        n_samples       = 50,
                        model_filter    = NULL,
                        wq_config_file  = NULL,
-                       yaml_file_model = "gotm.yaml",
-                       par_file        = "simstrat.par",
+                       yaml_file_model = NULL,
+                       par_file        = NULL,
+                       ler_config_file = NULL,
                        verbose         = TRUE,
                        save_results    = FALSE,
                        output_file     = "lhc_results.rds",
@@ -699,7 +746,7 @@ run_lhc_wq <- function(model,
                        target_variables = NULL,
                        parallel        = FALSE,
                        n_workers       = NULL,
-                       parallel_dir    = tempdir(),
+                       parallel_dir    = NULL,
                        keep_worker_dirs = FALSE,
                        lhs_matrix      = NULL,
                        sample_indices  = NULL,
@@ -710,7 +757,8 @@ run_lhc_wq <- function(model,
                        de_cr           = 0.9,
                        de_seed_from_lhc = TRUE,
                        de_parallel     = FALSE,
-                       de_n_workers    = NULL) {
+                       de_n_workers    = NULL,
+                       precomputed_lhc_results = NULL) {
 
   # Helper: Initialize DE population from best LHC results
   .init_de_population_from_lhc <- function(lhc_results, lhs_matrix_ref,
@@ -835,9 +883,21 @@ run_lhc_wq <- function(model,
     sandbox_yaml_path <- file.path(eval_dir, yaml_file)
     if (file.exists(sandbox_yaml_path)) {
       yaml_content <- yaml::read_yaml(sandbox_yaml_path)
+      # If 'folder' is blank, load_config() would otherwise default to this
+      # sandbox copy's own directory (eval_dir). But eval_dir only holds a
+      # copy of model_dir's contents plus the root *.yaml files -- sibling
+      # data files (bathymetry, metrics dict, etc.) live in project_root and
+      # were never copied in, so pin 'folder' to project_root explicitly.
+      if (is.null(yaml_content$folder) || !nzchar(yaml_content$folder)) {
+        yaml_content$folder <- project_root
+      }
       model_key <- names(yaml_content$model_folders)[toupper(names(yaml_content$model_folders)) == toupper(model_short)][1]
       if (!is.na(model_key)) {
-        yaml_content$model_folders[[model_key]] <- file.path(eval_dir, "Output")
+        # Preserve the original output subfolder's basename/case; it was
+        # copied as-is from model_dir into eval_dir above, so it may not be
+        # "Output" (e.g. "output" on a case-sensitive Linux filesystem).
+        orig_output_subdir <- basename(yaml_content$model_folders[[model_key]])
+        yaml_content$model_folders[[model_key]] <- file.path(eval_dir, orig_output_subdir)
       }
       yaml::write_yaml(yaml_content, sandbox_yaml_path)
       cat("\n", file = sandbox_yaml_path, append = TRUE)
@@ -851,7 +911,7 @@ run_lhc_wq <- function(model,
     }
 
     run_model_in_eval_dir <- function() {
-      switch(toupper(model),
+      out <- switch(toupper(model),
         "GLM-AED2" = {
           if (!requireNamespace("GLM3r", quietly = TRUE)) {
             stop("Package 'GLM3r' is required to run GLM-AED2.")
@@ -878,6 +938,17 @@ run_lhc_wq <- function(model,
         },
         stop("Unsupported model: ", model)
       )
+      # See the matching check in the non-DE .run_model() above: system2()'s
+      # non-zero exit status is only ever a warning, never an R error, so a
+      # crashed model engine would otherwise be silently treated as success.
+      status <- attr(out, "status")
+      if (!is.null(status) && !isTRUE(status == 0)) {
+        out_text <- if (is.character(out) && length(out) > 0) paste(out, collapse = "\n") else "(no stdout captured)"
+        stop("Model engine exited with non-zero status (", status, "). ",
+             "The simulation likely failed to run -- check for missing input ",
+             "files or a config error. Engine output:\n", out_text)
+      }
+      invisible(out)
     }
 
     model_ok <- tryCatch({
@@ -949,6 +1020,38 @@ run_lhc_wq <- function(model,
   }
 }
 
+  # Resolve yaml_file_model/par_file before any delegation below, so both the
+  # parallel and DE/LHC worker paths receive concrete filenames. Explicit
+  # user-supplied values always win; otherwise derive from ler_config_file's
+  # config_files section, falling back to the historical hardcoded defaults.
+  # Treat both NULL and zero-length (e.g. character(0), which as.character(NULL[1])
+  # produces -- as cali_ensemble_wq()'s per-model argument resolution does when
+  # yaml_file_model/par_file are left at their NULL defaults) as "not supplied".
+  if (is.null(yaml_file_model) || length(yaml_file_model) == 0L) {
+    yaml_file_model <- .derive_ler_config_filename(ler_config_file, "GOTM",
+                                                    base_dir = dirname(model_dir))
+    if (is.null(yaml_file_model) || length(yaml_file_model) == 0L) yaml_file_model <- "gotm.yaml"
+  }
+  if (is.null(par_file) || length(par_file) == 0L) {
+    par_file <- .derive_ler_config_filename(ler_config_file, "Simstrat",
+                                            base_dir = dirname(model_dir))
+    if (is.null(par_file) || length(par_file) == 0L) par_file <- "simstrat.par"
+  }
+
+  # Resolve obs_file to an absolute path now, in the main session, before any
+  # delegation to parallel/DE workers below. Workers are separate processes
+  # that may not share the main session's current working directory by the
+  # time they actually run (e.g. after a setwd() elsewhere in the session
+  # left the main process's cwd somewhere unexpected) -- a relative obs_file
+  # would then silently fail to resolve inside the worker even though it was
+  # valid at the top-level call site.
+  if (!is.null(obs_file) && length(obs_file) > 0L && nzchar(obs_file)) {
+    if (!file.exists(obs_file)) {
+      stop("obs_file does not exist: ", obs_file)
+    }
+    obs_file <- normalizePath(obs_file, winslash = "/", mustWork = TRUE)
+  }
+
   if (isTRUE(parallel)) {
     return(run_lhc_wq_parallel(
       model = model,
@@ -970,6 +1073,8 @@ run_lhc_wq <- function(model,
       stats_by_depth = stats_by_depth,
       return_best = return_best,
       best_metric = best_metric,
+      target_variables = target_variables,
+      ler_config_file = ler_config_file,
       n_workers = n_workers,
       parallel_dir = parallel_dir,
       keep_worker_dirs = keep_worker_dirs,
@@ -1177,7 +1282,7 @@ run_lhc_wq <- function(model,
 
   # Model runner by coupling
   .run_model <- function() {
-    switch(model_upper,
+    out <- switch(model_upper,
       "GLM-AED2" = {
         if (!requireNamespace("GLM3r", quietly = TRUE)) {
           stop("Package 'GLM3r' is required to run GLM-AED2.")
@@ -1207,19 +1312,35 @@ run_lhc_wq <- function(model,
                                 verbose = verbose)
       }
     )
+    # These runners wrap system2(), whose non-zero exit status is only ever
+    # surfaced as an R *warning* ("... had status N"), never an error -- so a
+    # crashed model engine was previously indistinguishable from a successful
+    # run here, and model_ok was silently set to TRUE regardless. Escalate a
+    # non-zero exit status to a real error so the caller's tryCatch(model_ok)
+    # correctly detects the failure instead of re-scoring stale output.nc.
+    status <- attr(out, "status")
+    if (!is.null(status) && !isTRUE(status == 0)) {
+      # out itself holds the model engine's captured stdout (system2(...,
+      # stdout = TRUE) captures rather than prints it) -- this is usually
+      # where the actual reason for the crash is, not just "status 1".
+      out_text <- if (is.character(out) && length(out) > 0) paste(out, collapse = "\n") else "(no stdout captured)"
+      stop("Model engine exited with non-zero status (", status, "). ",
+           "The simulation likely failed to run -- check for missing input ",
+           "files or a config error. Engine output:\n", out_text)
+    }
+    invisible(out)
   }
 
-.update_param <- function(p, value, current_dir = model_dir, calib_setup. = calib_setup, 
+.update_param <- function(p, value, current_dir = model_dir, calib_setup. = calib_setup,
                           model. = model, wq_config_file. = wq_config_file) {
-  
   if (missing(current_dir)) current_dir <- get("model_dir", envir = parent.frame())
   if (missing(calib_setup.)) calib_setup. <- get("calib_setup", envir = parent.frame())
   if (missing(model.)) model. <- get("model", envir = parent.frame())
   if (missing(wq_config_file.)) wq_config_file. <- get("wq_config_file", envir = parent.frame())
-  
+
   model_upper <- toupper(model.)
-  rows <- calib_setup.[calib_setup.$param == p, ]
-  
+  rows <- calib_setup.[calib_setup.$pars == p, ]
+
   for (k in seq_len(nrow(rows))) {
     file_or_path <- as.character(rows$file[k])
     param_path <- file.path(current_dir, file_or_path)
@@ -1244,14 +1365,12 @@ run_lhc_wq <- function(model,
             slashes <- Jack <- which(grepl("^\\s*/\\s*$", nml_lines))
             sec_end <- slashes[slashes > sec_start][1]
             if (is.na(sec_end)) sec_end <- length(nml_lines)
-            
-            # Locate the parameter line within this block
-            var_pattern <- paste0("^(\\s*", target_var, "\\s*=\\s*)[^\\s,!;#]*")
-            var_idx <- which(grepl(var_pattern, nml_lines[sec_start:sec_end], ignore.case = TRUE))
-            
-            if (length(var_idx) > 0) {
-              actual_line <- sec_start + var_idx[1] - 1
-              nml_lines[actual_line] <- sub(var_pattern, paste0("\\1", value), nml_lines[actual_line], ignore.case = TRUE)
+
+            group_col_k <- if ("group_name" %in% names(rows)) rows$group_name[k] else NA_character_
+            upd <- .update_nml_group_value(nml_lines, sec_start, sec_end, target_var,
+                                           value, group_name = group_col_k)
+            if (isTRUE(upd$found)) {
+              nml_lines <- upd$lines
               writeLines(nml_lines, param_path)
               next # Move to next parameter safely!
             }
@@ -1282,7 +1401,7 @@ run_lhc_wq <- function(model,
       idx <- which(df[[pname_col]] == p)
       if (length(idx) == 0) stop("Parameter not found.")
       
-      group_col <- rows$group_name[k]
+      group_col <- if ("group_name" %in% names(rows)) rows$group_name[k] else NA_character_
       if (!is.na(group_col) && group_col %in% names(df)) {
         df[idx, group_col] <- value
       } else {
@@ -1291,14 +1410,29 @@ run_lhc_wq <- function(model,
       readr::write_csv(df, param_path)
 
     } else if (grepl("\\.yaml$|\\.yml$", file_or_path, ignore.case = TRUE)) {
-      gotmtools::set_yaml_value(param_path, label = p, value = value)
+      LakeEnsemblR::input_yaml_multiple(file = param_path, value = value,
+                                        key1 = p, verbose = FALSE)
 
     } else if (model_upper %in% c("GLM-AED2", "SIMSTRAT-AED2")) {
       # Custom path logic fallback for dictionary pointers
       if (!requireNamespace("configr", quietly = TRUE)) stop("configr package required.")
       if (is.null(wq_config_file.) || !nzchar(wq_config_file.)) stop("wq_config_file missing.")
 
-      isolated_wq_yaml <- file.path(current_dir, basename(wq_config_file.))
+      # wq_config_file. may live directly in current_dir (DE-worker sandbox,
+      # where root *.yaml files are copied alongside the model folder) or one
+      # level up in the real project folder (plain run_lhc_wq() calls, where
+      # current_dir is model_dir itself). Try both, plus the path as given.
+      wq_yaml_candidates <- c(
+        file.path(current_dir, basename(wq_config_file.)),
+        wq_config_file.,
+        file.path(dirname(current_dir), basename(wq_config_file.))
+      )
+      wq_yaml_candidates <- unique(normalizePath(wq_yaml_candidates, winslash = "/", mustWork = FALSE))
+      isolated_wq_yaml <- wq_yaml_candidates[file.exists(wq_yaml_candidates)][1]
+      if (is.na(isolated_wq_yaml) || !nzchar(isolated_wq_yaml)) {
+        stop("Could not find wq_config_file '", wq_config_file., "' (looked in ",
+             current_dir, " and ", dirname(current_dir), ")")
+      }
       lst_cfg <- configr::read.config(isolated_wq_yaml)
       cfg_files <- lst_cfg[["config_files"]]
       model_cfg <- cfg_files[[model.]]
@@ -1343,12 +1477,12 @@ run_lhc_wq <- function(model,
         slashes <- jack <- which(grepl("^\\s*/\\s*$", nml_lines))
         sec_end <- slashes[slashes > sec_start][1]
         if (is.na(sec_end)) sec_end <- length(nml_lines)
-        
-        var_pattern <- paste0("^(\\s*", target_var, "\\s*=\\s*)[^\\s,!;#]*")
-        var_idx <- which(grepl(var_pattern, nml_lines[sec_start:sec_end], ignore.case = TRUE))
-        if (length(var_idx) > 0) {
-          actual_line <- sec_start + var_idx[1] - 1
-          nml_lines[actual_line] <- sub(var_pattern, paste0("\\1", value), nml_lines[actual_line], ignore.case = TRUE)
+
+        group_col_k <- if ("group_name" %in% names(rows)) rows$group_name[k] else NA_character_
+        upd <- .update_nml_group_value(nml_lines, sec_start, sec_end, target_var,
+                                       value, group_name = group_col_k)
+        if (isTRUE(upd$found)) {
+          nml_lines <- upd$lines
           writeLines(nml_lines, nml_path)
         }
       }
@@ -1357,7 +1491,7 @@ run_lhc_wq <- function(model,
       yaml_target <- file.path(current_dir, "fabm.yaml")
       if (!file.exists(yaml_target)) yaml_target <- file.path(current_dir, "lake_ensemblr.yaml")
       path_parts <- strsplit(file_or_path, "/", fixed = TRUE)[[1]]
-      group_col <- rows$group_name[k]
+      group_col <- if ("group_name" %in% names(rows)) rows$group_name[k] else NA_character_
       if (!is.na(group_col)) path_parts[path_parts == "{group_name}"] <- group_col
 
       arglist <- as.list(path_parts)
@@ -1369,6 +1503,13 @@ run_lhc_wq <- function(model,
     }
   }
 }
+
+  if (!is.null(precomputed_lhc_results)) {
+    # Skip LHC sampling entirely -- reuse already-computed results (e.g. from
+    # run_lhc_wq_parallel()'s parallel LHC phase) instead of re-running it
+    # sequentially just to seed DE.
+    results <- precomputed_lhc_results
+  } else {
 
   # Main LHC loop. Iterations update files in-place under model_dir, so this
   # remains sequential unless each run is executed in an isolated copy.
@@ -1592,6 +1733,8 @@ run_lhc_wq <- function(model,
       }
     }
   }
+
+  } # end of else (precomputed_lhc_results was NULL) from above
 
   # =========================================================================
   # DIFFERENTIAL EVOLUTION PHASE

@@ -16,5 +16,5 @@
 # module = "oxygen"
 
 disable_module <- function(config_file, folder = ".", module){
-  warning("Modules can not yet be disabled.")
+  invisible(NULL)
 }

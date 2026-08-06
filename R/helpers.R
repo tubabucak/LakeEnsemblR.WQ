@@ -1,3 +1,118 @@
+#' @title Update a (possibly group-indexed) value inside an AED2-style namelist
+#'
+#' @description AED2 namelist parameters like \code{pd\%R_growth} in
+#'   \code{aed2_phyto_pars.nml} or \code{zoop_param\%Rgrz_zoo} in
+#'   \code{aed2_zoop_pars.nml} are comma-separated arrays, one value per
+#'   group (e.g. \code{pd\%R_growth = 2.3, 1.25} for \code{diatoms},
+#'   \code{cyanobacteria}). Editing these blindly (e.g. always touching the
+#'   first token) silently miscalibrates every group but the first, and can
+#'   corrupt the array if multiple group rows for the same parameter are
+#'   written in sequence. This locates \code{target_var}'s line within
+#'   \code{nml_lines[sec_start:sec_end]}, finds the group's index by matching
+#'   \code{group_name} against the section's own name array (e.g.
+#'   \code{pd\%p_name = 'diatoms','cyanobacteria'}), and replaces only that
+#'   token -- preserving the rest of the array and any trailing inline
+#'   comment. Falls back to the first token when \code{group_name} is
+#'   \code{NA}/not found (matching the previous single-group behavior).
+#'
+#' @param nml_lines character vector; full file content from \code{readLines()}.
+#' @param sec_start,sec_end integer; 1-based line range of the namelist
+#'   section (\code{&section ... /}) to search within.
+#' @param target_var character; variable name to match (e.g.
+#'   \code{"pd\%R_growth"}), matched at the start of a line up to \code{=}.
+#' @param value the replacement value for the matched group's token.
+#' @param group_name character or \code{NA}; group to target (e.g.
+#'   \code{"diatoms"}). \code{NA} or no match falls back to the first token.
+#'
+#' @return A list with \code{lines} (the possibly-modified \code{nml_lines})
+#'   and \code{found} (logical; whether \code{target_var} was located).
+#'
+#' @noRd
+.update_nml_group_value <- function(nml_lines, sec_start, sec_end, target_var,
+                                    value, group_name = NA_character_) {
+  section_lines <- nml_lines[sec_start:sec_end]
+
+  group_idx <- NA_integer_
+  if (!is.na(group_name) && nzchar(group_name)) {
+    name_line_rel <- which(grepl("%[A-Za-z_]*name\\s*=", section_lines, ignore.case = TRUE))
+    if (length(name_line_rel) > 0) {
+      name_vals <- regmatches(section_lines[name_line_rel[1]],
+                              gregexpr("'([^']*)'", section_lines[name_line_rel[1]]))[[1]]
+      name_vals <- gsub("'", "", name_vals)
+      hit <- which(tolower(trimws(name_vals)) == tolower(trimws(group_name)))
+      if (length(hit) > 0) group_idx <- hit[1]
+    }
+  }
+
+  var_pattern <- paste0("^(\\s*", target_var, "\\s*=\\s*)(.*)$")
+  var_idx_rel <- which(grepl(var_pattern, section_lines, ignore.case = TRUE))
+  if (length(var_idx_rel) == 0) {
+    return(list(lines = nml_lines, found = FALSE))
+  }
+
+  actual_line <- sec_start + var_idx_rel[1] - 1
+  m <- regmatches(nml_lines[actual_line],
+                  regexec(var_pattern, nml_lines[actual_line], ignore.case = TRUE))[[1]]
+  prefix <- m[2]
+  rest <- m[3]
+
+  comment <- ""
+  if (grepl("!", rest, fixed = TRUE)) {
+    parts <- strsplit(rest, "!", fixed = TRUE)[[1]]
+    rest <- parts[1]
+    comment <- paste0(" !", paste(parts[-1], collapse = "!"))
+  }
+
+  tokens <- strsplit(rest, ",", fixed = TRUE)[[1]]
+  idx_to_replace <- if (!is.na(group_idx) && group_idx <= length(tokens)) group_idx else 1L
+  tokens[idx_to_replace] <- paste0(" ", value)
+  new_rest <- paste(trimws(tokens), collapse = ", ")
+
+  nml_lines[actual_line] <- paste0(prefix, new_rest, comment)
+  list(lines = nml_lines, found = TRUE)
+}
+
+#' @title Derive a model config filename from a LakeEnsemblR config
+#'
+#' @description Looks up \code{phys_model} (e.g. \code{"GOTM"},
+#'   \code{"Simstrat"}) in the \code{config_files} section of a
+#'   \code{LakeEnsemblR.yaml}-style config, case-insensitively, and returns
+#'   the basename of the matched path (e.g. \code{"gotm.yaml"}). Returns
+#'   \code{NULL} if \code{ler_config_file} is \code{NULL}, the file can't be
+#'   read, or no matching entry is found -- callers should fall back to their
+#'   own hardcoded default in that case.
+#'
+#' @param ler_config_file character or \code{NULL}; path to the LakeEnsemblR
+#'   config file. If relative, resolved against \code{base_dir}.
+#' @param phys_model character; physical model key to look up (e.g.
+#'   \code{"GOTM"}, \code{"Simstrat"}).
+#' @param base_dir character; directory used to resolve \code{ler_config_file}
+#'   when it is a relative path. Defaults to \code{"."}.
+#'
+#' @noRd
+.derive_ler_config_filename <- function(ler_config_file, phys_model, base_dir = ".") {
+  if (is.null(ler_config_file) || !nzchar(ler_config_file)) return(NULL)
+
+  ler_path <- if (grepl("^([A-Za-z]:|/)", ler_config_file)) {
+    ler_config_file
+  } else {
+    file.path(base_dir, ler_config_file)
+  }
+  if (!file.exists(ler_path)) return(NULL)
+
+  ler_cfg <- tryCatch(yaml::read_yaml(ler_path), error = function(e) NULL)
+  cfg_files <- ler_cfg[["config_files"]]
+  if (is.null(cfg_files) || length(cfg_files) == 0) return(NULL)
+
+  key <- names(cfg_files)[toupper(names(cfg_files)) == toupper(phys_model)][1]
+  if (is.na(key)) return(NULL)
+
+  path_val <- cfg_files[[key]]
+  if (is.null(path_val) || !nzchar(path_val)) return(NULL)
+
+  basename(path_val)
+}
+
 #' @title Adds an AED2 section to the Simstrat config file
 #'
 #' @description Checks for existence of and then adds a AED2Config section
