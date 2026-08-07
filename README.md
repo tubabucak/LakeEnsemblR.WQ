@@ -66,7 +66,7 @@ dependency-solving tools (`pak`, and by extension
 package’s own `Remotes:`. If you hit that, pre-install `GLM3r` first:
 
 ``` r
-remotes::install_github("aemon-j/GLM3r@v3.3")
+remotes::install_github("aemon-j/GLM3r@v3.3-lerwq")
 remotes::install_github("tubabucak/LakeEnsemblR.WQ")
 ```
 
