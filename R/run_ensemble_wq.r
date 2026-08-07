@@ -42,8 +42,9 @@ run_ensemble_wq <- function(config_file,
   #msg("Reading master config: ", config_file)
 
   # ---- 1) Extract model folders  ----
-
-  model_folders <- stats::setNames(file.path(folder, models), models)
+  fix_models = models
+  fix_models[which(fix_models == 'SIMSTRAT-AED2')] = 'Simstrat-AED2'
+  model_folders <- stats::setNames(file.path(folder, fix_models), models)
 
 
 .find_latest_netcdf <- function(sim_folder,
