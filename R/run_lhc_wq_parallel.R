@@ -166,7 +166,19 @@ run_lhc_wq_parallel <- function(model,
       stats_by_depth  = stats_by_depth,
       target_variables = target_variables,
       return_best     = return_best,
-      best_metric     = best_metric
+      best_metric     = best_metric,
+      # Forward DE settings here too -- without this, use_de = TRUE would be
+      # silently dropped (defaulting to FALSE) whenever this single-worker
+      # fallback is taken, exactly the same silent-skip failure mode fixed
+      # below in the multi-worker DE branch.
+      use_de           = use_de,
+      de_parallel      = de_parallel,
+      de_n_workers     = de_n_workers,
+      de_iterations    = de_iterations,
+      de_popsize       = de_popsize,
+      de_f             = de_f,
+      de_cr            = de_cr,
+      de_seed_from_lhc = de_seed_from_lhc
     ))
   }
 
@@ -477,58 +489,18 @@ result_parts <- parallel::parLapply(cl, seq_len(n_workers), function(worker_idx)
 
   if (isTRUE(verbose)) {
     message("[LHC] Parallel workers finished. Combining results...")
-    if (isTRUE(use_de)) {
-
-  if (isTRUE(verbose)) {
-    message("\n[DE] Starting differential evolution phase after LHC...")
   }
 
-  # reuse same function but now WITHOUT parallel
-  de_results <- run_lhc_wq(
-    model = model,
-    param_names = param_names,
-    calib_setup = calib_setup,
-    yaml_file = yaml_file,
-    model_dir = model_dir,
-    n_samples = n_samples,
-    model_filter = model_filter,
-    wq_config_file = wq_config_file,
-    yaml_file_model = yaml_file_model,
-    par_file = par_file,
-    ler_config_file = ler_config_file,
-    verbose = verbose,
-    save_results = FALSE,
-    output_file = NULL,
-    obs_file = obs_file,
-    obs_to_model_units = obs_to_model_units,
-    spin_up_days = spin_up_days,
-    stats_by_depth = stats_by_depth,
-    return_best = return_best,
-    best_metric = best_metric,
-    target_variables = target_variables,
-    parallel = FALSE,
-    use_de = TRUE,
-    de_parallel = de_parallel,
-    de_n_workers = de_n_workers,
-    de_iterations = de_iterations,
-    de_popsize = de_popsize,
-    de_f = de_f,
-    de_cr = de_cr,
-    de_seed_from_lhc = de_seed_from_lhc
-  )
-
-  return(de_results)
-}
-  }
-
-  # Combine results from all workers in sample order
+  # Combine results from all workers in sample order. This always runs --
+  # not gated behind use_de or verbose -- because the DE phase below seeds
+  # from this combined table instead of re-sampling LHC from scratch.
   if (is.null(obs_file)) {
     # Non-obs mode: list of results
     results <- vector("list", n_samples)
     for (worker_idx in seq_len(n_workers)) {
       worker_results <- result_parts[[worker_idx]]
-      sample_indices <- sample_splits[[worker_idx]]
-      results[sample_indices] <- worker_results
+      worker_sample_indices <- sample_splits[[worker_idx]]
+      results[worker_sample_indices] <- worker_results
     }
     if (isTRUE(verbose)) {
       n_ok <- sum(vapply(results, function(x) isTRUE(x$model_ok), logical(1)), na.rm = TRUE)
@@ -577,11 +549,11 @@ result_parts <- parallel::parLapply(cl, seq_len(n_workers), function(worker_idx)
           objective <- stats::weighted.mean(vals[ok], w = w[ok], na.rm = TRUE)
           first_row <- sub[1, , drop = FALSE]
 
-          out <- first_row[, c("sample_index", "n_stats", "n_obs_vars", 
+          out <- first_row[, c("sample_index", "n_stats", "n_obs_vars",
                                "n_obs_vars_with_stats"), drop = FALSE]
           out$best_metric <- best_metric_upper
           out$objective_score <- objective
-          out$objective_value <- if (best_metric_upper == "PBIAS") -objective 
+          out$objective_value <- if (best_metric_upper == "PBIAS") -objective
                                  else objective * score_sign
           for (p in param_names) {
             out[[p]] <- first_row[[p]]
@@ -615,6 +587,69 @@ result_parts <- parallel::parLapply(cl, seq_len(n_workers), function(worker_idx)
         attr(results, "best_metric") <- best_metric_upper
       }
     }
+  }
+
+  # ------------------------------------------------------------------------
+  # DE phase: seed from the parallel LHC results just combined above instead
+  # of re-sampling LHC from scratch. Previously this branch lived *inside*
+  # `if (isTRUE(verbose))` above (so use_de = TRUE was silently skipped
+  # whenever verbose = FALSE) and called run_lhc_wq() without passing the
+  # results just computed here -- which made it generate its own brand new
+  # random lhs_matrix and re-run the full LHC loop sequentially before DE,
+  # discarding the parallel workers' output entirely and roughly doubling
+  # the number of model runs for no benefit.
+  # ------------------------------------------------------------------------
+  if (isTRUE(use_de)) {
+    if (isTRUE(verbose)) {
+      message("\n[DE] Starting differential evolution phase after LHC (seeded from parallel LHC results)...")
+    }
+
+    # reuse same function but now WITHOUT parallel, seeding from the results
+    # already computed by the parallel workers above.
+    de_results <- run_lhc_wq(
+      model = model,
+      param_names = param_names,
+      calib_setup = calib_setup,
+      yaml_file = yaml_file,
+      model_dir = model_dir,
+      n_samples = n_samples,
+      model_filter = model_filter,
+      wq_config_file = wq_config_file,
+      yaml_file_model = yaml_file_model,
+      par_file = par_file,
+      ler_config_file = ler_config_file,
+      verbose = verbose,
+      save_results = FALSE,
+      output_file = NULL,
+      obs_file = obs_file,
+      obs_to_model_units = obs_to_model_units,
+      spin_up_days = spin_up_days,
+      stats_by_depth = stats_by_depth,
+      return_best = return_best,
+      best_metric = best_metric,
+      target_variables = target_variables,
+      lhs_matrix = lhs_matrix,
+      precomputed_lhc_results = results,
+      parallel = FALSE,
+      use_de = TRUE,
+      de_parallel = de_parallel,
+      de_n_workers = de_n_workers,
+      de_iterations = de_iterations,
+      de_popsize = de_popsize,
+      de_f = de_f,
+      de_cr = de_cr,
+      de_seed_from_lhc = de_seed_from_lhc
+    )
+
+    if (isTRUE(save_results)) {
+      out_path <- file.path(model_dir, output_file)
+      saveRDS(de_results, out_path)
+      if (isTRUE(verbose)) {
+        message("[LHC] Results saved to: ", out_path)
+      }
+    }
+
+    return(de_results)
   }
 
   if (isTRUE(save_results)) {

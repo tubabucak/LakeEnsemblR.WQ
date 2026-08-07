@@ -761,20 +761,52 @@ run_lhc_wq <- function(model,
                        precomputed_lhc_results = NULL) {
 
   # Helper: Initialize DE population from best LHC results
+  #
+  # Returns a (de_popsize_val x length(param_names_ref)) matrix in actual
+  # parameter units, suitable to pass straight through as
+  # DEoptim.control(initial.pop = ...).
   .init_de_population_from_lhc <- function(lhc_results, lhs_matrix_ref,
                                          param_names_ref, bounds_ref,
                                          de_popsize_val) {
 
   `%||%` <- function(x, y) if (!is.null(x) && length(x) > 0) x else y
 
+  # lhs_matrix_ref holds the LHS design in [0,1] per column -- the same
+  # values the main LHC loop scales via `lhs_matrix[i, j] * (ub - lb) + lb`
+  # before running the model. DEoptim's initial.pop must be in actual
+  # parameter units (matching `lower`/`upper`), not raw [0,1] design units,
+  # so any rows selected below must go through this same scaling.
+  .scale_lhs_rows <- function(rows) {
+    scaled <- rows
+    for (j in seq_along(param_names_ref)) {
+      p  <- param_names_ref[j]
+      lb <- bounds_ref[[p]]["lb"]
+      ub <- bounds_ref[[p]]["ub"]
+      scaled[, j] <- rows[, j] * (ub - lb) + lb
+    }
+    colnames(scaled) <- param_names_ref
+    scaled
+  }
+
+  # Rank in the same "higher transformed value = better" direction the real
+  # best-parameter-set selector uses after the LHC loop (see score_transform
+  # there): raw value for KGE/NSE, sign-flipped for RMSE/NRMSE (lower raw is
+  # better), and -abs() for PBIAS (closer to zero is better). Without this,
+  # seeding with best_metric = RMSE/NRMSE/PBIAS would rank the *worst*
+  # fitting LHC samples as "best".
+  metric_col <- best_metric
+  score_sign <- if (metric_col %in% c("RMSE", "NRMSE")) -1 else 1
+  score_transform <- function(x) {
+    if (metric_col == "PBIAS") return(-abs(x))
+    score_sign * x
+  }
+
   # ------------------------------------------------------------
-  # ✅ CASE 1: obs_file mode → data.frame
+  # CASE 1: obs_file mode -> data.frame
   # ------------------------------------------------------------
   if (is.data.frame(lhc_results)) {
 
-    metric_col <- best_metric   #
     df <- lhc_results
-
     df <- df[df$model_ok %in% TRUE, ]
     df <- df[!is.na(df[[metric_col]]), ]
 
@@ -782,34 +814,57 @@ run_lhc_wq <- function(model,
       stop("[DE] No valid LHC results to seed DE")
     }
 
-    # Aggregate per sample_index
-    agg <- aggregate(df[[metric_col]],
-                     by = list(sample_index = df$sample_index),
-                     FUN = mean, na.rm = TRUE)
+    # Weighted mean per sample_index (weighted by n_pairs, matching the main
+    # best-set selector), in the transformed "higher is better" direction.
+    iter_ids <- sort(unique(df$sample_index))
+    iter_fitness <- vapply(iter_ids, function(iter_id) {
+      sub  <- df[df$sample_index == iter_id, , drop = FALSE]
+      vals <- score_transform(sub[[metric_col]])
+      w    <- suppressWarnings(as.numeric(sub$n_pairs))
+      w[is.na(w) | w <= 0] <- 1
+      ok <- is.finite(vals) & is.finite(w)
+      if (!any(ok)) return(NA_real_)
+      stats::weighted.mean(vals[ok], w = w[ok], na.rm = TRUE)
+    }, numeric(1))
 
-    names(agg)[2] <- "fitness"
+    agg <- data.frame(sample_index = iter_ids, fitness = iter_fitness)
+    agg <- agg[!is.na(agg$fitness), , drop = FALSE]
+    if (nrow(agg) == 0) {
+      stop("[DE] No valid LHC results to seed DE")
+    }
 
     # sort best first
     agg <- agg[order(agg$fitness, decreasing = TRUE), ]
 
+    # sample_index is already the row number in lhs_matrix_ref (it's assigned
+    # from that same row during the LHC loop), so it can be used directly.
     top_indices <- agg$sample_index[seq_len(min(de_popsize_val, nrow(agg)))]
 
-    # convert to row indices
-    lhs_indices <- match(top_indices, seq_len(nrow(lhs_matrix_ref)))
+    if (length(top_indices) < de_popsize_val) {
+      top_indices <- c(top_indices,
+                       rep(top_indices,
+                           length.out = de_popsize_val - length(top_indices)))
+    }
 
-    init_pop <- lhs_matrix_ref[lhs_indices, , drop = FALSE]
-
-    return(init_pop)
+    return(.scale_lhs_rows(lhs_matrix_ref[top_indices, , drop = FALSE]))
   }
 
   # ------------------------------------------------------------
-  # ✅ CASE 2: list mode (original behavior)
+  # CASE 2: list mode (no obs_file)
   # ------------------------------------------------------------
+  # cal_metrics() output (stored in r$metrics) is raw/derived model output,
+  # not a goodness-of-fit score, so there is nothing to rank by in this mode.
+  # r$obs_stats is only ever populated when obs_data_loaded is non-NULL, and
+  # in that case `results` is always flattened into a data.frame before this
+  # function is called (see above) -- so this branch is reached only when
+  # obs_stats is NULL for every result, and the lookup below intentionally
+  # falls back to taking the first de_popsize_val LHC samples in their
+  # original order.
   lhc_fitness <- lapply(lhc_results, function(r) {
     if (!is.null(r$obs_stats) && length(r$obs_stats) > 0) {
-      vals <- vapply(r$obs_stats, function(st) st$KGE %||% NA_real_, numeric(1))
+      vals <- vapply(r$obs_stats, function(st) st[[metric_col]] %||% NA_real_, numeric(1))
       vals <- vals[!is.na(vals)]
-      if (length(vals) > 0) return(mean(vals))
+      if (length(vals) > 0) return(mean(score_transform(vals)))
     }
     return(NA_real_)
   })
@@ -827,7 +882,7 @@ run_lhc_wq <- function(model,
                          length.out = de_popsize_val - length(top_indices)))
   }
 
-  lhs_matrix_ref[top_indices, , drop = FALSE]
+  .scale_lhs_rows(lhs_matrix_ref[top_indices, , drop = FALSE])
 }
 
 .make_de_objective <- function(obs_data_loaded, dict_loaded, model_short, yaml_file,
@@ -1818,6 +1873,13 @@ run_lhc_wq <- function(model,
       trace = if (isTRUE(verbose)) 10 else FALSE,
       packages = c("stats", "utils", "yaml", "readr", "dplyr", "ncdf4", "lubridate", "glmtools", "gotmtools", "configr", "GLM3r")
     )
+
+    # Seed DE's starting population from the best LHC samples (see
+    # .init_de_population_from_lhc() above), when requested and available.
+    # initial_pop is guaranteed to have exactly de_popsize rows when non-NULL.
+    if (isTRUE(de_seed_from_lhc) && !is.null(initial_pop)) {
+      de_control_args$initial.pop <- initial_pop
+    }
 
     de_control_formals <- names(formals(DEoptim::DEoptim.control))
     supported_control_args <- intersect(names(de_control_args), de_control_formals)
