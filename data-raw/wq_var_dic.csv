@@ -1,9 +1,9 @@
 standard_name,short_name,nutrient,unit,aed2,selmaprotbas,wet,mylake,pclake
-wq_po4_gramsPerMeterCubed,inflow_po4,P,gramsPerMeterCubed,PHS_frp,selmaprotbas_po,abiotic_water_sPO4W,TP,"mPLoadPO4Epi/ReadPLoad,ReadNutFrac,InclTran"
-wq_pop_gramsPerMeterCubed,inflow_pop,P,gramsPerMeterCubed,OGM_pop,selmaprotbas_dd_p,POM_sPW,DOP,"mPLoadOrgEpi/ReadPLoad,ReadNutFrac,InclTran"
-wq_dop_gramsPerMeterCubed,inflow_dop,P,gramsPerMeterCubed,OGM_dop,-,DOM_sPW,DOP,-
-wq_no3_gramsPerMeterCubed,inflow_no3,N,gramsPerMeterCubed,NIT_nit,selmaprotbas_nn,abiotic_water_sNO3W,-,"mNLoadNO3Epi/ReadNLoad,ReadNutFrac,InclTran"
-wq_nh4_gramsPerMeterCubed,inflow_nh4,N,gramsPerMeterCubed,NIT_amm,selmaprotbas_aa,abiotic_water_sNH4W,-,"mNLoadNH4Epi/ReadNLoad,ReadNutFrac,InclTran"
-wq_pon_gramsPerMeterCubed,inflow_pon,N,gramsPerMeterCubed,OGM_pon,selmaprotbas_dd_n,POM_sNW,-,"mNLoadOrgEpi/ReadNLoad,ReadNutFrac,InclTran"
-wq_don_gramsPerMeterCubed,inflow_don,N,gramsPerMeterCubed,OGM_don,-,DOM_sNW,-,-
-wq_sio2_gramsPerMeterCubed,inflow_sio2,Si,gramsPerMeterCubed,SIL_rsi,selmaprotbas_si,abiotic_water_sSiO2W,-,mSiLoadSiO2Epi/ReadTranFrac
+wq_PO4_gramsPerCubicMeter,inflow_po4,P,gramsPerCubicMeter,PHS_frp,selmaprotbas_po,abiotic_water_sPO4W,TP,"mPLoadPO4Epi/ReadPLoad,ReadNutFrac,InclTran"
+wq_POP_gramsPerCubicMeter,inflow_pop,P,gramsPerCubicMeter,OGM_pop,selmaprotbas_dd_p,POM_sPW,DOP,"mPLoadOrgEpi/ReadPLoad,ReadNutFrac,InclTran"
+wq_DOP_gramsPerCubicMeter,inflow_dop,P,gramsPerCubicMeter,OGM_dop,-,DOM_sPW,DOP,-
+wq_NO3_gramsPerCubicMeter,inflow_no3,N,gramsPerCubicMeter,NIT_nit,selmaprotbas_nn,abiotic_water_sNO3W,-,"mNLoadNO3Epi/ReadNLoad,ReadNutFrac,InclTran"
+wq_NH4_gramsPerCubicMeter,inflow_nh4,N,gramsPerCubicMeter,NIT_amm,selmaprotbas_aa,abiotic_water_sNH4W,-,"mNLoadNH4Epi/ReadNLoad,ReadNutFrac,InclTran"
+wq_PON_gramsPerCubicMeter,inflow_pon,N,gramsPerCubicMeter,OGM_pon,selmaprotbas_dd_n,POM_sNW,-,"mNLoadOrgEpi/ReadNLoad,ReadNutFrac,InclTran"
+wq_DON_gramsPerCubicMeter,inflow_don,N,gramsPerCubicMeter,OGM_don,-,DOM_sNW,-,-
+wq_Silica_gramsPerCubicMeter,inflow_sio2,Si,gramsPerCubicMeter,SIL_rsi,selmaprotbas_si,abiotic_water_sSiO2W,-,mSiLoadSiO2Epi/ReadTranFrac
