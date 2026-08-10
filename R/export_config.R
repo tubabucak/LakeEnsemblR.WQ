@@ -73,21 +73,39 @@ export_config_wq <- function(config_file, folder = ".", verbose = FALSE,
                      module = i)
     }else{
       if(!(i %in% c("phytoplankton", "zooplankton", "fish"))){
-        input_file_paths <- file.path(folder, lst_config[[i]][["par_file"]])
+        pf <- lst_config[[i]][["par_file"]]
+        input_file_paths <- if(is.null(pf) || !nzchar(pf)){
+          character(0)
+        }else{
+          file.path(folder, pf)
+        }
       }else{
-        input_file_paths <- sapply(names(lst_config[[i]][["groups"]]), function(x){
-          lst_config[[i]][["groups"]][[x]][["par_file"]]
-        })
-        input_file_paths <- file.path(folder, input_file_paths)
+        par_files <- vapply(names(lst_config[[i]][["groups"]]), function(x){
+          pf <- lst_config[[i]][["groups"]][[x]][["par_file"]]
+          if(is.null(pf) || !nzchar(pf)) NA_character_ else pf
+        }, character(1L))
+        input_file_paths <- ifelse(is.na(par_files), NA_character_,
+                                   file.path(folder, par_files))
         names(input_file_paths) <- names(lst_config[[i]][["groups"]])
       }
 
 
-      
+
       # Read the file(s)
       for(j in seq_len(length(input_file_paths))){
+        has_par_file <- !is.na(input_file_paths[j]) && nzchar(input_file_paths[j]) &&
+          file.exists(input_file_paths[j])
+
+        if(!has_par_file){
+          if(verbose){
+            message("No parameter override file for '", i,
+                    "'; using dictionary defaults.")
+          }
+          next
+        }
+
         input_file <- read.csv(input_file_paths[j], stringsAsFactors = FALSE)
-        
+
         for (x in seq_len(nrow(input_file))){
           set_value_config(config_file = config_file,
                            module = i,
