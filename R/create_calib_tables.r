@@ -4,6 +4,11 @@
 #' dictionary. Every parameter gets \code{include = FALSE} by default so users can
 #' review and selectively opt-in. Lower and upper bounds are set to
 #' \code{default * (1 - bounds_factor)} and \code{default * (1 + bounds_factor)}.
+#' When the dictionary provides \code{min}/\code{max} values for a parameter,
+#' they are carried through as \code{dict_min}/\code{dict_max} reference
+#' columns (not used to compute \code{lower}/\code{upper} automatically) so
+#' they can be checked against, and copied into \code{lower}/\code{upper} by
+#' hand, when editing the CSV.
 #'
 #' @details
 #' \strong{Workflow:}
@@ -13,7 +18,8 @@
 #'     \code{calibration_<module>.csv} per active module.
 #'   \item Open the per-module CSVs, set \code{include = TRUE} for parameters
 #'     you want to calibrate, and adjust \code{lower} / \code{upper} /
-#'     \code{initial} as needed.
+#'     \code{initial} as needed — use \code{dict_min} / \code{dict_max} as a
+#'     reference for the parameter's plausible physical range, where available.
 #'   \item Call \code{\link{calib_setup_from_tables}} to read the edited CSVs
 #'     and build the \code{calib_setup} data frame expected by
 #'     \code{\link{run_lhc_wq}} and \code{\link{run_sensitivity}}.
@@ -99,10 +105,26 @@ create_calibration_tables <- function(folder = ".",
   calib_table$initial <- calib_table$default
   calib_table$log     <- FALSE
 
+  # Dictionary-supplied min/max, carried through as reference columns only.
+  # These are not used to compute lower/upper -- they're shown alongside the
+  # percentage-based bounds so the user can manually widen/narrow lower/upper
+  # against them when editing the CSV. Older dictionaries without min/max
+  # columns simply get NA here.
+  calib_table$dict_min <- if ("min" %in% names(calib_table)) {
+    suppressWarnings(as.numeric(calib_table$min))
+  } else {
+    NA_real_
+  }
+  calib_table$dict_max <- if ("max" %in% names(calib_table)) {
+    suppressWarnings(as.numeric(calib_table$max))
+  } else {
+    NA_real_
+  }
+
   # Column order for output
   out_cols <- c("include", "module", "domain", "process", "subprocess",
-                "model_coupled", "parameter", "default", "lower", "upper",
-                "initial", "log", "unit", "path", "note")
+                "model_coupled", "parameter", "default", "dict_min", "dict_max",
+                "lower", "upper", "initial", "log", "unit", "path", "note")
   calib_table <- calib_table[, out_cols]
 
   # --- Master reference file (all models, all parameters) ---
