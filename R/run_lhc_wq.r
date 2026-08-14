@@ -12,7 +12,7 @@
 # un-flips that back to the metric's natural value for reporting, matching
 # the LHC phase's objective_value convention.
 # ---------------------------------------------------------------------------
-.de_best_parameter_set <- function(de_result, param_names, best_metric) {
+.de_best_parameter_set <- function(de_result, param_key, best_metric) {
   best_metric_upper <- toupper(as.character(best_metric[1]))
 
   if (best_metric_upper == "PBIAS") {
@@ -22,8 +22,11 @@
     objective_value <- de_result$optim$bestval * score_sign
   }
 
+  # Named with param_key (unique per position, matching the LHC phase's
+  # result columns) rather than raw param_names -- duplicate `pars` names
+  # across groups would otherwise collide here too.
   best_params_df <- as.data.frame(
-    as.list(stats::setNames(de_result$optim$bestmem, param_names)),
+    as.list(stats::setNames(de_result$optim$bestmem, param_key)),
     stringsAsFactors = FALSE
   )
 
@@ -779,12 +782,15 @@ run_lhc_wq <- function(model,
   .scale_lhs_rows <- function(rows) {
     scaled <- rows
     for (j in seq_along(param_names_ref)) {
-      p  <- param_names_ref[j]
-      lb <- bounds_ref[[p]]["lb"]
-      ub <- bounds_ref[[p]]["ub"]
+      # Indexed positionally (bounds_ref[[j]]), matching the same
+      # disambiguation used to build bounds_ref -- see row_for_param in the
+      # main function body. A name lookup here would collapse duplicate
+      # `pars` names (different groups sharing one parameter) again.
+      lb <- bounds_ref[[j]]["lb"]
+      ub <- bounds_ref[[j]]["ub"]
       scaled[, j] <- rows[, j] * (ub - lb) + lb
     }
-    colnames(scaled) <- param_names_ref
+    colnames(scaled) <- names(bounds_ref)
     scaled
   }
 
@@ -888,7 +894,7 @@ run_lhc_wq <- function(model,
 .make_de_objective <- function(obs_data_loaded, dict_loaded, model_short, yaml_file,
                                wq_config_file, obs_to_model_units, spin_up_days,
                                stats_by_depth, target_variables, best_metric,
-                               model_dir, param_names, calib_setup,
+                               model_dir, param_names, calib_setup, row_for_param,
                                model = NULL, verbose = FALSE,
                                yaml_file_model = "gotm.yaml", par_file = "simstrat.par") {
   
@@ -959,9 +965,12 @@ run_lhc_wq <- function(model,
     }
 
     for (i in seq_along(param_names)) {
+      # calib_setup. sliced to this position's own row (row_for_param[i]) so
+      # duplicate `pars` names across groups don't all get overwritten with
+      # the same x_scaled[i] -- see row_for_param in the main function body.
       .update_param(
         p = param_names[i], value = x_scaled[i], current_dir = eval_dir,
-        calib_setup. = calib_setup, model. = model, wq_config_file. = wq_config_file
+        calib_setup. = calib_setup[row_for_param[i], , drop = FALSE], model. = model, wq_config_file. = wq_config_file
       )
     }
 
@@ -1327,13 +1336,41 @@ run_lhc_wq <- function(model,
     )
     unlink(baseline_dir, recursive = TRUE, force = TRUE)
   }, add = TRUE)
-  # Pre-collect bounds for each parameter
-  bounds <- lapply(param_names, function(p) {
+  # Disambiguate parameter positions that share the same `pars` string across
+  # different calib_setup rows -- e.g. one physical parameter (like
+  # "R_growth") calibrated independently for two phytoplankton groups, which
+  # both keep the same `pars` value and are told apart only by `group_name`.
+  # Everything below this point used to look values up by NAME alone
+  # (`bounds[[p]]`, `param_values[p]`, `calib_setup[calib_setup$pars == p, ]`)
+  # -- with duplicate names that silently collapses onto whichever row/value
+  # is found *first*, wasting one LHS dimension and forcing both groups onto
+  # one shared value. row_for_param[j] pins LHS/param_names position j to the
+  # correct, distinct calib_setup row (its j-th occurrence of that name, in
+  # calib_setup's own row order), and param_key gives each position a unique
+  # label to store/report results under, so nothing downstream needs to
+  # match by name again.
+  .occurrence_index <- function(x) stats::ave(seq_along(x), x, FUN = seq_along)
+  .pname_occurrence  <- .occurrence_index(param_names)
+  .setup_occurrence  <- .occurrence_index(calib_setup$pars)
+  row_for_param <- vapply(seq_along(param_names), function(j) {
+    p   <- param_names[j]
+    occ <- .pname_occurrence[j]
+    cand <- which(calib_setup$pars == p & .setup_occurrence == occ)
+    if (length(cand) == 0L) cand <- which(calib_setup$pars == p)
+    if (length(cand) == 0L) {
+      stop("Parameter '", p, "' not found in calib_setup$pars.")
+    }
+    cand[1]
+  }, integer(1))
+  param_key <- make.unique(param_names)
 
-    row <- calib_setup[calib_setup$pars == p, ]
+  # Pre-collect bounds for each parameter (indexed positionally by
+  # row_for_param, not by name -- see above).
+  bounds <- lapply(seq_along(param_names), function(j) {
+    row <- calib_setup[row_for_param[j], , drop = FALSE]
     c(lb = row$lb[1], ub = row$ub[1])
   })
-  names(bounds) <- param_names
+  names(bounds) <- param_key
 
   # Model runner by coupling
   .run_model <- function() {
@@ -1576,30 +1613,37 @@ run_lhc_wq <- function(model,
       cat("\n[LHC] Iteration", i, "/", total_samples, "\n")
     }
 
-    # Scale LHS values to [lb, ub]
+    # Scale LHS values to [lb, ub]. Indexed positionally (bounds[[j]], not
+    # bounds[[p]]) so duplicate `pars` names (different groups sharing one
+    # physical parameter) each get their own distinct value instead of
+    # collapsing onto whichever one a name lookup happens to find first.
     param_values <- setNames(
       vapply(seq_along(param_names), function(j) {
-        p <- param_names[j]
-        lb <- bounds[[p]]["lb"]
-        ub <- bounds[[p]]["ub"]
+        lb <- bounds[[j]]["lb"]
+        ub <- bounds[[j]]["ub"]
         lhs_matrix[i, j] * (ub - lb) + lb
       }, numeric(1)),
-      param_names
+      param_key
     )
 
     if (verbose) {
-      for (p in param_names) {
-        cat("  ", p, "=", round(param_values[p], 6), "\n")
+      for (j in seq_along(param_names)) {
+        cat("  ", param_key[j], "=", round(param_values[j], 6), "\n")
       }
     }
 
-    # Write sampled parameters
-    for (p in param_names) {
+    # Write sampled parameters. calib_setup is sliced down to the single row
+    # this position corresponds to (row_for_param[j]) -- .update_param()'s
+    # own `calib_setup.$pars == p` lookup then has only that one row to
+    # match, so each group/duplicate-named parameter is written with its own
+    # sampled value instead of every row sharing that `pars` name getting
+    # overwritten with the same one.
+    for (j in seq_along(param_names)) {
       .update_param(
-    p              = p, 
-    value          = param_values[p], 
+    p              = param_names[j],
+    value          = param_values[j],
     current_dir    = model_dir,        # During LHC, update the master workspace
-    calib_setup    = calib_setup, 
+    calib_setup    = calib_setup[row_for_param[j], , drop = FALSE],
     model          = model,            # Pass the top-level model variable
     wq_config_file = wq_config_file
   )
@@ -1754,7 +1798,10 @@ run_lhc_wq <- function(model,
           out$best_metric <- metric_for_scoring
           out$objective_score <- objective
           out$objective_value <- if (metric_for_scoring == "PBIAS") -objective else objective * score_sign
-          for (p in param_names) {
+          # first_row's parameter columns are named by param_key (see the
+          # results[[result_idx]]$params construction above), not raw
+          # param_names -- duplicate `pars` names would otherwise collide.
+          for (p in param_key) {
             out[[p]] <- first_row[[p]]
           }
           out
@@ -1837,6 +1884,7 @@ run_lhc_wq <- function(model,
       model_dir          = model_dir,
       param_names        = param_names,
       calib_setup        = calib_setup,
+      row_for_param      = row_for_param,
       model              = model,
       verbose            = verbose,
       yaml_file_model    = yaml_file_model,
@@ -1844,10 +1892,14 @@ run_lhc_wq <- function(model,
     )
 
     obj_fun <- local_obj_fun
-    
-    # Build lower and upper bounds vectors for DEoptim
-    bounds_lower <- vapply(param_names, function(p) bounds[[p]]["lb"], numeric(1))
-    bounds_upper <- vapply(param_names, function(p) bounds[[p]]["ub"], numeric(1))
+
+    # Build lower and upper bounds vectors for DEoptim. Indexed positionally
+    # (bounds[[j]]) -- see row_for_param -- so duplicate `pars` names don't
+    # collapse both groups onto the first group's range.
+    bounds_lower <- vapply(seq_along(param_names), function(j) bounds[[j]]["lb"], numeric(1))
+    bounds_upper <- vapply(seq_along(param_names), function(j) bounds[[j]]["ub"], numeric(1))
+    names(bounds_lower) <- param_key
+    names(bounds_upper) <- param_key
     
     # Run DE
     if (isTRUE(verbose)) {
@@ -2019,13 +2071,13 @@ run_lhc_wq <- function(model,
         # name in case it's still wanted for comparison.
         attr(results, "lhc_best_parameter_set") <- attr(results, "best_parameter_set")
 
-        attr(results, "best_parameter_set") <- .de_best_parameter_set(de_result, param_names, best_metric)
+        attr(results, "best_parameter_set") <- .de_best_parameter_set(de_result, param_key, best_metric)
         attr(results, "best_metric") <- toupper(as.character(best_metric[1]))
 
         if (isTRUE(verbose)) {
           message("[DE] Best parameters from DE:")
           for (i in seq_along(param_names)) {
-            message("  ", param_names[i], " = ",
+            message("  ", param_key[i], " = ",
                     round(de_result$optim$bestmem[i], 6))
           }
         }

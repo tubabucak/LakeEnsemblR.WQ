@@ -186,6 +186,16 @@ run_lhc_wq_parallel <- function(model,
   n_params <- length(param_names)
   lhs_matrix <- lhs::randomLHS(n_samples, n_params)
 
+  # Each worker below calls run_lhc_wq(), which disambiguates duplicate
+  # `pars` names (e.g. one physical parameter calibrated separately per
+  # phytoplankton group) by naming its result columns with make.unique()
+  # rather than raw param_names -- see row_for_param/param_key in
+  # run_lhc_wq(). Reproduced here (deterministically the same, since it's a
+  # pure function of param_names in the same order) so the global-best
+  # aggregation below reads the correct, matching column names instead of
+  # colliding on the raw (possibly duplicated) param_names.
+  param_key <- make.unique(param_names)
+
   # Split samples across workers
   sample_splits <- split(seq_len(n_samples), 
                         rep(seq_len(n_workers), length.out = n_samples))
@@ -209,17 +219,12 @@ run_lhc_wq_parallel <- function(model,
   cl <- parallel::makeCluster(n_workers, outfile = worker_log)
   on.exit(parallel::stopCluster(cl), add = TRUE)
 
-  # Load required packages on workers, including THIS package itself.
-  # Loading LakeEnsemblR.WQ via library() -- rather than clusterExport()'ing
-  # run_lhc_wq() and its internal helpers as bare function objects -- avoids
-  # a class of bug where a worker can silently receive a stale copy of the
-  # function (observed directly: clusterExport(cl, "run_lhc_wq", ...)
-  # shipped an outdated body() to the worker even though the master
-  # session's own "run_lhc_wq" was confirmed current, seemingly a
-  # devtools::load_all()-vs-clusterExport namespace resolution mismatch).
-  # library() gives every worker one canonical, independently-loaded copy
-  # of the installed package -- requires devtools::install() (not just
-  # load_all()) before testing the parallel path after code changes.
+  # Load required packages on workers, including THIS package itself, via
+  # library() rather than clusterExport()'ing run_lhc_wq() as a bare
+  # function -- clusterExport() has shipped stale copies of it to workers
+  # before. library() always loads the installed package, so run
+  # devtools::install() (not just load_all()) before testing parallel runs.
+
   parallel::clusterEvalQ(cl, {
     for (pkg in c("lhs", "readr", "yaml", "dplyr", "glmtools", "gotmtools",
                   "configr", "ncdf4", "lubridate", "reshape2", "GLM3r",
@@ -229,15 +234,11 @@ run_lhc_wq_parallel <- function(model,
     NULL
   })
 
-  # Worker dir names include a run-unique tag (pid + timestamp), NOT just
-  # "worker_1"/"worker_2". A fixed name means a rerun depends on unlink()
-  # then file.copy(overwrite=TRUE) fully replacing whatever is already
-  # there -- on Windows that silently fails to refresh (no error, just a
-  # no-op) if anything holds the old directory/file open, e.g. an editor tab
-  # on worker_1/fabm.yaml -- so a rerun can end up silently re-scoring the
-  # PREVIOUS run's stale files while looking like it did something.
-  # Guaranteed-fresh directories per call sidesteps that class of bug
-  # entirely.
+  # Worker dir names include a run-unique tag (pid + timestamp), not just
+  # "worker_1"/"worker_2" -- a fixed name relies on unlink()+overwrite fully
+  # replacing old contents, which can silently no-op on Windows if anything
+  # still holds a file open, leaving a rerun scoring stale files.
+
   worker_dir_tag <- paste0(Sys.getpid(), "_", format(Sys.time(), "%Y%m%d%H%M%OS3"))
 
   # Export data to workers. Function objects (run_lhc_wq() and its internal
@@ -376,35 +377,19 @@ result_parts <- parallel::parLapply(cl, seq_len(n_workers), function(worker_idx)
     }
     model_key_w <- names(yaml_content$model_folders)[toupper(names(yaml_content$model_folders)) == model_short_w][1]
     if (!is.na(model_key_w)) {
-      # Keep ONLY the entry for the model actually being run. load_config()
-      # validates dir.exists() for every entry in model_folders, and the
-      # worker sandbox only ever contains a copy of THIS model's directory
-      # -- other models' entries still point at the original project-root
-      # paths, which don't exist under worker_dir, so load_config() would
-      # stop() on them before the repointed entry is ever used.
+      # Keep ONLY the entry for the model being run -- load_config() checks
+      # dir.exists() on every model_folders entry, and the worker sandbox
+      # only has a copy of THIS model's directory.
       #
-      # The original entry typically points at an "Output" SUBFOLDER inside
-      # the model dir (e.g. "GOTM-Selmaprotbas/Output"), not the model dir
-      # itself -- get_output_wq() does file.path(model_folder, "output.nc")
-      # with no subfolder of its own, so it relies entirely on model_folders
-      # already including that suffix. Blindly overwriting with worker_dir
-      # (dropping the suffix) breaks nc_open() with "No such file or
-      # directory" even though the model itself ran successfully. Preserve
-      # whatever subpath (if any) followed the original model_dir.
+      # Preserve the original entry's subpath (e.g. ".../Output") when
+      # repointing to worker_dir -- get_output_wq() expects model_folders to
+      # already include it, so dropping it breaks nc_open().
       orig_entry <- as.character(yaml_content$model_folders[[model_key_w]])
-      # mustWork = TRUE here (not FALSE): model_dir necessarily already
-      # exists at this point (we've been copying its contents into
-      # worker_dir above), and resolving it with mustWork = TRUE makes
-      # Windows return the path in its REAL on-disk casing rather than
-      # verbatim as typed. This matters because the comparison below is
-      # case-sensitive (startsWith()) while Windows paths are not -- e.g.
-      # a caller passing model_dir = "SIMSTRAT-AED2" when the real folder
-      # (and the model_folders entry, e.g. "Simstrat-AED2/output") is
-      # actually "Simstrat-AED2" would otherwise silently fail this match,
-      # suffix would come back "", and get_output_wq() would look for
-      # output.nc directly in worker_dir instead of worker_dir/output --
-      # the same "no such file" failure mode as the missing-suffix bug
-      # this whole block exists to prevent, just triggered by case instead.
+      # mustWork = TRUE so Windows returns real on-disk casing -- the
+      # startsWith() match below is case-sensitive, so a caller-typed path
+      # differing only in case would otherwise fail to match, dropping the
+      # suffix and breaking nc_open() the same way.
+
       orig_entry_norm <- normalizePath(orig_entry, winslash = "/", mustWork = FALSE)
       model_dir_norm <- normalizePath(model_dir, winslash = "/", mustWork = TRUE)
       suffix <- if (startsWith(tolower(orig_entry_norm), tolower(paste0(model_dir_norm, "/")))) {
@@ -423,18 +408,12 @@ result_parts <- parallel::parLapply(cl, seq_len(n_workers), function(worker_idx)
     if (is.null(yaml_content$folder) || !nzchar(yaml_content$folder)) {
       yaml_content$folder <- normalizePath(worker_dir, winslash = "/", mustWork = FALSE)
     }
-    # load_config() hard-requires files$metric_yaml_file to literally exist
-    # on disk at file.path(folder, metric_yaml_file) -- it's almost always
-    # this package's own Output.yaml self-referencing its own filename. In
-    # the original layout that's harmless (folder = project root, a
-    # different directory from the model's own native output.yaml one
-    # level down in model_dir). Here folder = worker_dir, the SAME
-    # directory GOTM's native output.yaml already got copied into -- so
-    # pointing metric_yaml_file at a separate "Output.yaml" copy would
-    # collide with it again (see the output.yaml clobbering notes above).
-    # Point the self-reference at THIS sandboxed file instead (under its
-    # own collision-safe name) -- it's guaranteed to exist right here,
-    # no extra copy needed, and no name collision is possible.
+    # load_config() requires files$metric_yaml_file to exist on disk under
+    # `folder`. Here folder = worker_dir, which already has GOTM's own
+    # output.yaml copied in -- pointing metric_yaml_file at a separate
+    # "Output.yaml" would collide with it again, so point the self-reference
+    # at this sandboxed file's own collision-safe name instead.
+
     if (!is.null(yaml_content$files) && !is.null(yaml_content$files$metric_yaml_file)) {
       yaml_content$files$metric_yaml_file <- basename(worker_yaml_path)
     }
@@ -555,7 +534,10 @@ result_parts <- parallel::parLapply(cl, seq_len(n_workers), function(worker_idx)
           out$objective_score <- objective
           out$objective_value <- if (best_metric_upper == "PBIAS") -objective
                                  else objective * score_sign
-          for (p in param_names) {
+          # first_row's parameter columns are named by param_key (each
+          # worker's run_lhc_wq() call produces them that way) -- see note
+          # near param_key's definition above.
+          for (p in param_key) {
             out[[p]] <- first_row[[p]]
           }
           out

@@ -106,7 +106,16 @@ write_best_calib_to_par_files <- function(lhc_results,
   }
 
   # ---- identify parameter columns in lhc_results ---------------------------
-  param_names <- intersect(calib_setup$pars, names(lhc_results))
+  # run_lhc_wq() names its output parameter columns by make.unique(pars) --
+  # not the raw `pars` column -- so that two calib_setup rows sharing one
+  # `pars` string (e.g. the same physical parameter calibrated separately
+  # per phytoplankton group) get distinct columns/values instead of
+  # colliding. Reproduce that same disambiguation here, row-aligned with
+  # calib_setup, so each row's own optimized value is picked up rather than
+  # every row sharing a `pars` name being written the single value found
+  # under that shared (and now stale) name.
+  param_key <- make.unique(as.character(calib_setup$pars))
+  param_names <- intersect(param_key, names(lhc_results))
   if (length(param_names) == 0) {
     stop("None of the parameters in 'calib_setup$pars' were found as columns ",
          "in 'lhc_results'. Check that the same calib_setup was used for both.")
@@ -229,17 +238,25 @@ write_best_calib_to_par_files <- function(lhc_results,
   # ---- write best values ---------------------------------------------------
   written <- list()
 
-  for (p in param_names) {
-    best_value <- best_row[[p]]
-    rows_p     <- calib_setup[calib_setup$pars == p, , drop = FALSE]
+  # Iterate calib_setup rows directly (one calib_setup row = one param_key =
+  # one independently-optimized value), rather than grouping by the possibly
+  # non-unique `pars` name and applying one shared value to every row that
+  # happens to share it.
+  for (r in seq_len(nrow(calib_setup))) {
+    key_r <- param_key[r]
+    if (!key_r %in% names(best_row)) {
+      next
+    }
+    p           <- calib_setup$pars[r]
+    best_value  <- best_row[[key_r]]
 
-    for (k in seq_len(nrow(rows_p))) {
-      model_coupled <- rows_p$model_coupled[k]
-      domain        <- rows_p$domain[k]
-      process       <- rows_p$process[k]
-      subprocess    <- rows_p$subprocess[k]
-      module        <- if ("module" %in% names(rows_p)) rows_p$module[k] else NA_character_
-      grp           <- if ("group_name" %in% names(rows_p)) rows_p$group_name[k] else NA_character_
+    {
+      model_coupled <- calib_setup$model_coupled[r]
+      domain        <- calib_setup$domain[r]
+      process       <- calib_setup$process[r]
+      subprocess    <- calib_setup$subprocess[r]
+      module        <- if ("module" %in% names(calib_setup)) calib_setup$module[r] else NA_character_
+      grp           <- if ("group_name" %in% names(calib_setup)) calib_setup$group_name[r] else NA_character_
       ok_write <- FALSE
 
       if (write_target == "par_file") {
@@ -291,7 +308,7 @@ write_best_calib_to_par_files <- function(lhc_results,
                   " in ", par_path)
         }
       } else {
-        group_position <- if ("group_position" %in% names(rows_p)) rows_p$group_position[k] else NULL
+        group_position <- if ("group_position" %in% names(calib_setup)) calib_setup$group_position[r] else NULL
         write_res <- tryCatch(
           set_value_config(
             config_file = config_file,
@@ -321,7 +338,11 @@ write_best_calib_to_par_files <- function(lhc_results,
       }
 
       if (ok_write) {
-        written[[p]] <- best_value
+        # Keyed by key_r (unique), not p -- two calib_setup rows can share
+        # the same true `pars` name (different groups), and both were
+        # correctly written to their own files above; keying by p here would
+        # silently drop one of them from the returned summary.
+        written[[key_r]] <- best_value
       }
     }
   }
