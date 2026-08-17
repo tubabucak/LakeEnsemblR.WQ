@@ -21,7 +21,6 @@ Useful links:
 
 Authors:
 \itemize{
-  \item Tuba Bucak \email{tbo@ecos.au.dk}
   \item Robert Ladwig \email{rladwig2@wisc.edu}
   \item Johannes Feldbauer \email{johannes.feldbauer@tu-dresden.de}
   \item Jorrit Mesman \email{jorrit.mesman@unige.ch}

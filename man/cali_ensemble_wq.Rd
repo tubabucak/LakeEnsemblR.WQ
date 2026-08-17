@@ -69,7 +69,8 @@ Defaults to \code{file.path(folder, models)}.}
 
 \item{param_names}{Optional. Either a character vector reused for all models,
 or a named list/vector by model. If \code{NULL}, uses
-\code{unique(calib_setup$pars)} per model.}
+\code{calib_setup$pars} per model (including duplicate names across
+group-specific rows -- see Details).}
 
 \item{model_filter}{Optional model filter(s) passed to \code{run_lhc_wq()}.
 Accepts scalar, length-\code{length(models)} vector, or named vector/list.}

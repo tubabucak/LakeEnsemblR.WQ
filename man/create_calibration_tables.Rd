@@ -32,6 +32,11 @@ Generates a master calibration CSV and per-module CSVs from the LakeEnsemblR.WQ
 dictionary. Every parameter gets \code{include = FALSE} by default so users can
 review and selectively opt-in. Lower and upper bounds are set to
 \code{default * (1 - bounds_factor)} and \code{default * (1 + bounds_factor)}.
+When the dictionary provides \code{min}/\code{max} values for a parameter,
+they are carried through as \code{dict_min}/\code{dict_max} reference
+columns (not used to compute \code{lower}/\code{upper} automatically) so
+they can be checked against, and copied into \code{lower}/\code{upper} by
+hand, when editing the CSV.
 }
 \details{
 \strong{Workflow:}
@@ -41,7 +46,8 @@ review and selectively opt-in. Lower and upper bounds are set to
     \code{calibration_<module>.csv} per active module.
   \item Open the per-module CSVs, set \code{include = TRUE} for parameters
     you want to calibrate, and adjust \code{lower} / \code{upper} /
-    \code{initial} as needed.
+    \code{initial} as needed — use \code{dict_min} / \code{dict_max} as a
+    reference for the parameter's plausible physical range, where available.
   \item Call \code{\link{calib_setup_from_tables}} to read the edited CSVs
     and build the \code{calib_setup} data frame expected by
     \code{\link{run_lhc_wq}} and \code{\link{run_sensitivity}}.
