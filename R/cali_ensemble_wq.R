@@ -21,7 +21,8 @@
 #'   Defaults to \code{file.path(folder, models)}.
 #' @param param_names Optional. Either a character vector reused for all models,
 #'   or a named list/vector by model. If \code{NULL}, uses
-#'   \code{unique(calib_setup$pars)} per model.
+#'   \code{calib_setup$pars} per model (including duplicate names across
+#'   group-specific rows -- see Details).
 #' @param model_filter Optional model filter(s) passed to \code{run_lhc_wq()}.
 #'   Accepts scalar, length-\code{length(models)} vector, or named vector/list.
 #' @param wq_config_file Character scalar, vector, or named list of WQ config
@@ -332,7 +333,16 @@ cali_ensemble_wq <- function(models = c("GLM-AED2", "GOTM-WET", "GOTM-Selmaprotb
   if (is.null(param_names)) {
     for (m in models) {
       cs <- setup_by_model[[m]]
-      param_by_model[[m]] <- if (is.null(cs) || nrow(cs) == 0L) character(0) else unique(cs$pars)
+      # NOT unique(cs$pars): two calib_setup rows can share one `pars`
+      # string on purpose (e.g. one physical parameter calibrated
+      # separately per phytoplankton/zooplankton/etc. group, told apart by
+      # group_name). run_lhc_wq() relies on seeing every row -- including
+      # duplicated names -- to give each group its own LHS dimension and
+      # independently-optimized value; deduplicating here would silently
+      # collapse them onto a single shared value before run_lhc_wq() ever
+      # sees them, the same way passing param_names = unique(calib_setup$pars)
+      # manually does.
+      param_by_model[[m]] <- if (is.null(cs) || nrow(cs) == 0L) character(0) else cs$pars
     }
   } else if (is.list(param_names)) {
     param_by_model <- .resolve_by_model(param_names, models, "param_names")
