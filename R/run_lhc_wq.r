@@ -936,12 +936,33 @@ run_lhc_wq <- function(model,
     files_to_copy <- all_files[!grepl("de_worker_", basename(all_files))]
     file.copy(from = files_to_copy, to = eval_dir, recursive = TRUE, overwrite = TRUE)
 
-    root_yamls <- list.files(project_root, pattern = "\\.yaml$", full.names = TRUE)
+    # Copy project-root yaml siblings (LakeEnsemblR_WQ.yaml, LakeEnsemblR.yaml,
+    # etc.) into eval_dir -- EXCEPT anything named "output.yaml"/"Output.yaml"
+    # (any case). GOTM reserves that exact filename for its OWN native
+    # output-stream config, already copied in from model_dir just above.
+    # yaml_file (this function's metric-config argument) is almost always
+    # this package's own "Output.yaml" -- copying it here under its literal
+    # name would silently clobber GOTM's file on Windows (case-insensitive
+    # filesystem), corrupting it and crashing the model engine with a yaml
+    # parse error ("single- and double-quoted strings are not supported")
+    # while looking like an ordinary model failure. Confirmed happening in
+    # practice: GOTM-WET/GOTM-Selmaprotbas DE phases silently failed every
+    # single evaluation this way, each one just returning the 1e6 penalty,
+    # producing a perfectly flat "convergence" trace with nothing behind it.
+    # Sandbox yaml_file itself under a collision-safe name below instead --
+    # the same fix already applied to run_lhc_wq_parallel.R's worker
+    # sandboxing, just missing here since this is a separate code path.
+    root_yamls_all <- list.files(project_root, pattern = "\\.yaml$", full.names = TRUE)
+    yaml_file_src <- root_yamls_all[tolower(basename(root_yamls_all)) == tolower(basename(yaml_file))][1]
+    root_yamls <- root_yamls_all[tolower(basename(root_yamls_all)) != "output.yaml"]
     if (length(root_yamls) > 0) {
       file.copy(from = root_yamls, to = eval_dir, overwrite = TRUE)
     }
 
-    sandbox_yaml_path <- file.path(eval_dir, yaml_file)
+    sandbox_yaml_path <- file.path(eval_dir, "__de_worker_output_config.yaml")
+    if (!is.na(yaml_file_src) && file.exists(yaml_file_src)) {
+      file.copy(yaml_file_src, sandbox_yaml_path, overwrite = TRUE)
+    }
     if (file.exists(sandbox_yaml_path)) {
       yaml_content <- yaml::read_yaml(sandbox_yaml_path)
       # If 'folder' is blank, load_config() would otherwise default to this
