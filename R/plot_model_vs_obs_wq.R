@@ -103,7 +103,9 @@ plot_model_vs_obs_wq <- function(config_file, model, vars = NULL, obs_data,
   }
 
   if (is.null(vars) || is.null(conversion_factor)) {
-    cfg <- load_config(config_file)
+    # Only require this model's output folder to exist -- this function only
+    # ever plots one model per call (see model_short above).
+    cfg <- load_config(config_file, required_models = model_short)
     dict_src <- if (!is.null(dict_file)) dict_file else cfg$metrics_dict_file
     dict <- .load_metrics_dictionary_wq(dict_file = dict_src)
     dict_row <- dict[toupper(dict$model) == model_short &

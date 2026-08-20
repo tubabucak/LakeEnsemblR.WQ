@@ -199,7 +199,11 @@
     model_dict <- expand_templates(model_dict, wq_config_file)
   }
 
-  cfg <- load_config(yaml_file)
+  # Only require this run's model to have an existing output folder -- LHC
+  # calibration always targets one model at a time, so an unrelated model
+  # listed in the same shared Output.yaml but never actually run here
+  # shouldn't fail this call.
+  cfg <- load_config(yaml_file, required_models = model_short)
 
   model_dict$variable_global_name <- trimws(as.character(model_dict$variable_global_name))
   obs_data$variable_global_name <- trimws(as.character(obs_data$variable_global_name))
@@ -1264,8 +1268,10 @@ run_lhc_wq <- function(model,
            paste(missing_obs_cols, collapse = ", "))
     }
 
-    # Load metrics dictionary from configured file or bundled defaults.
-    cfg_for_dict <- load_config(yaml_file)
+    # Load metrics dictionary from configured file or bundled defaults. Only
+    # require this run's model folder to exist (see .cal_lhc_obs_stats()'s
+    # load_config() call above for the same rationale).
+    cfg_for_dict <- load_config(yaml_file, required_models = model_short)
     dict_loaded <- .load_metrics_dictionary_wq(
       dict_file = cfg_for_dict$metrics_dict_file,
       metric_yaml_file = cfg_for_dict$metric_yaml_file

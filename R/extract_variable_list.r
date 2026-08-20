@@ -19,7 +19,11 @@
 
 extract_variable_list <- function(extracted_metric_dict, config_file, model_filter = "all") {
 
- cfg <- load_config(config_file)
+ # Only require model(s) in model_filter to have an existing output folder --
+ # mirrors the same required_models narrowing cal_metrics() applies to its
+ # own load_config() call, and this function already skips (rather than
+ # errors on) any model whose folder key isn't found below.
+ cfg <- load_config(config_file, required_models = model_filter)
   # cfg$model_folders$GLM, cfg$model_folders$WET, cfg$model_folders$SELMAPROTBAS
 
     # Empty list to store the results for each metric

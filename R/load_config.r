@@ -6,8 +6,19 @@
 #' metric dictionary, and metric YAML), and model-specific output folders.
 #'
 #' @param config_path Full path to the YAML configuration file.
-
-#' @name load_config: 
+#' @param required_models Character vector or \code{NULL}. When \code{NULL}
+#'   (default), every entry under \code{model_folders} in the config must
+#'   exist on disk -- the original, backward-compatible behavior. When set to
+#'   a vector of model keys (e.g. \code{"WET"}, matching \code{cal_metrics()}'s
+#'   \code{model_filter}), only those entries are required to exist; other
+#'   models' folders are resolved but not validated. Use this when a config
+#'   file lists multiple coupled models but only one has actually been run
+#'   (e.g. a single-model calibration/sensitivity setup) -- without it, an
+#'   unrelated model's missing output folder fails the whole call even though
+#'   \code{model_filter} would never touch it. \code{"all"} is equivalent to
+#'   \code{NULL}.
+#'
+#' @name load_config:
 #'
 #' @return A named list with the following elements:
 #' \describe{
@@ -32,7 +43,7 @@
 #' @import yaml
 #' @export
 
-load_config <- function(config_path) {
+load_config <- function(config_path, required_models = NULL) {
   if (!file.exists(config_path)) {
     stop("Config file not found at: ", config_path)
   }
@@ -86,10 +97,17 @@ load_config <- function(config_path) {
     files[["metrics_dict"]] <- NULL
   }
   
-  # Ensure model folders exist
+  # Ensure model folders exist -- unless the caller has narrowed down which
+  # model(s) it actually needs via required_models, in which case unrelated
+  # models are resolved (so model_folders stays complete/consistent) but not
+  # required to exist. NULL/"all" preserves the original "validate every
+  # entry" behavior for every caller that doesn't pass required_models.
+  validate_all <- is.null(required_models) || identical(required_models, "all")
+  required_models_upper <- if (!validate_all) toupper(as.character(required_models)) else NULL
   for (model in names(model_folders)) {
     path <- resolve_path(model_folders[[model]])
-    if (!dir.exists(path)) stop(paste("Model folder for", model, "not found at:", path))
+    must_exist <- validate_all || toupper(model) %in% required_models_upper
+    if (must_exist && !dir.exists(path)) stop(paste("Model folder for", model, "not found at:", path))
     model_folders[[model]] <- path
   }
 

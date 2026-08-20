@@ -30,8 +30,12 @@ get_output_wq <- function(config_file,
                           conversion_factor = 1) {
 
 
-  # Load configuration file
-  cfg <- load_config(config_file)
+  # Load configuration file. Only require THIS model's output folder to
+  # exist -- get_output_wq() only ever reads one model's output per call, so
+  # an unrelated model listed in the same config but never actually run
+  # (e.g. a single-model calibration/sensitivity setup sharing a multi-model
+  # Output.yaml) should not fail this call.
+  cfg <- load_config(config_file, required_models = model)
   model_upper <- toupper(model)
   # cfg$model_folders$GLM, cfg$model_folders$WET, cfg$model_folders$SELMAPROTBAS
 

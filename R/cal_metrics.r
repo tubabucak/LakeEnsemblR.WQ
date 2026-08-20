@@ -23,7 +23,11 @@ cal_metrics <- function(metric_yaml_file, model_filter = "all", wq_config_file) 
 if (!identical(model_filter, "all") && !is.character(model_filter)) {
     stop("model_filter must be either 'all' or a character vector of model names.")
   }
-    cfg <- load_config(metric_yaml_file)
+    # Only require the model(s) actually being extracted to have an existing
+    # output folder -- a config listing multiple coupled models (e.g. a
+    # shared Output.yaml) should not fail here just because a model outside
+    # model_filter was never run in this particular setup.
+    cfg <- load_config(metric_yaml_file, required_models = model_filter)
 
     bathy_file <- cfg$bathy_file
     config_file <- cfg$LER_config_file
@@ -97,7 +101,7 @@ if (!identical(model_filter, "all")) {
     bathy_file <- load_bathy_depth_area(bathy_file)
 
     # Extract all the variables and harmonize the units
-    ext_data <- extract_variable_list(sel_metric, metric_yaml_file)
+    ext_data <- extract_variable_list(sel_metric, metric_yaml_file, model_filter = model_filter)
    # selected_keys <- paste(sel_metric$metric_name, sel_metric$model, sep = "_")
    selected_keys <- paste(sel_metric$metric_instance, sel_metric$model, sep = "_")
     ext_data <- ext_data[names(ext_data) %in% selected_keys]  
