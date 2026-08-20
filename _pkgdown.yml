@@ -93,5 +93,5 @@ articles:
   - title: Workflow Guides
     navbar: ~
     contents:
-      - full-workflow
-      - function-map
+      - "full-workflow"
+      - "articles/function-map"

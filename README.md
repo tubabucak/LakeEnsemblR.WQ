@@ -16,24 +16,32 @@ experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](h
 2)](https://img.shields.io/badge/License-GPL%20(%3E%3D%202)-blue.svg)](https://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html)
 <!-- badges: end -->
 
-Run, harmonize, and compare water quality simulations across multiple 1D
-lake model frameworks.
+This package aims to facilitate the settin-up, running and calibrating
+and post-processing of the process based aquatic ecosystem models.
+harmonize, and compare water quality simulations across multiple 1D lake
+model frameworks.
+
+LakeEnsemblR.WQ is an extension of LakeEnsemblR package with a new
+framework that integrates water quality and biological modules for 1D
+process-based aquatic ecosystem models. It aims to facilitate data
+preprocessing, setup, calibration, post-processing, and also support the
+calculation of system metrics through concept, state, process, system
+framework.
 
 LakeEnsemblR.WQ extends LakeEnsemblR workflows with tools to:
 
-- configure model-specific WQ settings,
-- validate model setups before run,
-- run model ensembles,
-- calibrate model ensembles – Latin Hypercube sampling, optional
-  Differential Evolution refinement, and single-model or
-  all-coupled-models-at-once (sequential or concurrent) calibration via
-  `cali_ensemble_wq()`,
-- extract and harmonize output variables,
-- calculate standardized ecosystem metrics and summary statistics,
-- compare and visualize model outputs against each other and
+- Configure model-specific water quality and ecosystem dynamics
+  settings,
+- Validate model setups before run,
+- Run model ensembles,
+- Calibrate model ensembles – Latin Hypercube sampling, optional
+  Differential Evolution refinement
+- Extract and harmonize output variables,
+- Calculate standardized ecosystem metrics and summary statistics,
+- Compare and visualize model outputs against each other and
   observations.
 
-Supported model frameworks:
+Supported 1D model frameworks:
 
 - GLM-AED2
 - GOTM-WET
@@ -49,21 +57,22 @@ Supported model frameworks:
 remotes::install_github("tubabucak/LakeEnsemblR.WQ")
 ```
 
-Several dependencies are GitHub-only wrappers around external lake model
-binaries (`GLM3r`, `WETr`, `SelmaprotbasR`, `SimstratR`, `MyLakeR`) and
-are optional – you only need the ones matching the model(s) you actually
-run (`run_ensemble_wq()`/`run_lhc_wq()` check for them at call time and
-give an informative error if missing). They’re declared in `Remotes:` in
-`DESCRIPTION` so `remotes::install_github()` resolves them
-automatically.
+Some dependencies are GitHub-only wrappers around external lake model
+binaries: `GLM3r`, `WETr`, `SelmaprotbasR`, `SimstratR`, `MyLakeR`.
+These are optional – you only need the one(s) matching the model(s) you
+actually run. If a required one is missing,
+`run_ensemble_wq()`/`run_lhc_wq()` will tell you at call time rather
+than fail silently. All of them are listed in `Remotes:` in
+`DESCRIPTION`, so `remotes::install_github()` installs them
+automatically along with everything else.
 
-`glmtools` (a hard dependency, needed regardless of which model you run)
-has a known upstream packaging gap: its own `DESCRIPTION` depends on
-`GLM3r` but doesn’t declare where to find it, which can make
-dependency-solving tools (`pak`, and by extension
-`devtools::install_deps()`/`build_vignettes()`) fail with
-`Can't find package called GLM3r` even though `GLM3r` is in this
-package’s own `Remotes:`. If you hit that, pre-install `GLM3r` first:
+`glmtools` is always required, no matter which model you run. It in turn
+needs `GLM3r`, but doesn’t say where to find it – so tools that resolve
+dependencies automatically (`pak`, and anything built on it, like
+`devtools::install_deps()`/`build_vignettes()`) can fail with
+`Can't find package called GLM3r`, even though `GLM3r` is listed in this
+package’s own `Remotes:`. If that happens, install `GLM3r` yourself
+first, then install this package as normal:
 
 ``` r
 remotes::install_github("aemon-j/GLM3r@v3.3-lerwq")
@@ -76,7 +85,12 @@ remotes::install_github("tubabucak/LakeEnsemblR.WQ")
 library(LakeEnsemblR)
 
 # 0) Export model-specific configuration and inputs for physical setup
-
+# This step is only needed once per project, unless you want to change the
+# physical configuration (e.g., bathymetry, inflows, meteorology, etc.).
+# Please check the default configuration configuration that was generated before proceeding
+# to the next step. You can edit the configuration file to change model settings if needed.
+# For example the default configuration setup of GLM does not include the sediment module, so if you want to include the sediment module in GLM, you need to change the configuration file before proceeding to the next step.
+# Or if you need more diagnostics and output variables, you can change the configuration file before proceeding to the next step.
 export_config(
   config_file = "LakeEnsemblR.yaml",
   folder = ".",
@@ -87,6 +101,8 @@ library(LakeEnsemblR.WQ)
 
 
 # 1) Export model-specific configuration and inputs for WQ setup
+# This step is only needed once per project, unless you want to change the
+# water quality configuration
 export_config_wq(
   config_file = "LakeEnsemblR_WQ.yaml",
   folder = ".",
@@ -94,6 +110,8 @@ export_config_wq(
 )
 
 # 2) Run selected models
+# This function only run the selected models with the current configuration setup
+# and save their outputs in the output folders of the models.
 run_res <- run_ensemble_wq(
   config_file = "LakeEnsemblR_WQ.yaml",
   models = c("GLM-AED2", "GOTM-WET", "GOTM-Selmaprotbas", "SIMSTRAT-AED2"),
@@ -102,64 +120,112 @@ run_res <- run_ensemble_wq(
   verbose = TRUE
 )
 
-# 3) Compute metrics listed in Output.yaml
+# 3) cal_metric function computes the metrics (which was specified in Output.yaml) for the 
+# selected models and save them in a list. Now they are all in the same units and can be compared with each other. 
+# The metrics are computed for all the models that were run in the previous step.
+
 metric_out <- cal_metrics(
   metric_yaml_file = "Output.yaml",
   model_filter = "all",
   wq_config_file = "LakeEnsemblR_WQ.yaml"
 )
-
-# 4) Optional: compute summary statistics
-stat_out <- cal_stats(metric_out)
 ```
 
 ## Calibration
 
 ``` r
-# Build a calibration setup table from editable calibration CSVs
-# (see create_calibration_tables() to generate the templates first)
+
+# Create calibration tables for all coupled models at once, with default bounds_factor = 0.2.
+create_calibration_tables(
+  folder = ".",
+  config_file = "LakeEnsemblR_WQ.yaml",
+  folder_out = "calibration",
+  models_coupled = c("GLM-AED2", "GOTM-WET", "GOTM-Selmaprotbas", "Simstrat-AED2"),
+  bounds_factor = 0.2
+)
+
+# Edit the generated calibration CSVs in the "calibration" folder before continuing:
+#   - set include = TRUE for the parameters you want to calibrate
+#   - adjust lower, upper, and initial as needed -- the generated CSVs also
+#     include suggested min-max ranges (dict_min/dict_max) for some
+#     parameters as a reference; use them to inform your own bounds if useful
+#
+# Then build a calibration setup table from the edited CSVs:
 cs_all <- calib_setup_from_tables(
   folder_in = "calibration",
   model_coupled = c("GLM-AED2", "GOTM-WET", "GOTM-Selmaprotbas", "Simstrat-AED2")
 )
 
-# Calibrate all coupled models at once, concurrently, with LHC + DE refinement
-result <- cali_ensemble_wq(
-  models          = c("GLM-AED2", "GOTM-WET", "GOTM-Selmaprotbas", "Simstrat-AED2"),
+# Calibrate all coupled models at once, with optional DE refinement and parallelism.
+result_all <- cali_ensemble_wq(
+  models          = c("GOTM-WET", "GOTM-Selmaprotbas", "GLM-AED2", "Simstrat-AED2"),
   calib_setup     = cs_all,
   yaml_file       = "Output.yaml",
-  wq_config_file  = "LakeEnsemblR_WQ.yaml",
-  ler_config_file = "LakeEnsemblR.yaml",  # auto-derives gotm.yaml/simstrat.par filenames
-  obs_file        = "obs_data.csv",   # datetime, depth, variable_global_name, value
-  n_samples       = 20,
-  best_metric     = "KGE",
+  folder          = ".",
+  n_samples       = 16,     # LHC seed
   use_de          = TRUE,
-  parallel_models = TRUE,   # one worker process per model, run concurrently
-  write_best      = TRUE
+  de_popsize      = 12,
+  de_iterations   = 8,
+  de_parallel     = TRUE,   # <- must flip this on to use de_n_workers
+  de_n_workers    = 4,
+  n_workers       = 4,
+  parallel_models = FALSE,   # keep this -- see why below
+  obs_file        = "standart_observed_data.csv",
+  wq_config_file  = "LakeEnsemblR_WQ.yaml",
+  ler_config_file = "LakeEnsemblR.yaml",
+  best_metric     = "KGE",
+  target_variable   = "DO_gramsPerCubicMeter",
+  parallel        = TRUE,
+  force_parallel_glm_simstrat = TRUE,
+  verbose         = TRUE,
+  on_error        = "skip",
+  save_results    = TRUE,
+  output_dir      = "calibration_results",
+  write_best      = TRUE,
+  write_target    = "config"
 )
 
-result$summary                            # success/failure + row counts per model
-result$best_parameter_sets[["GLM-AED2"]]  # winning parameters for one model
+`parallel_models` stacks with `parallel`/`de_parallel` (which parallelize LHC
+samples or DE evaluations *within* one model's run) -- if you turn multiple of
+these on together, size worker counts so
+`n_model_workers * n_workers` (or `* de_n_workers`) doesn't oversubscribe your
+CPU cores. Worker processes have no attached console, so with
+`parallel_models = TRUE` progress messages are written to
+`<output_dir>/cali_ensemble_wq_workers.log` instead of printing live -- tail
+that file to watch progress while it runs.
+
+result_all$summary                            # success/failure + row counts per model
+result_all$best_parameter_sets[["GLM-AED2"]]   # winning parameters for one model
 ```
 
 See `vignette("full-workflow")` for the full calibration workflow,
 including single-model LHC/DE runs via `run_lhc_wq()`, writing best
-parameters back with `write_best_calib_to_par_files()`, and sensitivity
-analysis.
+parameters back with `write_best_calib_to_par_files()` and
+post-processing functions.
 
 ## Key functions
 
 - Setup and export:
-  - export_config_wq()
+  - export_config_wq() is the main function to export the configuration
+    files for the water quality models also calling the functions below
+    to export the input files for the water quality models.
   - export_inputs()
   - set_up_configs()
   - set_value_config()
-- Validation and run:
+- Validation and run: These functions are used to validate the
+  configuration files and input files for the water quality models
+  before running the models. If the validation fails, the function will
+  return an error message and stop the execution of the code. They are
+  included in the export_config_wq() function and can also be called
+  separately if needed.
   - validate_glm_aed()
   - validate_gotm_wet()
   - validate_simstrat()
   - run_ensemble_wq()
-- Extraction and metrics:
+- Extraction and metrics: These functions are used to extract the output
+  variables from the model runs and calculate the metrics for the water
+  quality models. They are included in the cal_metrics() function and
+  can also be called separately if needed.
   - get_output_wq()
   - extract_variable_list()
   - cal_metrics()
