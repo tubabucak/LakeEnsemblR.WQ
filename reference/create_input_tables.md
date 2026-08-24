@@ -2,9 +2,9 @@
 
 **Deprecated.** This function generates CSV scaffolds for parameter
 overrides but no function in the package reads them back. Use
-[`set_value_config`](https://aemon-j.github.io/LakeEnsemblR.WQ/reference/set_value_config.md)
+[`set_value_config`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/set_value_config.md)
 to set fixed parameter values directly, or
-[`create_calibration_tables`](https://aemon-j.github.io/LakeEnsemblR.WQ/reference/create_calibration_tables.md)
+[`create_calibration_tables`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/create_calibration_tables.md)
 to set up calibration ranges.
 
 ## Usage

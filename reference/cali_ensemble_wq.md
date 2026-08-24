@@ -4,7 +4,7 @@ High-level calibration wrapper inspired by LakeEnsemblR
 [`cali_ensemble()`](https://aemon-j.github.io/LakeEnsemblR/reference/cali_ensemble.html),
 implemented for the LakeEnsemblR.WQ calibration workflow. The function
 runs
-[`run_lhc_wq()`](https://aemon-j.github.io/LakeEnsemblR.WQ/reference/run_lhc_wq.md)
+[`run_lhc_wq()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/run_lhc_wq.md)
 model-by-model, using either a combined `calib_setup` table (with
 `model_coupled`) or a named list of per-model setup tables.
 
@@ -21,17 +21,20 @@ cali_ensemble_wq(
   model_filter = NULL,
   wq_config_file = NULL,
   n_samples = 50,
-  yaml_file_model = "gotm.yaml",
-  par_file = "simstrat.par",
+  yaml_file_model = NULL,
+  par_file = NULL,
+  ler_config_file = NULL,
   obs_file = NULL,
   obs_to_model_units = TRUE,
+  target_variables = NULL,
   spin_up_days = NULL,
   stats_by_depth = FALSE,
   return_best = TRUE,
   best_metric = "KGE",
   parallel = FALSE,
+  force_parallel_glm_simstrat = FALSE,
   n_workers = NULL,
-  parallel_dir = tempdir(),
+  parallel_dir = NULL,
   keep_worker_dirs = FALSE,
   use_de = FALSE,
   de_iterations = 50,
@@ -49,8 +52,7 @@ cali_ensemble_wq(
   output_dir = NULL,
   output_prefix = "lhc_results",
   write_best = FALSE,
-  write_target = c("par_file", "config"),
-  config_file = NULL
+  write_target = c("par_file", "config")
 )
 ```
 
@@ -72,7 +74,7 @@ cali_ensemble_wq(
 
   Character scalar, vector, or named list. Path(s) to metric YAML
   file(s) passed to
-  [`run_lhc_wq()`](https://aemon-j.github.io/LakeEnsemblR.WQ/reference/run_lhc_wq.md).
+  [`run_lhc_wq()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/run_lhc_wq.md).
 
 - folder:
 
@@ -88,19 +90,22 @@ cali_ensemble_wq(
 - param_names:
 
   Optional. Either a character vector reused for all models, or a named
-  list/vector by model. If `NULL`, uses `unique(calib_setup$pars)` per
-  model.
+  list/vector by model. If `NULL`, uses `calib_setup$pars` per model
+  (including duplicate names across group-specific rows – see Details).
 
 - model_filter:
 
   Optional model filter(s) passed to
-  [`run_lhc_wq()`](https://aemon-j.github.io/LakeEnsemblR.WQ/reference/run_lhc_wq.md).
+  [`run_lhc_wq()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/run_lhc_wq.md).
   Accepts scalar, length-`length(models)` vector, or named vector/list.
 
 - wq_config_file:
 
-  Character scalar, vector, or named list of WQ config path(s) passed to
-  [`run_lhc_wq()`](https://aemon-j.github.io/LakeEnsemblR.WQ/reference/run_lhc_wq.md).
+  Character scalar, vector, or named list of WQ config path(s) (e.g.
+  `"LakeEnsemblR_WQ.yaml"`). Passed to
+  [`run_lhc_wq()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/run_lhc_wq.md)
+  and, when `write_best = TRUE`, also used as the `config_file` for
+  [`write_best_calib_to_par_files()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/write_best_calib_to_par_files.md).
 
 - n_samples:
 
@@ -108,107 +113,141 @@ cali_ensemble_wq(
 
 - yaml_file_model:
 
-  Character scalar/vector/list. GOTM YAML file name(s) passed to
-  [`run_lhc_wq()`](https://aemon-j.github.io/LakeEnsemblR.WQ/reference/run_lhc_wq.md).
+  Character scalar/vector/list, or `NULL` (default). GOTM YAML file
+  name(s) passed to
+  [`run_lhc_wq()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/run_lhc_wq.md).
+  If `NULL`, auto-derived per model from `ler_config_file`.
 
 - par_file:
 
-  Character scalar/vector/list. Simstrat `.par` file name(s) passed to
-  [`run_lhc_wq()`](https://aemon-j.github.io/LakeEnsemblR.WQ/reference/run_lhc_wq.md).
+  Character scalar/vector/list, or `NULL` (default). Simstrat `.par`
+  file name(s) passed to
+  [`run_lhc_wq()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/run_lhc_wq.md).
+  If `NULL`, auto-derived per model from `ler_config_file`.
+
+- ler_config_file:
+
+  Character or `NULL`. Path to the LakeEnsemblR config file (e.g.
+  `"LakeEnsemblR.yaml"`), used to auto-derive
+  `yaml_file_model`/`par_file` per model when they are not explicitly
+  set. Passed through to
+  [`run_lhc_wq()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/run_lhc_wq.md).
 
 - obs_file:
 
   Optional observed-data CSV path. When supplied, each model returns the
   flattened stats data.frame from
-  [`run_lhc_wq()`](https://aemon-j.github.io/LakeEnsemblR.WQ/reference/run_lhc_wq.md).
+  [`run_lhc_wq()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/run_lhc_wq.md).
 
 - obs_to_model_units:
 
   Logical. Passed to
-  [`run_lhc_wq()`](https://aemon-j.github.io/LakeEnsemblR.WQ/reference/run_lhc_wq.md).
+  [`run_lhc_wq()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/run_lhc_wq.md).
+
+- target_variables:
+
+  Character vector or `NULL`. Passed to
+  [`run_lhc_wq()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/run_lhc_wq.md)
+  – restricts scoring to these `variable_global_name` value(s) from
+  `obs_file` (e.g. `"DO_gramsPerCubicMeter"`) instead of averaging
+  across every observed variable. `NULL` (default) uses all.
 
 - spin_up_days:
 
   Numeric or `NULL`. Passed to
-  [`run_lhc_wq()`](https://aemon-j.github.io/LakeEnsemblR.WQ/reference/run_lhc_wq.md).
+  [`run_lhc_wq()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/run_lhc_wq.md).
 
 - stats_by_depth:
 
   Logical. Passed to
-  [`run_lhc_wq()`](https://aemon-j.github.io/LakeEnsemblR.WQ/reference/run_lhc_wq.md).
+  [`run_lhc_wq()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/run_lhc_wq.md).
 
 - return_best:
 
   Logical. Passed to
-  [`run_lhc_wq()`](https://aemon-j.github.io/LakeEnsemblR.WQ/reference/run_lhc_wq.md).
+  [`run_lhc_wq()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/run_lhc_wq.md).
 
 - best_metric:
 
   Character. Passed to
-  [`run_lhc_wq()`](https://aemon-j.github.io/LakeEnsemblR.WQ/reference/run_lhc_wq.md).
+  [`run_lhc_wq()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/run_lhc_wq.md).
 
 - parallel:
 
   Logical. Passed to
-  [`run_lhc_wq()`](https://aemon-j.github.io/LakeEnsemblR.WQ/reference/run_lhc_wq.md)
+  [`run_lhc_wq()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/run_lhc_wq.md)
   (parallelizes LHC samples *within* a single model's run).
+
+- force_parallel_glm_simstrat:
+
+  Logical. GLM-AED2 and Simstrat-AED2 edit their config files in-place
+  during each LHC sample; by default (`FALSE`) their LHC phase always
+  runs sequentially even when `parallel = TRUE`, to avoid file write
+  collisions.
+  [`run_lhc_wq_parallel()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/run_lhc_wq_parallel.md)
+  isolates each worker onto its own copy of `model_dir`, the same
+  mechanism DE already uses safely – set `TRUE` to test parallel LHC for
+  these two models too.
 
 - n_workers:
 
   Integer or `NULL`. Passed to
-  [`run_lhc_wq()`](https://aemon-j.github.io/LakeEnsemblR.WQ/reference/run_lhc_wq.md).
+  [`run_lhc_wq()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/run_lhc_wq.md).
 
 - parallel_dir:
 
-  Character. Passed to
-  [`run_lhc_wq()`](https://aemon-j.github.io/LakeEnsemblR.WQ/reference/run_lhc_wq.md).
+  Character or `NULL`. Passed to
+  [`run_lhc_wq()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/run_lhc_wq.md),
+  which defaults it (when `NULL`) to a sibling of each model's own
+  directory under the project root rather than
+  [`tempdir()`](https://rdrr.io/r/base/tempfile.html).
 
 - keep_worker_dirs:
 
   Logical. Passed to
-  [`run_lhc_wq()`](https://aemon-j.github.io/LakeEnsemblR.WQ/reference/run_lhc_wq.md).
+  [`run_lhc_wq()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/run_lhc_wq.md).
 
 - use_de:
 
   Logical. Passed to
-  [`run_lhc_wq()`](https://aemon-j.github.io/LakeEnsemblR.WQ/reference/run_lhc_wq.md).
+  [`run_lhc_wq()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/run_lhc_wq.md).
   Scalar, length `length(models)`, or named by model.
 
 - de_iterations:
 
   Integer. Passed to
-  [`run_lhc_wq()`](https://aemon-j.github.io/LakeEnsemblR.WQ/reference/run_lhc_wq.md).
+  [`run_lhc_wq()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/run_lhc_wq.md).
 
 - de_popsize:
 
   Integer or `NULL`. Passed to
-  [`run_lhc_wq()`](https://aemon-j.github.io/LakeEnsemblR.WQ/reference/run_lhc_wq.md).
+  [`run_lhc_wq()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/run_lhc_wq.md).
 
 - de_f:
 
   Numeric. Passed to
-  [`run_lhc_wq()`](https://aemon-j.github.io/LakeEnsemblR.WQ/reference/run_lhc_wq.md).
+  [`run_lhc_wq()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/run_lhc_wq.md).
 
 - de_cr:
 
   Numeric. Passed to
-  [`run_lhc_wq()`](https://aemon-j.github.io/LakeEnsemblR.WQ/reference/run_lhc_wq.md).
+  [`run_lhc_wq()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/run_lhc_wq.md).
 
 - de_seed_from_lhc:
 
   Logical. Passed to
-  [`run_lhc_wq()`](https://aemon-j.github.io/LakeEnsemblR.WQ/reference/run_lhc_wq.md).
+  [`run_lhc_wq()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/run_lhc_wq.md).
 
 - de_parallel:
 
   Logical. Passed to
-  [`run_lhc_wq()`](https://aemon-j.github.io/LakeEnsemblR.WQ/reference/run_lhc_wq.md)
+  [`run_lhc_wq()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/run_lhc_wq.md)
   (parallelizes DE evaluations *within* a single model's run).
 
 - de_n_workers:
 
   Integer or `NULL`. Passed to
-  [`run_lhc_wq()`](https://aemon-j.github.io/LakeEnsemblR.WQ/reference/run_lhc_wq.md).
+  [`run_lhc_wq()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/run_lhc_wq.md).
 
 - parallel_models:
 
@@ -253,19 +292,13 @@ cali_ensemble_wq(
 - write_best:
 
   Logical. If `TRUE`, call
-  [`write_best_calib_to_par_files()`](https://aemon-j.github.io/LakeEnsemblR.WQ/reference/write_best_calib_to_par_files.md)
+  [`write_best_calib_to_par_files()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/write_best_calib_to_par_files.md)
   for each successful model.
 
 - write_target:
 
   Character. Passed to
-  [`write_best_calib_to_par_files()`](https://aemon-j.github.io/LakeEnsemblR.WQ/reference/write_best_calib_to_par_files.md).
-
-- config_file:
-
-  Character. Required when `write_best = TRUE`; path to the WQ master
-  config used by
-  [`write_best_calib_to_par_files()`](https://aemon-j.github.io/LakeEnsemblR.WQ/reference/write_best_calib_to_par_files.md).
+  [`write_best_calib_to_par_files()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/write_best_calib_to_par_files.md).
 
 ## Value
 
@@ -274,7 +307,7 @@ A list with:
 - results:
 
   Named list of per-model outputs from
-  [`run_lhc_wq()`](https://aemon-j.github.io/LakeEnsemblR.WQ/reference/run_lhc_wq.md).
+  [`run_lhc_wq()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/run_lhc_wq.md).
 
 - summary:
 

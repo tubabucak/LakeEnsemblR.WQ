@@ -47,7 +47,7 @@ run_multi_param_sensitivity(
 - yaml_file:
 
   Path to the YAML file used for metric extraction by
-  [`cal_metrics()`](https://aemon-j.github.io/LakeEnsemblR.WQ/reference/cal_metrics.md).
+  [`cal_metrics()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/cal_metrics.md).
 
 - model_dir:
 
@@ -62,7 +62,7 @@ run_multi_param_sensitivity(
 - model_filter:
 
   A character string specifying the model filter passed to
-  [`cal_metrics()`](https://aemon-j.github.io/LakeEnsemblR.WQ/reference/cal_metrics.md)
+  [`cal_metrics()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/cal_metrics.md)
   (default is `"GLM"`).
 
 ## Value

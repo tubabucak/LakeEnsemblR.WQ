@@ -3,7 +3,7 @@
 Takes the `Duration_of_Stratification` (or any metric with columns
 `Year`, `Strat_Start_Date`, `Consecutive_Strat_Days`, and
 `Mixing_Start_Date`) from the
-[`cal_metrics()`](https://aemon-j.github.io/LakeEnsemblR.WQ/reference/cal_metrics.md)
+[`cal_metrics()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/cal_metrics.md)
 output list and produces a multi-panel comparison across all available
 models.
 
@@ -26,7 +26,7 @@ plot_strat_metrics(
 - metrics_list:
 
   list or character; the full output of
-  [`cal_metrics()`](https://aemon-j.github.io/LakeEnsemblR.WQ/reference/cal_metrics.md),
+  [`cal_metrics()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/cal_metrics.md),
   the sub-list for a single metric, or a path to a NetCDF file. When a
   NetCDF path is provided, stratification variables are read directly
   from file.

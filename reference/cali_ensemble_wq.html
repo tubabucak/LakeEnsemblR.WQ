@@ -27,6 +27,8 @@ list of per-model setup tables."></head><body>
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/full-workflow.html">LakeEnsemblR.WQ Full Workflow</a></li>
+    <li><a class="dropdown-item" href="../articles/config-reference.html">Configuration File Reference</a></li>
+    <li><a class="dropdown-item" href="../articles/function-map.html">Function Map</a></li>
   </ul></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json"></form></li>
@@ -64,17 +66,20 @@ list of per-model setup tables.</p>
 <span>  model_filter <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  wq_config_file <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  n_samples <span class="op">=</span> <span class="fl">50</span>,</span>
-<span>  yaml_file_model <span class="op">=</span> <span class="st">"gotm.yaml"</span>,</span>
-<span>  par_file <span class="op">=</span> <span class="st">"simstrat.par"</span>,</span>
+<span>  yaml_file_model <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  par_file <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  ler_config_file <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  obs_file <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  obs_to_model_units <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  target_variables <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  spin_up_days <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  stats_by_depth <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  return_best <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  best_metric <span class="op">=</span> <span class="st">"KGE"</span>,</span>
 <span>  parallel <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  force_parallel_glm_simstrat <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  n_workers <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  parallel_dir <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempdir</a></span><span class="op">(</span><span class="op">)</span>,</span>
+<span>  parallel_dir <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  keep_worker_dirs <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  use_de <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  de_iterations <span class="op">=</span> <span class="fl">50</span>,</span>
@@ -92,8 +97,7 @@ list of per-model setup tables.</p>
 <span>  output_dir <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  output_prefix <span class="op">=</span> <span class="st">"lhc_results"</span>,</span>
 <span>  write_best <span class="op">=</span> <span class="cn">FALSE</span>,</span>
-<span>  write_target <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"par_file"</span>, <span class="st">"config"</span><span class="op">)</span>,</span>
-<span>  config_file <span class="op">=</span> <span class="cn">NULL</span></span>
+<span>  write_target <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"par_file"</span>, <span class="st">"config"</span><span class="op">)</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -132,7 +136,8 @@ Defaults to <code>file.path(folder, models)</code>.</p></dd>
 <dt id="arg-param-names">param_names<a class="anchor" aria-label="anchor" href="#arg-param-names"></a></dt>
 <dd><p>Optional. Either a character vector reused for all models,
 or a named list/vector by model. If <code>NULL</code>, uses
-<code>unique(calib_setup$pars)</code> per model.</p></dd>
+<code>calib_setup$pars</code> per model (including duplicate names across
+group-specific rows – see Details).</p></dd>
 
 
 <dt id="arg-model-filter">model_filter<a class="anchor" aria-label="anchor" href="#arg-model-filter"></a></dt>
@@ -142,7 +147,9 @@ Accepts scalar, length-<code>length(models)</code> vector, or named vector/list.
 
 <dt id="arg-wq-config-file">wq_config_file<a class="anchor" aria-label="anchor" href="#arg-wq-config-file"></a></dt>
 <dd><p>Character scalar, vector, or named list of WQ config
-path(s) passed to <code><a href="run_lhc_wq.html">run_lhc_wq()</a></code>.</p></dd>
+path(s) (e.g. <code>"LakeEnsemblR_WQ.yaml"</code>). Passed to <code><a href="run_lhc_wq.html">run_lhc_wq()</a></code>
+and, when <code>write_best = TRUE</code>, also used as the <code>config_file</code>
+for <code><a href="write_best_calib_to_par_files.html">write_best_calib_to_par_files()</a></code>.</p></dd>
 
 
 <dt id="arg-n-samples">n_samples<a class="anchor" aria-label="anchor" href="#arg-n-samples"></a></dt>
@@ -150,13 +157,22 @@ path(s) passed to <code><a href="run_lhc_wq.html">run_lhc_wq()</a></code>.</p></
 
 
 <dt id="arg-yaml-file-model">yaml_file_model<a class="anchor" aria-label="anchor" href="#arg-yaml-file-model"></a></dt>
-<dd><p>Character scalar/vector/list. GOTM YAML file name(s)
-passed to <code><a href="run_lhc_wq.html">run_lhc_wq()</a></code>.</p></dd>
+<dd><p>Character scalar/vector/list, or <code>NULL</code>
+(default). GOTM YAML file name(s) passed to <code><a href="run_lhc_wq.html">run_lhc_wq()</a></code>. If
+<code>NULL</code>, auto-derived per model from <code>ler_config_file</code>.</p></dd>
 
 
 <dt id="arg-par-file">par_file<a class="anchor" aria-label="anchor" href="#arg-par-file"></a></dt>
-<dd><p>Character scalar/vector/list. Simstrat <code>.par</code> file
-name(s) passed to <code><a href="run_lhc_wq.html">run_lhc_wq()</a></code>.</p></dd>
+<dd><p>Character scalar/vector/list, or <code>NULL</code> (default).
+Simstrat <code>.par</code> file name(s) passed to <code><a href="run_lhc_wq.html">run_lhc_wq()</a></code>. If
+<code>NULL</code>, auto-derived per model from <code>ler_config_file</code>.</p></dd>
+
+
+<dt id="arg-ler-config-file">ler_config_file<a class="anchor" aria-label="anchor" href="#arg-ler-config-file"></a></dt>
+<dd><p>Character or <code>NULL</code>. Path to the LakeEnsemblR
+config file (e.g. <code>"LakeEnsemblR.yaml"</code>), used to auto-derive
+<code>yaml_file_model</code>/<code>par_file</code> per model when they are not
+explicitly set. Passed through to <code><a href="run_lhc_wq.html">run_lhc_wq()</a></code>.</p></dd>
 
 
 <dt id="arg-obs-file">obs_file<a class="anchor" aria-label="anchor" href="#arg-obs-file"></a></dt>
@@ -166,6 +182,13 @@ returns the flattened stats data.frame from <code><a href="run_lhc_wq.html">run_
 
 <dt id="arg-obs-to-model-units">obs_to_model_units<a class="anchor" aria-label="anchor" href="#arg-obs-to-model-units"></a></dt>
 <dd><p>Logical. Passed to <code><a href="run_lhc_wq.html">run_lhc_wq()</a></code>.</p></dd>
+
+
+<dt id="arg-target-variables">target_variables<a class="anchor" aria-label="anchor" href="#arg-target-variables"></a></dt>
+<dd><p>Character vector or <code>NULL</code>. Passed to
+<code><a href="run_lhc_wq.html">run_lhc_wq()</a></code> – restricts scoring to these <code>variable_global_name</code>
+value(s) from <code>obs_file</code> (e.g. <code>"DO_gramsPerCubicMeter"</code>) instead
+of averaging across every observed variable. <code>NULL</code> (default) uses all.</p></dd>
 
 
 <dt id="arg-spin-up-days">spin_up_days<a class="anchor" aria-label="anchor" href="#arg-spin-up-days"></a></dt>
@@ -189,12 +212,23 @@ returns the flattened stats data.frame from <code><a href="run_lhc_wq.html">run_
 samples <em>within</em> a single model's run).</p></dd>
 
 
+<dt id="arg-force-parallel-glm-simstrat">force_parallel_glm_simstrat<a class="anchor" aria-label="anchor" href="#arg-force-parallel-glm-simstrat"></a></dt>
+<dd><p>Logical. GLM-AED2 and Simstrat-AED2 edit
+their config files in-place during each LHC sample; by default (<code>FALSE</code>)
+their LHC phase always runs sequentially even when <code>parallel = TRUE</code>,
+to avoid file write collisions. <code><a href="run_lhc_wq_parallel.html">run_lhc_wq_parallel()</a></code> isolates each
+worker onto its own copy of <code>model_dir</code>, the same mechanism DE already
+uses safely – set <code>TRUE</code> to test parallel LHC for these two models too.</p></dd>
+
+
 <dt id="arg-n-workers">n_workers<a class="anchor" aria-label="anchor" href="#arg-n-workers"></a></dt>
 <dd><p>Integer or <code>NULL</code>. Passed to <code><a href="run_lhc_wq.html">run_lhc_wq()</a></code>.</p></dd>
 
 
 <dt id="arg-parallel-dir">parallel_dir<a class="anchor" aria-label="anchor" href="#arg-parallel-dir"></a></dt>
-<dd><p>Character. Passed to <code><a href="run_lhc_wq.html">run_lhc_wq()</a></code>.</p></dd>
+<dd><p>Character or <code>NULL</code>. Passed to <code><a href="run_lhc_wq.html">run_lhc_wq()</a></code>,
+which defaults it (when <code>NULL</code>) to a sibling of each model's own
+directory under the project root rather than <code><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempdir()</a></code>.</p></dd>
 
 
 <dt id="arg-keep-worker-dirs">keep_worker_dirs<a class="anchor" aria-label="anchor" href="#arg-keep-worker-dirs"></a></dt>
@@ -284,11 +318,6 @@ processes used when <code>parallel_models = TRUE</code>. Defaults to
 <dt id="arg-write-target">write_target<a class="anchor" aria-label="anchor" href="#arg-write-target"></a></dt>
 <dd><p>Character. Passed to
 <code><a href="write_best_calib_to_par_files.html">write_best_calib_to_par_files()</a></code>.</p></dd>
-
-
-<dt id="arg-config-file">config_file<a class="anchor" aria-label="anchor" href="#arg-config-file"></a></dt>
-<dd><p>Character. Required when <code>write_best = TRUE</code>; path to
-the WQ master config used by <code><a href="write_best_calib_to_par_files.html">write_best_calib_to_par_files()</a></code>.</p></dd>
 
 </dl></div>
     <div class="section level2">

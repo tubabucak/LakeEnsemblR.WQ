@@ -1,14 +1,14 @@
 # Write best calibration parameter set back to par_file CSVs
 
 After running
-[`run_lhc_wq`](https://aemon-j.github.io/LakeEnsemblR.WQ/reference/run_lhc_wq.md)
+[`run_lhc_wq`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/run_lhc_wq.md)
 with `obs_file` supplied (which returns a data frame of parameter
 values + performance statistics), this function picks the
 best-performing row and writes the calibrated parameter values into the
 `par_file` CSVs referenced in the `LakeEnsemblR_WQ.yaml` config. This
 closes the loop between the calibration workflow and the
 parameter-override files consumed by
-[`export_config_wq`](https://aemon-j.github.io/LakeEnsemblR.WQ/reference/export_config_wq.md).
+[`export_config_wq`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/export_config_wq.md).
 
 ## Usage
 
@@ -30,7 +30,7 @@ write_best_calib_to_par_files(
 - lhc_results:
 
   data.frame; the output of
-  [`run_lhc_wq()`](https://aemon-j.github.io/LakeEnsemblR.WQ/reference/run_lhc_wq.md)
+  [`run_lhc_wq()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/run_lhc_wq.md)
   when `obs_file` is supplied. Must contain one column per calibrated
   parameter and at least one performance-metric column (e.g. `NSE`,
   `KGE`).
@@ -38,9 +38,9 @@ write_best_calib_to_par_files(
 - calib_setup:
 
   data.frame; the calibration setup table used when running
-  [`run_lhc_wq()`](https://aemon-j.github.io/LakeEnsemblR.WQ/reference/run_lhc_wq.md),
+  [`run_lhc_wq()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/run_lhc_wq.md),
   as produced by
-  [`calib_setup_from_tables`](https://aemon-j.github.io/LakeEnsemblR.WQ/reference/calib_setup_from_tables.md).
+  [`calib_setup_from_tables`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/calib_setup_from_tables.md).
   Must contain columns `pars`, `model_coupled`, `domain`, `process`,
   `subprocess`, and optionally `group_name`.
 
@@ -71,7 +71,7 @@ write_best_calib_to_par_files(
 
   character; where to write best values. One of `"par_file"` (default,
   updates module `par_file` CSVs) or `"config"` (uses
-  [`set_value_config()`](https://aemon-j.github.io/LakeEnsemblR.WQ/reference/set_value_config.md)
+  [`set_value_config()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/set_value_config.md)
   to write directly to model config files).
 
 - verbose:

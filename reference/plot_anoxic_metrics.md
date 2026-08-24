@@ -1,9 +1,9 @@
 # Plot and compare anoxia metrics across models
 
 Takes the output of
-[`cal_anoxic_date()`](https://aemon-j.github.io/LakeEnsemblR.WQ/reference/cal_anoxic_date.md)
+[`cal_anoxic_date()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/cal_anoxic_date.md)
 (either directly or as part of the nested
-[`cal_metrics()`](https://aemon-j.github.io/LakeEnsemblR.WQ/reference/cal_metrics.md)
+[`cal_metrics()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/cal_metrics.md)
 output) and builds comparison plots for:
 
 - yearly number of anoxic days,
@@ -32,13 +32,13 @@ plot_anoxic_metrics(
   list or character; either:
 
   - the full
-    [`cal_metrics()`](https://aemon-j.github.io/LakeEnsemblR.WQ/reference/cal_metrics.md)
+    [`cal_metrics()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/cal_metrics.md)
     output,
 
   - one metric sub-list (model -\> metric instance), or
 
   - a named model list of
-    [`cal_anoxic_date()`](https://aemon-j.github.io/LakeEnsemblR.WQ/reference/cal_anoxic_date.md)
+    [`cal_anoxic_date()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/cal_anoxic_date.md)
     outputs,
 
   - a path to an ensemble NetCDF file (`.nc`).
@@ -46,7 +46,7 @@ plot_anoxic_metrics(
 - metric_name:
 
   character; metric name to extract when `metrics_list` is the full
-  [`cal_metrics()`](https://aemon-j.github.io/LakeEnsemblR.WQ/reference/cal_metrics.md)
+  [`cal_metrics()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/cal_metrics.md)
   output. If not found, the function assumes `metrics_list` is already
   the per-model list. In NetCDF mode, this is used as preferred variable
   name for AF.

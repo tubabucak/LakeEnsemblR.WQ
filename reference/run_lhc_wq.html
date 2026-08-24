@@ -23,6 +23,8 @@ either cal_metrics() outputs or observed-data statistics."></head><body>
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/full-workflow.html">LakeEnsemblR.WQ Full Workflow</a></li>
+    <li><a class="dropdown-item" href="../articles/config-reference.html">Configuration File Reference</a></li>
+    <li><a class="dropdown-item" href="../articles/function-map.html">Function Map</a></li>
   </ul></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json"></form></li>
@@ -57,8 +59,9 @@ either <code><a href="cal_metrics.html">cal_metrics()</a></code> outputs or obse
 <span>  n_samples <span class="op">=</span> <span class="fl">50</span>,</span>
 <span>  model_filter <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  wq_config_file <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  yaml_file_model <span class="op">=</span> <span class="st">"gotm.yaml"</span>,</span>
-<span>  par_file <span class="op">=</span> <span class="st">"simstrat.par"</span>,</span>
+<span>  yaml_file_model <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  par_file <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  ler_config_file <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  verbose <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  save_results <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  output_file <span class="op">=</span> <span class="st">"lhc_results.rds"</span>,</span>
@@ -71,7 +74,7 @@ either <code><a href="cal_metrics.html">cal_metrics()</a></code> outputs or obse
 <span>  target_variables <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  parallel <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  n_workers <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  parallel_dir <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempdir</a></span><span class="op">(</span><span class="op">)</span>,</span>
+<span>  parallel_dir <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  keep_worker_dirs <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  lhs_matrix <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  sample_indices <span class="op">=</span> <span class="cn">NULL</span>,</span>
@@ -82,7 +85,8 @@ either <code><a href="cal_metrics.html">cal_metrics()</a></code> outputs or obse
 <span>  de_cr <span class="op">=</span> <span class="fl">0.9</span>,</span>
 <span>  de_seed_from_lhc <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  de_parallel <span class="op">=</span> <span class="cn">FALSE</span>,</span>
-<span>  de_n_workers <span class="op">=</span> <span class="cn">NULL</span></span>
+<span>  de_n_workers <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  precomputed_lhc_results <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -128,13 +132,26 @@ CSV updates.</p></dd>
 
 
 <dt id="arg-yaml-file-model">yaml_file_model<a class="anchor" aria-label="anchor" href="#arg-yaml-file-model"></a></dt>
-<dd><p>Character. GOTM yaml filename (default
-<code>"gotm.yaml"</code>).</p></dd>
+<dd><p>Character or <code>NULL</code>. GOTM yaml filename. If
+<code>NULL</code> (default), derived from <code>ler_config_file</code>'s
+<code>config_files$GOTM</code> entry when available, else falls back to
+<code>"gotm.yaml"</code>.</p></dd>
 
 
 <dt id="arg-par-file">par_file<a class="anchor" aria-label="anchor" href="#arg-par-file"></a></dt>
-<dd><p>Character. Simstrat par filename (default
-<code>"simstrat.par"</code>).</p></dd>
+<dd><p>Character or <code>NULL</code>. Simstrat par filename. If
+<code>NULL</code> (default), derived from <code>ler_config_file</code>'s
+<code>config_files$Simstrat</code> entry when available, else falls back to
+<code>"simstrat.par"</code>.</p></dd>
+
+
+<dt id="arg-ler-config-file">ler_config_file<a class="anchor" aria-label="anchor" href="#arg-ler-config-file"></a></dt>
+<dd><p>Character or <code>NULL</code>. Path to the LakeEnsemblR
+(physical-model) config file, e.g. <code>"LakeEnsemblR.yaml"</code>. When
+supplied and <code>yaml_file_model</code>/<code>par_file</code> are not explicitly
+set, they are auto-derived from its <code>config_files</code> section instead
+of requiring the user to duplicate those filenames here. If relative,
+resolved against <code>dirname(model_dir)</code>.</p></dd>
 
 
 <dt id="arg-verbose">verbose<a class="anchor" aria-label="anchor" href="#arg-verbose"></a></dt>
@@ -205,8 +222,10 @@ when <code>return_best = TRUE</code>. One of <code>"KGE"</code>, <code>"NSE"</co
 
 
 <dt id="arg-parallel-dir">parallel_dir<a class="anchor" aria-label="anchor" href="#arg-parallel-dir"></a></dt>
-<dd><p>Character. Parent directory for worker copies when
-<code>parallel = TRUE</code>. Passed to <code><a href="run_lhc_wq_parallel.html">run_lhc_wq_parallel()</a></code>.</p></dd>
+<dd><p>Character or <code>NULL</code>. Parent directory for worker
+copies when <code>parallel = TRUE</code>. Passed to <code><a href="run_lhc_wq_parallel.html">run_lhc_wq_parallel()</a></code>,
+which defaults it (when <code>NULL</code>) to a sibling of <code>model_dir</code>
+under the project root rather than <code><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempdir()</a></code> – see its docs.</p></dd>
 
 
 <dt id="arg-keep-worker-dirs">keep_worker_dirs<a class="anchor" aria-label="anchor" href="#arg-keep-worker-dirs"></a></dt>
@@ -247,6 +266,16 @@ increase parameter exchange probability. Default is 0.9. Ignored when
 <dd><p>Logical. Initialize DE population from best LHC
 results (default = <code>TRUE</code>). If <code>FALSE</code>, DE starts from random
 population. Ignored when <code>use_de = FALSE</code>.</p></dd>
+
+
+<dt id="arg-precomputed-lhc-results">precomputed_lhc_results<a class="anchor" aria-label="anchor" href="#arg-precomputed-lhc-results"></a></dt>
+<dd><p>Data frame or <code>NULL</code>. Internal use –
+when supplied (already in the shape <code>run_lhc_wq()</code>'s own LHC phase
+would produce, including the <code>attr(., "best_parameter_set")</code>
+attribute when applicable), the LHC sampling loop is skipped entirely and
+these results are used directly to seed the DE phase. Used by
+<code><a href="run_lhc_wq_parallel.html">run_lhc_wq_parallel()</a></code> to seed DE from its already-computed
+parallel LHC results instead of re-running LHC sequentially.</p></dd>
 
 </dl></div>
     <div class="section level2">

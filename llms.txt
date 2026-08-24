@@ -1,23 +1,31 @@
 # LakeEnsemblR.WQ
 
-Run, harmonize, and compare water quality simulations across multiple 1D
-lake model frameworks.
+This package aims to facilitate the settin-up, running and calibrating
+and post-processing of the process based aquatic ecosystem models.
+harmonize, and compare water quality simulations across multiple 1D lake
+model frameworks.
+
+LakeEnsemblR.WQ is an extension of LakeEnsemblR package with a new
+framework that integrates water quality and biological modules for 1D
+process-based aquatic ecosystem models. It aims to facilitate data
+preprocessing, setup, calibration, post-processing, and also support the
+calculation of system metrics through concept, state, process, system
+framework.
 
 LakeEnsemblR.WQ extends LakeEnsemblR workflows with tools to:
 
-- configure model-specific WQ settings,
-- validate model setups before run,
-- run model ensembles,
-- calibrate model ensembles – Latin Hypercube sampling, optional
-  Differential Evolution refinement, and single-model or
-  all-coupled-models-at-once (sequential or concurrent) calibration via
-  [`cali_ensemble_wq()`](https://aemon-j.github.io/LakeEnsemblR.WQ/reference/cali_ensemble_wq.md),
-- extract and harmonize output variables,
-- calculate standardized ecosystem metrics and summary statistics,
-- compare and visualize model outputs against each other and
+- Configure model-specific water quality and ecosystem dynamics
+  settings,
+- Validate model setups before run,
+- Run model ensembles,
+- Calibrate model ensembles – Latin Hypercube sampling, optional
+  Differential Evolution refinement
+- Extract and harmonize output variables,
+- Calculate standardized ecosystem metrics and summary statistics,
+- Compare and visualize model outputs against each other and
   observations.
 
-Supported model frameworks:
+Supported 1D model frameworks:
 
 - GLM-AED2
 - GOTM-WET
@@ -34,27 +42,27 @@ Supported model frameworks:
 remotes::install_github("tubabucak/LakeEnsemblR.WQ")
 ```
 
-Several dependencies are GitHub-only wrappers around external lake model
-binaries (`GLM3r`, `WETr`, `SelmaprotbasR`, `SimstratR`, `MyLakeR`) and
-are optional – you only need the ones matching the model(s) you actually
-run
-([`run_ensemble_wq()`](https://aemon-j.github.io/LakeEnsemblR.WQ/reference/run_ensemble_wq.md)/[`run_lhc_wq()`](https://aemon-j.github.io/LakeEnsemblR.WQ/reference/run_lhc_wq.md)
-check for them at call time and give an informative error if missing).
-They’re declared in `Remotes:` in `DESCRIPTION` so
+Some dependencies are GitHub-only wrappers around external lake model
+binaries: `GLM3r`, `WETr`, `SelmaprotbasR`, `SimstratR`, `MyLakeR`.
+These are optional – you only need the one(s) matching the model(s) you
+actually run. If a required one is missing,
+[`run_ensemble_wq()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/run_ensemble_wq.md)/[`run_lhc_wq()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/run_lhc_wq.md)
+will tell you at call time rather than fail silently. All of them are
+listed in `Remotes:` in `DESCRIPTION`, so
 [`remotes::install_github()`](https://remotes.r-lib.org/reference/install_github.html)
-resolves them automatically.
+installs them automatically along with everything else.
 
-`glmtools` (a hard dependency, needed regardless of which model you run)
-has a known upstream packaging gap: its own `DESCRIPTION` depends on
-`GLM3r` but doesn’t declare where to find it, which can make
-dependency-solving tools (`pak`, and by extension
-`devtools::install_deps()`/`build_vignettes()`) fail with
-`Can't find package called GLM3r` even though `GLM3r` is in this
-package’s own `Remotes:`. If you hit that, pre-install `GLM3r` first:
+`glmtools` is always required, no matter which model you run. It in turn
+needs `GLM3r`, but doesn’t say where to find it – so tools that resolve
+dependencies automatically (`pak`, and anything built on it, like
+`devtools::install_deps()`/`build_vignettes()`) can fail with
+`Can't find package called GLM3r`, even though `GLM3r` is listed in this
+package’s own `Remotes:`. If that happens, install `GLM3r` yourself
+first, then install this package as normal:
 
 ``` r
 
-remotes::install_github("aemon-j/GLM3r@v3.3")
+remotes::install_github("aemon-j/GLM3r@v3.3-lerwq")
 remotes::install_github("tubabucak/LakeEnsemblR.WQ")
 ```
 
@@ -65,7 +73,12 @@ remotes::install_github("tubabucak/LakeEnsemblR.WQ")
 library(LakeEnsemblR)
 
 # 0) Export model-specific configuration and inputs for physical setup
-
+# This step is only needed once per project, unless you want to change the
+# physical configuration (e.g., bathymetry, inflows, meteorology, etc.).
+# Please check the default configuration configuration that was generated before proceeding
+# to the next step. You can edit the configuration file to change model settings if needed.
+# For example the default configuration setup of GLM does not include the sediment module, so if you want to include the sediment module in GLM, you need to change the configuration file before proceeding to the next step.
+# Or if you need more diagnostics and output variables, you can change the configuration file before proceeding to the next step.
 export_config(
   config_file = "LakeEnsemblR.yaml",
   folder = ".",
@@ -76,6 +89,8 @@ library(LakeEnsemblR.WQ)
 
 
 # 1) Export model-specific configuration and inputs for WQ setup
+# This step is only needed once per project, unless you want to change the
+# water quality configuration
 export_config_wq(
   config_file = "LakeEnsemblR_WQ.yaml",
   folder = ".",
@@ -83,6 +98,8 @@ export_config_wq(
 )
 
 # 2) Run selected models
+# This function only run the selected models with the current configuration setup
+# and save their outputs in the output folders of the models.
 run_res <- run_ensemble_wq(
   config_file = "LakeEnsemblR_WQ.yaml",
   models = c("GLM-AED2", "GOTM-WET", "GOTM-Selmaprotbas", "SIMSTRAT-AED2"),
@@ -91,69 +108,121 @@ run_res <- run_ensemble_wq(
   verbose = TRUE
 )
 
-# 3) Compute metrics listed in Output.yaml
+# 3) cal_metric function computes the metrics (which was specified in Output.yaml) for the 
+# selected models and save them in a list. Now they are all in the same units and can be compared with each other. 
+# The metrics are computed for all the models that were run in the previous step.
+
 metric_out <- cal_metrics(
   metric_yaml_file = "Output.yaml",
   model_filter = "all",
   wq_config_file = "LakeEnsemblR_WQ.yaml"
 )
-
-# 4) Optional: compute summary statistics
-stat_out <- cal_stats(metric_out)
 ```
 
 ## Calibration
 
 ``` r
 
-# Build a calibration setup table from editable calibration CSVs
-# (see create_calibration_tables() to generate the templates first)
+# Create calibration tables for all coupled models at once, with default bounds_factor = 0.2.
+create_calibration_tables(
+  folder = ".",
+  config_file = "LakeEnsemblR_WQ.yaml",
+  folder_out = "calibration",
+  models_coupled = c("GLM-AED2", "GOTM-WET", "GOTM-Selmaprotbas", "Simstrat-AED2"),
+  bounds_factor = 0.2
+)
+
+# Edit the generated calibration CSVs in the "calibration" folder before continuing:
+#   - set include = TRUE for the parameters you want to calibrate
+#   - adjust lower, upper, and initial as needed -- the generated CSVs also
+#     include suggested min-max ranges (dict_min/dict_max) for some
+#     parameters as a reference; use them to inform your own bounds if useful
+#
+# Then build a calibration setup table from the edited CSVs:
 cs_all <- calib_setup_from_tables(
   folder_in = "calibration",
   model_coupled = c("GLM-AED2", "GOTM-WET", "GOTM-Selmaprotbas", "Simstrat-AED2")
 )
 
-# Calibrate all coupled models at once, concurrently, with LHC + DE refinement
-result <- cali_ensemble_wq(
-  models          = c("GLM-AED2", "GOTM-WET", "GOTM-Selmaprotbas", "Simstrat-AED2"),
+# Calibrate all coupled models at once, with optional DE refinement and parallelism.
+result_all <- cali_ensemble_wq(
+  models          = c("GOTM-WET", "GOTM-Selmaprotbas", "GLM-AED2", "Simstrat-AED2"),
   calib_setup     = cs_all,
   yaml_file       = "Output.yaml",
-  wq_config_file  = "LakeEnsemblR_WQ.yaml",
-  obs_file        = "obs_data.csv",   # datetime, depth, variable_global_name, value
-  n_samples       = 20,
-  best_metric     = "KGE",
+  folder          = ".",
+  n_samples       = 16,     # LHC seed
   use_de          = TRUE,
-  parallel_models = TRUE,   # one worker process per model, run concurrently
+  de_popsize      = 12,
+  de_iterations   = 8,
+  de_parallel     = TRUE,   # <- must flip this on to use de_n_workers
+  de_n_workers    = 4,
+  n_workers       = 4,
+  parallel_models = FALSE,   # keep this -- see why below
+  obs_file        = "standart_observed_data.csv",
+  wq_config_file  = "LakeEnsemblR_WQ.yaml",
+  ler_config_file = "LakeEnsemblR.yaml",
+  best_metric     = "KGE",
+  target_variable   = "DO_gramsPerCubicMeter",
+  parallel        = TRUE,
+  force_parallel_glm_simstrat = TRUE,
+  verbose         = TRUE,
+  on_error        = "skip",
+  save_results    = TRUE,
+  output_dir      = "calibration_results",
   write_best      = TRUE,
-  config_file     = "LakeEnsemblR_WQ.yaml"
+  write_target    = "config"
 )
 
-result$summary                            # success/failure + row counts per model
-result$best_parameter_sets[["GLM-AED2"]]  # winning parameters for one model
+`parallel_models` stacks with `parallel`/`de_parallel` (which parallelize LHC
+samples or DE evaluations *within* one model's run) -- if you turn multiple of
+these on together, size worker counts so
+`n_model_workers * n_workers` (or `* de_n_workers`) doesn't oversubscribe your
+CPU cores. Worker processes have no attached console, so with
+`parallel_models = TRUE` progress messages are written to
+`<output_dir>/cali_ensemble_wq_workers.log` instead of printing live -- tail
+that file to watch progress while it runs.
+
+result_all$summary                            # success/failure + row counts per model
+result_all$best_parameter_sets[["GLM-AED2"]]   # winning parameters for one model
 ```
 
-See
-[`vignette("full-workflow")`](https://aemon-j.github.io/LakeEnsemblR.WQ/articles/full-workflow.md)
-for the full calibration workflow, including single-model LHC/DE runs
-via
-[`run_lhc_wq()`](https://aemon-j.github.io/LakeEnsemblR.WQ/reference/run_lhc_wq.md),
+See the [Full
+Workflow](https://tubabucak.github.io/LakeEnsemblR.WQ/articles/full-workflow.html)
+article (or
+[`vignette("full-workflow")`](https://tubabucak.github.io/LakeEnsemblR.WQ/articles/full-workflow.md)
+if you installed with `build_vignettes = TRUE`) for the full calibration
+workflow, including single-model LHC/DE runs via
+[`run_lhc_wq()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/run_lhc_wq.md),
 writing best parameters back with
-[`write_best_calib_to_par_files()`](https://aemon-j.github.io/LakeEnsemblR.WQ/reference/write_best_calib_to_par_files.md),
-and sensitivity analysis.
+[`write_best_calib_to_par_files()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/write_best_calib_to_par_files.md)
+and post-processing functions. See the [Configuration File
+Reference](https://tubabucak.github.io/LakeEnsemblR.WQ/articles/config-reference.html)
+article for a field-by-field breakdown of `LakeEnsemblR_WQ.yaml` and
+`Output.yaml`.
 
 ## Key functions
 
 - Setup and export:
-  - export_config_wq()
+  - export_config_wq() is the main function to export the configuration
+    files for the water quality models also calling the functions below
+    to export the input files for the water quality models.
   - export_inputs()
   - set_up_configs()
   - set_value_config()
-- Validation and run:
+- Validation and run: These functions are used to validate the
+  configuration files and input files for the water quality models
+  before running the models. If the validation fails, the function will
+  return an error message and stop the execution of the code. They are
+  included in the export_config_wq() function and can also be called
+  separately if needed.
   - validate_glm_aed()
   - validate_gotm_wet()
   - validate_simstrat()
   - run_ensemble_wq()
-- Extraction and metrics:
+- Extraction and metrics: These functions are used to extract the output
+  variables from the model runs and calculate the metrics for the water
+  quality models. They are included in the cal_metrics() function and
+  can also be called separately if needed.
   - get_output_wq()
   - extract_variable_list()
   - cal_metrics()
@@ -196,7 +265,7 @@ Example from a typical setup:
 
 ## Output structure
 
-[`cal_metrics()`](https://aemon-j.github.io/LakeEnsemblR.WQ/reference/cal_metrics.md)
+[`cal_metrics()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/cal_metrics.md)
 returns a nested list by metric and model. For each metric/model
 combination, values are stored as data frames with `datetime` and
 depth/value columns.
@@ -273,135 +342,138 @@ git push -u origin my-feature
 
 Build model-specific configuration and inputs.
 
-- [`export_config_wq()`](https://aemon-j.github.io/LakeEnsemblR.WQ/reference/export_config_wq.md)
+- [`export_config_wq()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/export_config_wq.md)
   : Export settings to model-specific configuration files for LER.WQ
-- [`export_inputs()`](https://aemon-j.github.io/LakeEnsemblR.WQ/reference/export_inputs.md)
+- [`export_inputs()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/export_inputs.md)
   : Reads and sets nutrient inputs for all models
-- [`create_input_tables()`](https://aemon-j.github.io/LakeEnsemblR.WQ/reference/create_input_tables.md)
+- [`create_input_tables()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/create_input_tables.md)
   : Create input tables (Deprecated)
-- [`set_up_configs()`](https://aemon-j.github.io/LakeEnsemblR.WQ/reference/set_up_configs.md)
+- [`set_up_configs()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/set_up_configs.md)
   : Sets up the model-specific configuration files
-- [`set_value_config()`](https://aemon-j.github.io/LakeEnsemblR.WQ/reference/set_value_config.md)
+- [`set_value_config()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/set_value_config.md)
   : Set value in model-specific config file
-- [`set_coupling()`](https://aemon-j.github.io/LakeEnsemblR.WQ/reference/set_coupling.md)
+- [`set_coupling()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/set_coupling.md)
   : Set coupling settings for each model
-- [`disable_module()`](https://aemon-j.github.io/LakeEnsemblR.WQ/reference/disable_module.md)
+- [`disable_module()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/disable_module.md)
   : Disables a module
-- [`input_pclakeconfig()`](https://aemon-j.github.io/LakeEnsemblR.WQ/reference/input_pclakeconfig.md)
+- [`input_pclakeconfig()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/input_pclakeconfig.md)
   : Inputs values into a PCLake config file
-- [`export_pclake_physics()`](https://aemon-j.github.io/LakeEnsemblR.WQ/reference/export_pclake_physics.md)
+- [`export_pclake_physics()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/export_pclake_physics.md)
   : Sets PCLake physics settings
-- [`generate_simstrat_aed2_inflows()`](https://aemon-j.github.io/LakeEnsemblR.WQ/reference/generate_simstrat_aed2_inflows.md)
+- [`generate_simstrat_aed2_inflows()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/generate_simstrat_aed2_inflows.md)
   : Generate Simstrat–AED2 inflow files for active modules
 
 ## Validation and Run
 
 Validate setups and execute coupled simulations.
 
-- [`validate_glm_aed()`](https://aemon-j.github.io/LakeEnsemblR.WQ/reference/validate_glm_aed.md)
+- [`validate_glm_aed()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/validate_glm_aed.md)
   : Validate a GLM-AED model simulation folder
-- [`validate_gotm_wet()`](https://aemon-j.github.io/LakeEnsemblR.WQ/reference/validate_gotm_wet.md)
+- [`validate_gotm_wet()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/validate_gotm_wet.md)
   : Validate a GOTM-WET model simulation folder
-- [`validate_simstrat()`](https://aemon-j.github.io/LakeEnsemblR.WQ/reference/validate_simstrat.md)
+- [`validate_simstrat()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/validate_simstrat.md)
   : Validate a Simstrat-AED2 model simulation folder
-- [`run_ensemble_wq()`](https://aemon-j.github.io/LakeEnsemblR.WQ/reference/run_ensemble_wq.md)
+- [`run_ensemble_wq()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/run_ensemble_wq.md)
   : Run an ensemble of LakeEnsemblR.WQ models selected
 
 ## Calibration and Sensitivity
 
 Create calibration tables and run calibration/sensitivity analyses.
 
-- [`create_calibration_tables()`](https://aemon-j.github.io/LakeEnsemblR.WQ/reference/create_calibration_tables.md)
+- [`create_calibration_tables()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/create_calibration_tables.md)
   : Create calibration tables
-- [`calib_setup_from_tables()`](https://aemon-j.github.io/LakeEnsemblR.WQ/reference/calib_setup_from_tables.md)
+- [`calib_setup_from_tables()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/calib_setup_from_tables.md)
   : Build calib_setup from edited calibration CSVs
-- [`run_lhc_wq()`](https://aemon-j.github.io/LakeEnsemblR.WQ/reference/run_lhc_wq.md)
+- [`run_lhc_wq()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/run_lhc_wq.md)
   : Run Latin Hypercube Calibration for Water Quality Models
-- [`run_sensitivity()`](https://aemon-j.github.io/LakeEnsemblR.WQ/reference/run_sensitivity.md)
+- [`run_sensitivity()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/run_sensitivity.md)
   : Run Sensitivity Analysis for a Model Parameter
-- [`run_multi_param_sensitivity()`](https://aemon-j.github.io/LakeEnsemblR.WQ/reference/run_multi_param_sensitivity.md)
+- [`run_multi_param_sensitivity()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/run_multi_param_sensitivity.md)
   : Run Multi-Parameter Sensitivity Analysis Using Latin Hypercube
   Sampling
-- [`run_lhc_wq_parallel()`](https://aemon-j.github.io/LakeEnsemblR.WQ/reference/run_lhc_wq_parallel.md)
+- [`run_lhc_wq_parallel()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/run_lhc_wq_parallel.md)
   : Run Latin Hypercube Calibration in Parallel
-- [`cali_ensemble_wq()`](https://aemon-j.github.io/LakeEnsemblR.WQ/reference/cali_ensemble_wq.md)
+- [`cali_ensemble_wq()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/cali_ensemble_wq.md)
   : Calibrate an ensemble of LakeEnsemblR.WQ models
-- [`write_best_calib_to_par_files()`](https://aemon-j.github.io/LakeEnsemblR.WQ/reference/write_best_calib_to_par_files.md)
+- [`write_best_calib_to_par_files()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/write_best_calib_to_par_files.md)
   : Write best calibration parameter set back to par_file CSVs
 
 ## Extraction and Metrics
 
 Extract model output and compute harmonized metrics/statistics.
 
-- [`get_output_wq()`](https://aemon-j.github.io/LakeEnsemblR.WQ/reference/get_output_wq.md)
+- [`get_output_wq()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/get_output_wq.md)
   : Get lake model outputs
-- [`extract_variable_list()`](https://aemon-j.github.io/LakeEnsemblR.WQ/reference/extract_variable_list.md)
+- [`extract_variable_list()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/extract_variable_list.md)
   : Create variable list for calculating the metrics
-- [`export_all_stats()`](https://aemon-j.github.io/LakeEnsemblR.WQ/reference/integrate_depths.md)
-  [`integrate_depths()`](https://aemon-j.github.io/LakeEnsemblR.WQ/reference/integrate_depths.md)
+- [`export_all_stats()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/integrate_depths.md)
+  [`integrate_depths()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/integrate_depths.md)
   : Calculate & export performance metrics for integrated samples - so
   far only for specific depths
-- [`cal_metrics()`](https://aemon-j.github.io/LakeEnsemblR.WQ/reference/cal_metrics.md)
+- [`cal_metrics()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/cal_metrics.md)
   : Calculate the Metrics
-- [`cal_stats()`](https://aemon-j.github.io/LakeEnsemblR.WQ/reference/cal_stats.md)
+- [`cal_stats()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/cal_stats.md)
   : Calculate Model Performance Statistics
-- [`cal_anoxic_date()`](https://aemon-j.github.io/LakeEnsemblR.WQ/reference/cal_anoxic_date.md)
+- [`cal_anoxic_date()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/cal_anoxic_date.md)
   : Calculate Anoxic Days
-- [`cal_bot_surf_temp_dif()`](https://aemon-j.github.io/LakeEnsemblR.WQ/reference/cal_bot_surf_temp_dif.md)
+- [`cal_bot_surf_temp_dif()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/cal_bot_surf_temp_dif.md)
   : Calculate surface-bottom temperature difference
-- [`cal_DO_exceedance()`](https://aemon-j.github.io/LakeEnsemblR.WQ/reference/cal_DO_exceedance.md)
+- [`cal_DO_exceedance()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/cal_DO_exceedance.md)
   : Calculate DO exceedance
-- [`cal_epi_depth()`](https://aemon-j.github.io/LakeEnsemblR.WQ/reference/cal_epi_depth.md)
+- [`cal_epi_depth()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/cal_epi_depth.md)
   : Calculate Epilimnion Thickness
-- [`cal_ice_duration()`](https://aemon-j.github.io/LakeEnsemblR.WQ/reference/cal_ice_duration.md)
+- [`cal_ice_duration()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/cal_ice_duration.md)
   : Calculate Ice Duration & Thickness
-- [`cal_meta_depth()`](https://aemon-j.github.io/LakeEnsemblR.WQ/reference/cal_meta_depth.md)
+- [`cal_meta_depth()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/cal_meta_depth.md)
   : Calculate Metalimnion Thickness
-- [`cal_nitrif_selma()`](https://aemon-j.github.io/LakeEnsemblR.WQ/reference/cal_nitrif_selma.md)
+- [`cal_nitrif_selma()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/cal_nitrif_selma.md)
   : Nitrification rate in SELMAPROTBAS
-- [`cal_strat_date()`](https://aemon-j.github.io/LakeEnsemblR.WQ/reference/cal_strat_date.md)
+- [`cal_strat_date()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/cal_strat_date.md)
   : Calculate Stratified Days
-- [`compare_plot()`](https://aemon-j.github.io/LakeEnsemblR.WQ/reference/compare_plot.md)
+- [`compare_plot()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/compare_plot.md)
   : Comparing observed/predicted data and calculate the stats
-- [`scat_plot()`](https://aemon-j.github.io/LakeEnsemblR.WQ/reference/scat_plot.md)
+- [`scat_plot()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/scat_plot.md)
   : Scatter plot modeled vs observed
-- [`compare_models_metric()`](https://aemon-j.github.io/LakeEnsemblR.WQ/reference/compare_models_metric.md)
+- [`compare_models_metric()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/compare_models_metric.md)
   : Compare one metric across models
-- [`compare_models_metric_netcdf()`](https://aemon-j.github.io/LakeEnsemblR.WQ/reference/compare_models_metric_netcdf.md)
+- [`compare_models_metric_netcdf()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/compare_models_metric_netcdf.md)
   : Compare one metric across models from NetCDF output
 
 ## Visualization
 
 Plot model outputs and derived metrics.
 
-- [`plot_heatmap_wq()`](https://aemon-j.github.io/LakeEnsemblR.WQ/reference/plot_heatmap_wq.md)
+- [`plot_model_vs_obs_wq()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/plot_model_vs_obs_wq.md)
+  : Plot a single model's output against observed data at matching
+  depths
+- [`plot_heatmap_wq()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/plot_heatmap_wq.md)
   : Plot heat map from LakeEnsemblR.WQ NetCDF output
-- [`plot_strat_metrics()`](https://aemon-j.github.io/LakeEnsemblR.WQ/reference/plot_strat_metrics.md)
+- [`plot_strat_metrics()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/plot_strat_metrics.md)
   : Plot and compare stratification metrics across models
-- [`plot_anoxic_metrics()`](https://aemon-j.github.io/LakeEnsemblR.WQ/reference/plot_anoxic_metrics.md)
+- [`plot_anoxic_metrics()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/plot_anoxic_metrics.md)
   : Plot and compare anoxia metrics across models
-- [`plot_ice_metrics()`](https://aemon-j.github.io/LakeEnsemblR.WQ/reference/plot_ice_metrics.md)
+- [`plot_ice_metrics()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/plot_ice_metrics.md)
   : Plot and compare ice metrics across models
 
 ## NetCDF and Outputs
 
 Create and manage NetCDF outputs.
 
-- [`create_netcdf_output()`](https://aemon-j.github.io/LakeEnsemblR.WQ/reference/create_netcdf_output.md)
+- [`create_netcdf_output()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/create_netcdf_output.md)
   : Create NetCDF output from model-specific runs
-- [`create_netcdf_wq()`](https://aemon-j.github.io/LakeEnsemblR.WQ/reference/create_netcdf_wq.md)
+- [`create_netcdf_wq()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/create_netcdf_wq.md)
   : Backward-compatible alias for create_netcdf_output
 
 ## Helpers
 
-- [`load_config()`](https://aemon-j.github.io/LakeEnsemblR.WQ/reference/load_config-colon.md)
+- [`load_config()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/load_config-colon.md)
   : Load and validate LakeEnsemblR.WQ configuration file
-- [`visualise_dictionary()`](https://aemon-j.github.io/LakeEnsemblR.WQ/reference/visualise_dictionary.md)
-  [`visualize_dictionary()`](https://aemon-j.github.io/LakeEnsemblR.WQ/reference/visualise_dictionary.md)
+- [`visualise_dictionary()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/visualise_dictionary.md)
+  [`visualize_dictionary()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/visualise_dictionary.md)
   : Visualise LakeEnsemblR.WQ dictionary
-- [`convert_ler_to_lerwq()`](https://aemon-j.github.io/LakeEnsemblR.WQ/reference/convert_ler_to_lerwq.md)
+- [`convert_ler_to_lerwq()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/convert_ler_to_lerwq.md)
   : Convert LakeEnsemblR configuration to LakeEnsemblR.WQ
-- [`create_bathy_bth()`](https://aemon-j.github.io/LakeEnsemblR.WQ/reference/create_bathy_bth.md)
+- [`create_bathy_bth()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/create_bathy_bth.md)
   : Create a Lake Analyzer bathymetry file (.bth)
 
 # Articles
@@ -409,4 +481,8 @@ Create and manage NetCDF outputs.
 ### Workflow Guides
 
 - [LakeEnsemblR.WQ Full
-  Workflow](https://aemon-j.github.io/LakeEnsemblR.WQ/articles/full-workflow.md):
+  Workflow](https://tubabucak.github.io/LakeEnsemblR.WQ/articles/full-workflow.md):
+- [Configuration File
+  Reference](https://tubabucak.github.io/LakeEnsemblR.WQ/articles/config-reference.md):
+- [Function
+  Map](https://tubabucak.github.io/LakeEnsemblR.WQ/articles/function-map.md):

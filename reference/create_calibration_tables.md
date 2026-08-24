@@ -4,7 +4,11 @@ Generates a master calibration CSV and per-module CSVs from the
 LakeEnsemblR.WQ dictionary. Every parameter gets `include = FALSE` by
 default so users can review and selectively opt-in. Lower and upper
 bounds are set to `default * (1 - bounds_factor)` and
-`default * (1 + bounds_factor)`.
+`default * (1 + bounds_factor)`. When the dictionary provides
+`min`/`max` values for a parameter, they are carried through as
+`dict_min`/`dict_max` reference columns (not used to compute
+`lower`/`upper` automatically) so they can be checked against, and
+copied into `lower`/`upper` by hand, when editing the CSV.
 
 ## Usage
 
@@ -55,15 +59,16 @@ Invisibly returns the master calibration table as a data frame.
 
 2.  Open the per-module CSVs, set `include = TRUE` for parameters you
     want to calibrate, and adjust `lower` / `upper` / `initial` as
-    needed.
+    needed — use `dict_min` / `dict_max` as a reference for the
+    parameter's plausible physical range, where available.
 
 3.  Call
-    [`calib_setup_from_tables`](https://aemon-j.github.io/LakeEnsemblR.WQ/reference/calib_setup_from_tables.md)
+    [`calib_setup_from_tables`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/calib_setup_from_tables.md)
     to read the edited CSVs and build the `calib_setup` data frame
     expected by
-    [`run_lhc_wq`](https://aemon-j.github.io/LakeEnsemblR.WQ/reference/run_lhc_wq.md)
+    [`run_lhc_wq`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/run_lhc_wq.md)
     and
-    [`run_sensitivity`](https://aemon-j.github.io/LakeEnsemblR.WQ/reference/run_sensitivity.md).
+    [`run_sensitivity`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/run_sensitivity.md).
 
 ## Examples
 

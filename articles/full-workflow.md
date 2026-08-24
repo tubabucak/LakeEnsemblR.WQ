@@ -8,12 +8,13 @@ This vignette provides an end-to-end workflow for LakeEnsemblR.WQ:
 2.  Validate model setups.
 3.  Run model ensembles.
 4.  Compute harmonized metrics.
-5.  Prepare and run calibration – single-model LHC, optional DE
+5.  Prepare a calibration setup, run sensitivity analysis on it to
+    identify which parameters actually matter before spending compute
+    calibrating them, then calibrate – single-model LHC, optional DE
     refinement, writing best parameters back, and calibrating all
     coupled models at once (sequentially or concurrently) with
-    [`cali_ensemble_wq()`](https://aemon-j.github.io/LakeEnsemblR.WQ/reference/cali_ensemble_wq.md).
-6.  Run sensitivity analysis.
-7.  Compare and visualize model outputs against each other and
+    [`cali_ensemble_wq()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/cali_ensemble_wq.md).
+6.  Compare and visualize model outputs against each other and
     observations.
 
 ## Prerequisites
@@ -25,7 +26,7 @@ This vignette provides an end-to-end workflow for LakeEnsemblR.WQ:
   - GLM-AED2
   - GOTM-WET
   - GOTM-Selmaprotbas
-  - SIMSTRAT-AED2
+  - Simstrat-AED2
 - For calibration against observations (Section 5): an observed-data CSV
   with columns `datetime`, `depth`, `variable_global_name`, `value`.
 
@@ -39,25 +40,37 @@ library(LakeEnsemblR.WQ)
 
 ``` r
 
+# Export model-specific configuration and inputs for physical setup. This step is a must to create physical lake model folders
+export_config("LakeEnsemblR.yaml")
+
+# Export model-specific configuration and inputs for WQ setup
 export_config_wq("LakeEnsemblR_WQ.yaml")
 ```
 
 ## 2) Validate model setups
 
+These are to check if we have the correct model setup and configuration
+files for each model. If any of these fail, check the model folder and
+config files for errors.
+
 ``` r
 
-validate_glm_aed(config_file = "LakeEnsemblR_WQ.yaml", folder = ".")
-validate_gotm_wet(config_file = "LakeEnsemblR_WQ.yaml", folder = ".")
-validate_simstrat(config_file = "LakeEnsemblR_WQ.yaml", folder = ".")
+
+validate_glm_aed(sim_folder = "GLM-AED2", file = "glm3.nml", verbose = TRUE)
+validate_gotm_wet(sim_folder = "GOTM-WET", file = "gotm.yaml", verbose = TRUE)
+validate_gotm_wet(sim_folder = "GOTM-SELMAPROTBAS", file = "gotm.yaml", verbose = TRUE)
+validate_simstrat(sim_folder = "SIMSTRAT-AED2", file = "simstrat.par", verbose = TRUE)
 ```
 
-[`run_ensemble_wq()`](https://aemon-j.github.io/LakeEnsemblR.WQ/reference/run_ensemble_wq.md)
+[`run_ensemble_wq()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/run_ensemble_wq.md)
 (next section) can also run these automatically via its own
 `validate = TRUE` argument – calling them directly here is useful when
 you want validation errors surfaced before committing to a full ensemble
 run.
 
 ## 3) Run ensemble simulations
+
+### This function runs the ensemble of models with current configurations, and returns a list of run results. It also validates the model setups before running the models.
 
 ``` r
 
@@ -72,6 +85,13 @@ run_res <- run_ensemble_wq(
 
 ## 4) Compute metrics and statistics
 
+This step can also be done after calibration to calculate the CSPS
+metrics or to see how the model behaves with default configuration. The
+metrics are calculated based on the Output.yaml file, which contains the
+list of metrics to be calculated for each model. The metrics are
+calculated for each model and stored in a list, which can be used for
+further analysis or visualization.
+
 ``` r
 
 metric_out <- cal_metrics(
@@ -84,6 +104,23 @@ metric_out <- cal_metrics(
 ## 5) Calibration workflow
 
 ### 5.1 Generate calibration tables
+
+This function generates editable calibration CSVs for each model, based
+on the parameter ranges defined in the configuration file. The CSVs can
+be modified to adjust the parameter ranges for calibration. For some
+parameters, literature ranges are also included in the CSVs to help you
+set up sensible calibration ranges.
+
+Pay attention if you have more than one phytoplankton or zooplankton
+group: they share the same parameter names but have different
+`group_name` values. Select which group to calibrate by setting
+`group_name` in the CSVs, and set their ranges independently before
+running calibration. The calibration tables are generated in the
+`"calibration"` folder, which can be edited and then used for
+calibration. You may also want to adjust default values (N fixation,
+Silica module etc) in the model config files for diatom and
+cyanobacteria groups, as they are used as initial values for
+calibration.
 
 ``` r
 
@@ -104,36 +141,206 @@ selected parameters - adjust lower, upper, and initial as needed
 ``` r
 
 cs_all <- calib_setup_from_tables(
-  folder_in = "calibration-test",
+  folder_in = "calibration",
   model_coupled = c("GLM-AED2", "GOTM-WET", "GOTM-Selmaprotbas", "SIMSTRAT-AED2")
 )
 ```
 
-### 5.3 Run small LHC test per model
+### 5.3 Sensitivity analysis
+
+Before committing to a full LHC/DE calibration run, it’s worth checking
+which parameters in `cs_all` actually move the outputs you care about –
+sensitivity analysis on the calibration setup you just built, before
+spending compute on calibrating parameters that turn out not to matter
+(or whose ranges are far wider than they need to be).
+
+Two functions cover this, both supporting all four coupled models
+(`"GLM-AED2"`, `"GOTM-WET"`, `"GOTM-Selmaprotbas"`, `"Simstrat-AED2"`)
+via the same `model` argument used elsewhere in this vignette:
+
+- [`run_sensitivity()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/run_sensitivity.md)
+  – **one parameter at a time**: sweeps a single parameter across
+  `n_steps` values between its `calib_setup` bounds, holding everything
+  else fixed at whatever is currently in the model’s config files.
+- [`run_multi_param_sensitivity()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/run_multi_param_sensitivity.md)
+  – **all parameters together**: at each of `n_steps` iterations, every
+  parameter in `param_names` (default: every row of `calib_setup`) is
+  sampled jointly via Latin Hypercube Sampling and varied
+  simultaneously.
+
+Both support two output modes:
+
+- `output_mode = "raw"` – bypasses the metrics dictionary/`Output.yaml`
+  entirely and pulls one or more variables straight from the model’s
+  native output via
+  [`get_output_wq()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/get_output_wq.md).
+  Requires `vars` (the model-native variable name,
+  e.g. `"selmaprotbas_DO_mg"` for GOTM-Selmaprotbas, `"OXY_oxy"` for
+  GLM-AED2/Simstrat-AED2, `"sO2W"` for GOTM-WET) instead of
+  `wq_config_file`. Useful for a quick look at a raw variable without
+  needing a dictionary entry for it.
+- `output_mode = "metrics"` (default) – runs
+  [`cal_metrics()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/cal_metrics.md)
+  at each step, same as calibration/Section 4. Requires `wq_config_file`
+  and a `target_variable` (optional) naming which metric(s) in
+  `Output.yaml` you care about, e.g. `"DO_gramsPerCubicMeter"`. But it
+  takes longer to run because it computes every metric in `Output.yaml`
+  for each
+
+#### 5.3.1 One-at-a-time: `run_sensitivity()`
+
+``` r
+
+cs_selma <- subset(cs_all, model_coupled == "GOTM-Selmaprotbas")
+
+# raw mode -- no wq_config_file needed, just the model-native variable name
+res_sens <- run_sensitivity(
+  param_name  = "kc",                       # light extinction coefficient
+  calib_setup = cs_selma,
+  yaml_file   = "Output.yaml",
+  model_dir   = "GOTM-Selmaprotbas",
+  n_steps     = 10,
+  model       = "GOTM-Selmaprotbas",
+  output_mode = "raw",
+  vars        = "selmaprotbas_DO_mg"
+)
+```
+
+`results[[i]]$param_value` gives the parameter value;
+`results[[i]]$output` (raw mode) or `results[[i]]$metrics` (metrics
+mode) gives that step’s result – see
+[`?run_sensitivity`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/run_sensitivity.md)
+for the exact nested shape of each.
+
+##### Phytoplankton/zooplankton group parameters
+
+Parameters shared by multiple groups (e.g. `r0`, present in both
+`diatoms` and `cyanobacteria`) produce multiple `calib_setup` rows with
+the same `pars` but different `group_name`. Pass `group_name` to target
+just one group; omitting it sweeps **all** matching groups’ rows with
+the same value, simultaneously, every iteration – which is rarely what
+you want unless that’s deliberate:
+
+``` r
+
+res_sens_diatoms <- run_sensitivity(
+  param_name  = "r0",
+  calib_setup = cs_selma,
+  yaml_file   = "Output.yaml",
+  model_dir   = "GOTM-Selmaprotbas",
+  n_steps     = 10,
+  model       = "GOTM-Selmaprotbas",
+  group_name  = "diatoms",                  # only this group's r0 is varied
+  output_mode = "raw",
+  vars        = "selmaprotbas_DO_mg"
+)
+```
+
+#### 5.3.2 Joint multi-parameter sensitivity: `run_multi_param_sensitivity()`
+
+``` r
+
+res_multi <- run_multi_param_sensitivity(
+  # param_names left NULL -> uses every row of cs_selma$pars in the table
+  calib_setup = cs_selma,
+  yaml_file   = "Output.yaml",
+  model_dir   = "GOTM-Selmaprotbas",
+  n_steps     = 20,
+  model       = "GOTM-Selmaprotbas",
+  output_mode = "raw",
+  vars        = "selmaprotbas_DO_mg"
+)
+```
+
+Bounds come from `calib_setup$lb`/`ub` by default; pass `rel_change`
+(e.g. `0.1` for +/-10%) instead to sample symmetrically around
+`calib_setup$x0`. Duplicate `pars` names (group parameters) in
+`param_names` are matched positionally to `calib_setup`’s own row order
+for that name – check
+`cs_selma[cs_selma$pars == "r0", c("pars", "group_name")]` first if the
+order isn’t obvious.
+
+#### 5.3.3 Visualizing an uncertainty envelope
+
+For `output_mode = "raw"` with a depth-resolved variable, stack every
+iteration into long format and summarize a band (e.g. a 90% interval)
+plus a central line per timestep:
+
+``` r
+
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+
+stack_sensitivity_raw <- function(res, depth = NULL) {
+  pieces <- lapply(seq_along(res), function(i) {
+    df <- res[[i]]$output
+    if (is.list(df) && !is.data.frame(df)) df <- df[[1]]
+    if (is.null(df) || !is.data.frame(df) || nrow(df) == 0) {
+      warning("Iteration ", i, " (param_value = ", res[[i]]$param_value,
+              ") has no usable output -- skipping.")
+      return(NULL)
+    }
+    long <- df %>%
+      pivot_longer(cols = starts_with("Depth_"), names_to = "depth_col", values_to = "value") %>%
+      mutate(depth = as.numeric(sub("Depth_", "", depth_col)))
+    if (!is.null(depth)) {
+      nearest <- long$depth[which.min(abs(long$depth - depth))]
+      long <- long[long$depth == nearest, ]
+    }
+    long$iteration <- i
+    long
+  })
+  do.call(rbind, pieces)
+}
+
+df_long <- stack_sensitivity_raw(res_sens_diatoms, depth = 5)
+
+df_env <- df_long %>%
+  group_by(datetime) %>%
+  summarise(
+    q_lo   = quantile(value, 0.05, na.rm = TRUE),
+    q_hi   = quantile(value, 0.95, na.rm = TRUE),
+    median = median(value, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+ggplot() +
+  geom_line(data = df_long, aes(datetime, value, group = iteration),
+            color = "grey70", alpha = 0.25, linewidth = 0.3) +
+  geom_ribbon(data = df_env, aes(datetime, ymin = q_lo, ymax = q_hi),
+              fill = "steelblue", alpha = 0.25) +
+  geom_line(data = df_env, aes(datetime, median), color = "steelblue", linewidth = 0.8) +
+  labs(x = NULL, y = "DO (mg/m3)", title = "Sensitivity envelope: kc -> DO at 5 m") +
+  theme_minimal()
+```
+
+### 5.4 Run small LHC test per model
 
 Run one model at a time.
-[`run_lhc_wq()`](https://aemon-j.github.io/LakeEnsemblR.WQ/reference/run_lhc_wq.md)
+[`run_lhc_wq()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/run_lhc_wq.md)
 samples the parameter space with Latin Hypercube Sampling and, for each
 sample, edits the model’s own config files in `model_dir` in place, runs
 the model, and scores it. If `obs_file` is supplied it returns a
 long-format data frame (one row per iteration x observed variable) with
-NSE/RMSE/NRMSE/PBIAS/KGE; otherwise it falls back to
-[`cal_metrics()`](https://aemon-j.github.io/LakeEnsemblR.WQ/reference/cal_metrics.md)-derived
+NSE/RMSE/NRMSE/PBIAS/KGE; otherwise it is
+[`cal_metrics()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/cal_metrics.md)-derived
 metrics only.
 
 ``` r
 
 cs_glm <- subset(cs_all, model_coupled == "GLM-AED2")
 
+param_glm <- unique(cs_glm$pars)
 res_glm <- run_lhc_wq(
   model          = "GLM-AED2",
-  param_names    = unique(cs_glm$pars),
+  param_names    = param_glm,
   calib_setup    = cs_glm,
   yaml_file      = "Output.yaml",
   model_dir      = "GLM-AED2",
-  n_samples      = 3,
+  n_samples      = 10,
   wq_config_file = "LakeEnsemblR_WQ.yaml",
-  obs_file       = "obs_data.csv",   # datetime, depth, variable_global_name, value
+  obs_file       = "standart_observed_DO.csv",   # datetime, depth, variable_global_name, value
   best_metric    = "KGE",
   verbose        = TRUE
 )
@@ -147,7 +354,7 @@ head(res_glm)
 attr(res_glm, "best_parameter_set")   # winning parameter set for this model
 ```
 
-### 5.4 Optional: refine with Differential Evolution (DE)
+### 5.5 Optional: refine with Differential Evolution (DE)
 
 Set `use_de = TRUE` to run DEoptim after the LHC phase, seeded from the
 best LHC results. When DE is used, `attr(res_glm, "best_parameter_set")`
@@ -157,107 +364,112 @@ the original LHC-phase best is still available under
 
 ``` r
 
-res_glm_de <- run_lhc_wq(
-  model            = "GLM-AED2",
-  param_names      = unique(cs_glm$pars),
-  calib_setup      = cs_glm,
-  yaml_file        = "Output.yaml",
-  model_dir        = "GLM-AED2",
-  n_samples        = 20,
-  wq_config_file   = "LakeEnsemblR_WQ.yaml",
-  obs_file         = "obs_data.csv",
-  best_metric      = "KGE",
-  use_de           = TRUE,
-  de_iterations    = 30,
-  de_seed_from_lhc = TRUE,
-  verbose          = TRUE
-)
+    res <- run_lhc_wq(
+        model          = "GLM-AED2",
+        param_names    = param_glm,
+        calib_setup    = cs_glm,
+        yaml_file      = "Output.yaml",
+        model_dir      = "GLM-AED2",
+        obs_file       = "standart_observed_DO.csv",
+        wq_config_file = "LakeEnsemblR_WQ.yaml",
+        verbose        = TRUE,
+        save_results   = FALSE,
+        stats_by_depth = TRUE,
+        return_best    = TRUE,
+        best_metric    = "KGE",
+        
+        parallel       = TRUE,
+        n_workers      = 2,
+        n_samples      = 10,
+        
+       use_de         = TRUE,
+       de_parallel    = TRUE,
+       de_n_workers   = 2,
+       de_popsize     = 4,
+       de_iterations  = 1,
+      target_variables = c("DO_gramsPerCubicMeter")
+    )
 
-attr(res_glm_de, "best_parameter_set")   # DE-refined best (used for write-back below)
+attr(res, "best_parameter_set")   # DE-refined best (used for write-back below)
 ```
 
-### 5.5 Write the best parameters back
+### 5.6 Write the best parameters back
 
-[`write_best_calib_to_par_files()`](https://aemon-j.github.io/LakeEnsemblR.WQ/reference/write_best_calib_to_par_files.md)
+[`write_best_calib_to_par_files()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/write_best_calib_to_par_files.md)
 takes the best row (LHC’s, or DE’s if `use_de = TRUE`) and writes it
 into the module `par_file` CSVs referenced by `LakeEnsemblR_WQ.yaml` (or
 directly into model config files with `write_target = "config"`). Re-run
-[`export_config_wq()`](https://aemon-j.github.io/LakeEnsemblR.WQ/reference/export_config_wq.md)
+[`export_config_wq()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/export_config_wq.md)
 afterward if you need those values pushed all the way into the model
 folders for a final verification run.
 
 ``` r
 
 write_best_calib_to_par_files(
-  lhc_results  = res_glm_de,
+  lhc_results  = res_glm,
   calib_setup  = cs_glm,
   config_file  = "LakeEnsemblR_WQ.yaml",
   folder       = ".",
   metric       = "KGE",
-  write_target = "par_file"
+  write_target = "config"
 )
 ```
 
-### 5.6 Calibrate all coupled models with cali_ensemble_wq()
+Re-run the model so output.nc reflects those parameters
 
-[`cali_ensemble_wq()`](https://aemon-j.github.io/LakeEnsemblR.WQ/reference/cali_ensemble_wq.md)
+``` r
+
+run_ensemble_wq(
+  config_file = "LakeEnsemblR_WQ.yaml",
+  models = c("GLM-AED2"),
+  folder = ".",
+  validate = TRUE,
+  verbose = TRUE
+)
+```
+
+### 5.7 Calibrate all coupled models with cali_ensemble_wq()
+
+[`cali_ensemble_wq()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/cali_ensemble_wq.md)
 is the multi-model wrapper around
-[`run_lhc_wq()`](https://aemon-j.github.io/LakeEnsemblR.WQ/reference/run_lhc_wq.md):
+[`run_lhc_wq()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/run_lhc_wq.md):
 pass it the full `models` vector and the combined `cs_all` table (split
 automatically by `model_coupled`) and it runs, scores, and optionally
 writes back the best parameters for every model in one call.
 
-``` r
-
-models_coupled <- c("GLM-AED2", "GOTM-WET", "GOTM-Selmaprotbas", "Simstrat-AED2")
-
-result <- cali_ensemble_wq(
-  models         = models_coupled,
-  calib_setup    = cs_all,
-  yaml_file      = "Output.yaml",
-  folder         = ".",
-  n_samples      = 20,
-  obs_file       = "obs_data.csv",
-  wq_config_file = "LakeEnsemblR_WQ.yaml",
-  best_metric    = "KGE",
-  use_de         = TRUE,
-  de_iterations  = 30,
-  verbose        = TRUE,
-  on_error       = "skip",       # a failing model doesn't stop the others
-  save_results   = TRUE,
-  output_dir     = "calibration_results",
-  write_best     = TRUE,
-  write_target   = "par_file",
-  config_file    = "LakeEnsemblR_WQ.yaml"
-)
-
-result$summary                              # one row per model: success, n_rows, n_stats
-result$best_parameter_sets[["GLM-AED2"]]     # winning parameters for one model
-result$write_back[["GLM-AED2"]]              # whether the write-back succeeded
-```
-
 By default the four models run sequentially. Since each model has its
 own `model_dir`, they can safely run **concurrently** instead, one
-worker process per model:
+worker process per model: Start with small number of iterations to see
+if the models run successfully, then increase the number of iterations
+and workers for a full calibration run.
 
 ``` r
 
-result_parallel <- cali_ensemble_wq(
-  models          = models_coupled,
+
+result_all <- cali_ensemble_wq(
+  models          = c("GOTM-WET", "GOTM-Selmaprotbas"),
   calib_setup     = cs_all,
   yaml_file       = "Output.yaml",
   folder          = ".",
-  n_samples       = 20,
-  obs_file        = "obs_data.csv",
+  n_samples       = 4,
+  obs_file        = "standart_observed_DO.csv",
   wq_config_file  = "LakeEnsemblR_WQ.yaml",
+  ler_config_file = "LakeEnsemblR.yaml",
   best_metric     = "KGE",
-  parallel_models = TRUE,   # run all requested models at the same time
-  n_model_workers = 4,      # one worker process per model
+  parallel        = TRUE,
+  force_parallel_glm_simstrat = TRUE,
+  parallel_models = FALSE,
+  use_de          = TRUE,
+  de_parallel     = TRUE,
+  de_n_workers    = 4,
+  de_popsize      = 4,
+  de_iterations   = 3,
   verbose         = TRUE,
+  on_error        = "skip",
   save_results    = TRUE,
   output_dir      = "calibration_results",
   write_best      = TRUE,
-  config_file     = "LakeEnsemblR_WQ.yaml"
+  write_target    = "config"
 )
 ```
 
@@ -268,35 +480,21 @@ you turn multiple of these on together, size worker counts so
 oversubscribe your CPU cores. Worker processes have no attached console,
 so with `parallel_models = TRUE` progress messages are written to
 `<output_dir>/cali_ensemble_wq_workers.log` instead of printing live –
-tail that file to watch progress while it runs.
+check that file to watch progress while it runs.
 
-## 6) Sensitivity analysis
+## 6) Compare and visualize model outputs
 
-``` r
-
-res_sens <- run_sensitivity(
-  param_name = "theta_sed_oxy",
-  calib_setup = cs_glm,
-  yaml_file = "Output.yaml",
-  model_dir = "GLM-AED2",
-  n_steps = 10,
-  model_filter = "GLM"
-)
-```
-
-## 7) Compare and visualize model outputs
-
-The functions below all plug directly into outputs you’ve already
+The functions below all plot directly into outputs you’ve already
 produced earlier in this vignette:
-[`cal_metrics()`](https://aemon-j.github.io/LakeEnsemblR.WQ/reference/cal_metrics.md)’s
+[`cal_metrics()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/cal_metrics.md)’s
 nested list (Section 4) and the NetCDF file from
-[`create_netcdf_output()`](https://aemon-j.github.io/LakeEnsemblR.WQ/reference/create_netcdf_output.md).
+[`create_netcdf_output()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/create_netcdf_output.md).
 
-### 7.1 Compare one metric across models
+### 6.1 Compare one metric across models
 
-[`compare_models_metric()`](https://aemon-j.github.io/LakeEnsemblR.WQ/reference/compare_models_metric.md)
+[`compare_models_metric()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/compare_models_metric.md)
 takes the list returned by
-[`cal_metrics()`](https://aemon-j.github.io/LakeEnsemblR.WQ/reference/cal_metrics.md)
+[`cal_metrics()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/cal_metrics.md)
 directly and line-plots one metric across all coupled models
 (auto-detecting the depth/value columns from that structure).
 
@@ -316,12 +514,11 @@ cmp <- compare_models_metric(
 cmp$plot
 ```
 
-[`compare_models_metric_netcdf()`](https://aemon-j.github.io/LakeEnsemblR.WQ/reference/compare_models_metric_netcdf.md)
+[`compare_models_metric_netcdf()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/compare_models_metric_netcdf.md)
 does the same comparison but reads straight from a NetCDF file (see 7.3)
 instead of a
-[`cal_metrics()`](https://aemon-j.github.io/LakeEnsemblR.WQ/reference/cal_metrics.md)
-list – useful when you want to compare a variable that wasn’t included
-in `Output.yaml`.
+[`cal_metrics()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/cal_metrics.md)
+list
 
 ``` r
 
@@ -333,11 +530,11 @@ cmp_nc <- compare_models_metric_netcdf(
 cmp_nc$plot
 ```
 
-### 7.2 Stratification metrics across models and years
+### 6.2 Stratification metrics across models and years
 
-[`plot_strat_metrics()`](https://aemon-j.github.io/LakeEnsemblR.WQ/reference/plot_strat_metrics.md)
+[`plot_strat_metrics()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/plot_strat_metrics.md)
 accepts the same
-[`cal_metrics()`](https://aemon-j.github.io/LakeEnsemblR.WQ/reference/cal_metrics.md)
+[`cal_metrics()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/cal_metrics.md)
 list (or a NetCDF path) and produces three plots per model:
 stratification duration, onset day of year, and mixing onset day of
 year.
@@ -350,15 +547,15 @@ strat$onset_plot
 strat$mixing_plot
 ```
 
-### 7.3 Depth-time heatmap from the ensemble NetCDF
+### 6.3 Depth-time heatmap from the ensemble NetCDF
 
-[`create_netcdf_output()`](https://aemon-j.github.io/LakeEnsemblR.WQ/reference/create_netcdf_output.md)
+[`create_netcdf_output()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/create_netcdf_output.md)
 combines all coupled models’ output into a single NetCDF for easier
 downstream analysis;
-[`plot_heatmap_wq()`](https://aemon-j.github.io/LakeEnsemblR.WQ/reference/plot_heatmap_wq.md)
+[`plot_heatmap_wq()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/plot_heatmap_wq.md)
 reads it directly to produce a depth-time heatmap faceted by model.
 Repeat the
-[`plot_heatmap_wq()`](https://aemon-j.github.io/LakeEnsemblR.WQ/reference/plot_heatmap_wq.md)
+[`plot_heatmap_wq()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/plot_heatmap_wq.md)
 call for any metric name present in `Output.yaml`
 (e.g. `DO_gramsPerCubicMeter`, `NH4_gramsPerCubicMeter`,
 `TP_gramsPerCubicMeter`, `Total_Chla_miligramsPerCubicMeter`).
@@ -377,15 +574,15 @@ create_netcdf_output(
 plot_heatmap_wq("ensemble_output.nc", "Temp_degreeCelcius", spin_up = 30)
 ```
 
-### 7.4 Anoxic and ice metrics across models and years
+### 6.4 Anoxic and ice metrics across models and years
 
-[`plot_anoxic_metrics()`](https://aemon-j.github.io/LakeEnsemblR.WQ/reference/plot_anoxic_metrics.md)
+[`plot_anoxic_metrics()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/plot_anoxic_metrics.md)
 and
-[`plot_ice_metrics()`](https://aemon-j.github.io/LakeEnsemblR.WQ/reference/plot_ice_metrics.md)
+[`plot_ice_metrics()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/plot_ice_metrics.md)
 follow the same flexible input as
-[`plot_strat_metrics()`](https://aemon-j.github.io/LakeEnsemblR.WQ/reference/plot_strat_metrics.md)
+[`plot_strat_metrics()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/plot_strat_metrics.md)
 (7.2) – a
-[`cal_metrics()`](https://aemon-j.github.io/LakeEnsemblR.WQ/reference/cal_metrics.md)
+[`cal_metrics()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/cal_metrics.md)
 list or a NetCDF path – and plot their respective derived metrics per
 model per year.
 
@@ -395,25 +592,64 @@ plot_anoxic_metrics("ensemble_output.nc")
 plot_ice_metrics("ensemble_output.nc", metric_name = "Ice_Thickness_meter")
 ```
 
-### 7.5 Per-model time series and scatter plots against observations
+### 6.5 Plot the best parameters (main config folder)
 
-[`compare_plot()`](https://aemon-j.github.io/LakeEnsemblR.WQ/reference/compare_plot.md)
+You can check the dictionary for the global variable name of the
+observed data, and use it to plot the model vs observed data. The
+variable_global_name should match the variable_global_name column in the
+observed data file.
+
+``` r
+
+result <- plot_model_vs_obs_wq(
+    config_file           = "Output.yaml",
+    model                 = "GLM-AED2",
+    vars                  = "temp",              # GLM-native variable name
+    obs_data              = "standart_observed_data.csv",
+    variable_global_name  = "Temp_degreeCelcius", # matches obs_data's variable_global_name column
+    y_title               = "DO (mmol/m3)"
+)
+
+result <- plot_model_vs_obs_wq(
+    config_file           = "Output.yaml",
+    model                 = "GLM-AED2",
+    vars                  = "OXY_oxy",              # GLM-native variable name
+    obs_data              = "standart_observed_data.csv",
+    variable_global_name  = "DO_gramsPerCubicMeter", # matches obs_data's variable_global_name column
+    y_title               = "DO (g/m3)"
+)
+
+# vars can be omitted -- it's then auto-derived from the metrics dictionary
+# using model + variable_global_name, which also works for the other coupled
+# models (not just GLM-AED2).
+result <- plot_model_vs_obs_wq(
+    config_file           = "Output.yaml",
+    model                 = "GOTM-Selmaprotbas",
+    obs_data              = "standart_observed_data.csv",
+    variable_global_name  = "Total_Chla_miligramsPerCubicMeter", # matches obs_data's variable_global_name column
+    y_title               = "Chl-a (mg/m3)"
+)
+```
+
+### 6.6 Per-model time series and scatter plots against observations
+
+[`compare_plot()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/compare_plot.md)
 and
-[`scat_plot()`](https://aemon-j.github.io/LakeEnsemblR.WQ/reference/scat_plot.md)
+[`scat_plot()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/scat_plot.md)
 work at a lower level than the functions above: instead of a
-[`cal_metrics()`](https://aemon-j.github.io/LakeEnsemblR.WQ/reference/cal_metrics.md)
+[`cal_metrics()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/cal_metrics.md)
 list, each takes one **wide-format** data frame per model (`datetime` +
 `Depth_<n>` columns – the shape
-[`get_output_wq()`](https://aemon-j.github.io/LakeEnsemblR.WQ/reference/get_output_wq.md)
+[`get_output_wq()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/get_output_wq.md)
 returns) plus one for observations, and compute
-[`cal_stats()`](https://aemon-j.github.io/LakeEnsemblR.WQ/reference/cal_stats.md)
+[`cal_stats()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/cal_stats.md)
 against the observed values internally. They’re most useful once you
 already have per-model output pulled out via
-[`get_output_wq()`](https://aemon-j.github.io/LakeEnsemblR.WQ/reference/get_output_wq.md)
+[`get_output_wq()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/get_output_wq.md)
 (see
-[`?compare_plot`](https://aemon-j.github.io/LakeEnsemblR.WQ/reference/compare_plot.md)
+[`?compare_plot`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/compare_plot.md)
 and
-[`?scat_plot`](https://aemon-j.github.io/LakeEnsemblR.WQ/reference/scat_plot.md)
+[`?scat_plot`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/scat_plot.md)
 for the full column/argument requirements) – for example:
 
 ``` r
@@ -434,51 +670,4 @@ res <- compare_plot(
 )
 res[[1]]        # the plot
 res[[2]]        # cal_stats() output for GLM at this depth
-```
-
-## Troubleshooting
-
-### No metrics found for selected model
-
-Use coupling-specific model_filter values in metrics extraction: -
-GLM-AED2 -\> GLM - GOTM-WET -\> WET - GOTM-Selmaprotbas -\>
-SELMAPROTBAS - SIMSTRAT-AED2 -\> SIMSTRAT
-
-### Unsupported file type in run_lhc_wq
-
-Calibration tables may store dictionary-style paths (for example,
-section/parameter) instead of physical filenames. Current run_lhc_wq
-updates those dictionary paths for GLM-AED2, GOTM-WET,
-GOTM-Selmaprotbas, and SIMSTRAT-AED2.
-
-### “unused arguments” errors after editing R/ source files
-
-If you’re developing against a local clone and see errors like
-`unused arguments (de_parallel = ..., de_n_workers = ...)` for a
-parameter that clearly exists in the function’s source, your session is
-very likely running a stale **installed** copy of the package (loaded
-via
-[`library(LakeEnsemblR.WQ)`](https://github.com/aemon-j/LakeEnsemblR.WQ))
-rather than your edited source. Reload from source instead:
-
-``` r
-
-devtools::load_all(".")   # or source() the changed R/ files directly
-```
-
-### No progress messages with parallel_models = TRUE
-
-This is expected, not a hang – see the note at the end of Section 5.6.
-Worker processes have no attached console, so check
-`<output_dir>/cali_ensemble_wq_workers.log` instead.
-
-## Build package docs
-
-``` r
-
-# Regenerate Rd files from roxygen comments
-devtools::document()
-
-# Build the website (in docs/)
-pkgdown::build_site()
 ```

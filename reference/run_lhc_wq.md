@@ -3,7 +3,7 @@
 Performs Latin Hypercube Sampling (LHS) based parameter-space
 exploration for coupled water-quality model setups and evaluates each
 sampled run using either
-[`cal_metrics()`](https://aemon-j.github.io/LakeEnsemblR.WQ/reference/cal_metrics.md)
+[`cal_metrics()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/cal_metrics.md)
 outputs or observed-data statistics.
 
 ## Usage
@@ -18,8 +18,9 @@ run_lhc_wq(
   n_samples = 50,
   model_filter = NULL,
   wq_config_file = NULL,
-  yaml_file_model = "gotm.yaml",
-  par_file = "simstrat.par",
+  yaml_file_model = NULL,
+  par_file = NULL,
+  ler_config_file = NULL,
   verbose = TRUE,
   save_results = FALSE,
   output_file = "lhc_results.rds",
@@ -32,7 +33,7 @@ run_lhc_wq(
   target_variables = NULL,
   parallel = FALSE,
   n_workers = NULL,
-  parallel_dir = tempdir(),
+  parallel_dir = NULL,
   keep_worker_dirs = FALSE,
   lhs_matrix = NULL,
   sample_indices = NULL,
@@ -43,7 +44,8 @@ run_lhc_wq(
   de_cr = 0.9,
   de_seed_from_lhc = TRUE,
   de_parallel = FALSE,
-  de_n_workers = NULL
+  de_n_workers = NULL,
+  precomputed_lhc_results = NULL
 )
 ```
 
@@ -78,7 +80,7 @@ run_lhc_wq(
 - model_filter:
 
   Character or `NULL`. Optional model key for
-  [`cal_metrics()`](https://aemon-j.github.io/LakeEnsemblR.WQ/reference/cal_metrics.md).
+  [`cal_metrics()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/cal_metrics.md).
   If `NULL`, it is auto-derived from `model`.
 
 - wq_config_file:
@@ -87,11 +89,24 @@ run_lhc_wq(
 
 - yaml_file_model:
 
-  Character. GOTM yaml filename (default `"gotm.yaml"`).
+  Character or `NULL`. GOTM yaml filename. If `NULL` (default), derived
+  from `ler_config_file`'s `config_files$GOTM` entry when available,
+  else falls back to `"gotm.yaml"`.
 
 - par_file:
 
-  Character. Simstrat par filename (default `"simstrat.par"`).
+  Character or `NULL`. Simstrat par filename. If `NULL` (default),
+  derived from `ler_config_file`'s `config_files$Simstrat` entry when
+  available, else falls back to `"simstrat.par"`.
+
+- ler_config_file:
+
+  Character or `NULL`. Path to the LakeEnsemblR (physical-model) config
+  file, e.g. `"LakeEnsemblR.yaml"`. When supplied and
+  `yaml_file_model`/`par_file` are not explicitly set, they are
+  auto-derived from its `config_files` section instead of requiring the
+  user to duplicate those filenames here. If relative, resolved against
+  `dirname(model_dir)`.
 
 - verbose:
 
@@ -151,26 +166,29 @@ run_lhc_wq(
 - parallel:
 
   Logical. If `TRUE`, run in parallel by delegating to
-  [`run_lhc_wq_parallel()`](https://aemon-j.github.io/LakeEnsemblR.WQ/reference/run_lhc_wq_parallel.md).
+  [`run_lhc_wq_parallel()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/run_lhc_wq_parallel.md).
   Default is `FALSE`.
 
 - n_workers:
 
   Integer or `NULL`. Number of workers used when `parallel = TRUE`.
   Passed to
-  [`run_lhc_wq_parallel()`](https://aemon-j.github.io/LakeEnsemblR.WQ/reference/run_lhc_wq_parallel.md).
+  [`run_lhc_wq_parallel()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/run_lhc_wq_parallel.md).
 
 - parallel_dir:
 
-  Character. Parent directory for worker copies when `parallel = TRUE`.
-  Passed to
-  [`run_lhc_wq_parallel()`](https://aemon-j.github.io/LakeEnsemblR.WQ/reference/run_lhc_wq_parallel.md).
+  Character or `NULL`. Parent directory for worker copies when
+  `parallel = TRUE`. Passed to
+  [`run_lhc_wq_parallel()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/run_lhc_wq_parallel.md),
+  which defaults it (when `NULL`) to a sibling of `model_dir` under the
+  project root rather than
+  [`tempdir()`](https://rdrr.io/r/base/tempfile.html) – see its docs.
 
 - keep_worker_dirs:
 
   Logical. Keep worker directories after completion when
   `parallel = TRUE`. Passed to
-  [`run_lhc_wq_parallel()`](https://aemon-j.github.io/LakeEnsemblR.WQ/reference/run_lhc_wq_parallel.md).
+  [`run_lhc_wq_parallel()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/run_lhc_wq_parallel.md).
 
 - use_de:
 
@@ -206,6 +224,17 @@ run_lhc_wq(
   `TRUE`). If `FALSE`, DE starts from random population. Ignored when
   `use_de = FALSE`.
 
+- precomputed_lhc_results:
+
+  Data frame or `NULL`. Internal use – when supplied (already in the
+  shape `run_lhc_wq()`'s own LHC phase would produce, including the
+  `attr(., "best_parameter_set")` attribute when applicable), the LHC
+  sampling loop is skipped entirely and these results are used directly
+  to seed the DE phase. Used by
+  [`run_lhc_wq_parallel()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/run_lhc_wq_parallel.md)
+  to seed DE from its already-computed parallel LHC results instead of
+  re-running LHC sequentially.
+
 ## Value
 
 If `obs_file = NULL`, a list of length `n_samples` with sampled
@@ -218,7 +247,7 @@ the returned data.frame includes column `is_best`, and attributes
 iteration). When `use_de = TRUE` is also set, `best_parameter_set` and
 `best_metric` are overwritten with DE's refined optimum (DE runs after
 and improves on the LHC seed) – this is the attribute read by
-[`write_best_calib_to_par_files()`](https://aemon-j.github.io/LakeEnsemblR.WQ/reference/write_best_calib_to_par_files.md)
+[`write_best_calib_to_par_files()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/write_best_calib_to_par_files.md)
 and by `cali_ensemble_wq()$best_parameter_sets`, so both automatically
 use the DE result when DE was run. The original LHC-phase best is
 preserved under attribute `lhc_best_parameter_set` for comparison. The

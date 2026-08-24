@@ -2,8 +2,10 @@ pandoc: 3.8.3
 pkgdown: 2.2.1
 pkgdown_sha: ~
 articles:
+  config-reference: config-reference.html
   full-workflow: full-workflow.html
-last_built: 2026-07-23T14:17Z
+  articles/function-map: function-map.html
+last_built: 2026-08-24T11:35Z
 urls:
-  reference: https://aemon-j.github.io/LakeEnsemblR.WQ/reference
-  article: https://aemon-j.github.io/LakeEnsemblR.WQ/articles
+  reference: https://tubabucak.github.io/LakeEnsemblR.WQ/reference
+  article: https://tubabucak.github.io/LakeEnsemblR.WQ/articles

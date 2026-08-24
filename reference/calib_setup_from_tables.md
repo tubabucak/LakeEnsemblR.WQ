@@ -1,12 +1,12 @@
 # Build calib_setup from edited calibration CSVs
 
 Reads the per-module calibration CSV files produced by
-[`create_calibration_tables`](https://aemon-j.github.io/LakeEnsemblR.WQ/reference/create_calibration_tables.md),
+[`create_calibration_tables`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/create_calibration_tables.md),
 filters to rows where `include == TRUE`, and returns a `calib_setup`
 data frame in the format expected by
-[`run_lhc_wq`](https://aemon-j.github.io/LakeEnsemblR.WQ/reference/run_lhc_wq.md)
+[`run_lhc_wq`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/run_lhc_wq.md)
 and
-[`run_sensitivity`](https://aemon-j.github.io/LakeEnsemblR.WQ/reference/run_sensitivity.md).
+[`run_sensitivity`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/run_sensitivity.md).
 
 ## Usage
 
@@ -20,7 +20,7 @@ calib_setup_from_tables(folder_in, model_coupled, group_name = NULL)
 
   character; path to the folder containing the
   `calibration_<module>.csv` files (same as `folder_out` used in
-  [`create_calibration_tables`](https://aemon-j.github.io/LakeEnsemblR.WQ/reference/create_calibration_tables.md)).
+  [`create_calibration_tables`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/create_calibration_tables.md)).
 
 - model_coupled:
 
