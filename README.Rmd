@@ -77,6 +77,13 @@ remotes::install_github("aemon-j/GLM3r@v3.3-lerwq")
 remotes::install_github("tubabucak/LakeEnsemblR.WQ")
 ```
 
+## Example projects
+
+Full, real-lake example setups (config files, inputs, and run scripts) are
+available at [tubabucak/LERWQ_testcases](https://github.com/tubabucak/LERWQ_testcases) --
+useful as a starting template, or to see the full workflow applied end-to-end
+against actual data.
+
 ## Typical workflow
 
 ```{r eval = FALSE}
