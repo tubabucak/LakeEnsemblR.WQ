@@ -270,7 +270,7 @@ stack_sensitivity_raw <- function(res, depth = NULL) {
   do.call(rbind, pieces)
 }
 
-df_long <- stack_sensitivity_raw(res_sens, depth = 5)
+df_long <- stack_sensitivity_raw(res_sens_diatoms, depth = 5)
 
 df_env <- df_long %>%
   group_by(datetime) %>%

@@ -5,7 +5,7 @@ home:
   title: LakeEnsemblR.WQ
   description: Tools to configure, run, calibrate, and evaluate coupled 1D lake water-quality models.
 
-url: https://aemon-j.github.io/LakeEnsemblR.WQ
+url: https://tubabucak.github.io/LakeEnsemblR.WQ
 
 authors:
   footer:
@@ -94,4 +94,5 @@ articles:
     navbar: ~
     contents:
       - "full-workflow"
+      - "config-reference"
       - "articles/function-map"
