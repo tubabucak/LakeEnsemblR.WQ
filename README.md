@@ -198,10 +198,16 @@ result_all$summary                            # success/failure + row counts per
 result_all$best_parameter_sets[["GLM-AED2"]]   # winning parameters for one model
 ```
 
-See `vignette("full-workflow")` for the full calibration workflow,
-including single-model LHC/DE runs via `run_lhc_wq()`, writing best
-parameters back with `write_best_calib_to_par_files()` and
-post-processing functions.
+See the [Full
+Workflow](https://tubabucak.github.io/LakeEnsemblR.WQ/articles/full-workflow.html)
+article (or `vignette("full-workflow")` if you installed with
+`build_vignettes = TRUE`) for the full calibration workflow, including
+single-model LHC/DE runs via `run_lhc_wq()`, writing best parameters
+back with `write_best_calib_to_par_files()` and post-processing
+functions. See the [Configuration File
+Reference](https://tubabucak.github.io/LakeEnsemblR.WQ/articles/config-reference.html)
+article for a field-by-field breakdown of `LakeEnsemblR_WQ.yaml` and
+`Output.yaml`.
 
 ## Key functions
 
