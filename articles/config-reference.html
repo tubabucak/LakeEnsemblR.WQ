@@ -70,9 +70,13 @@
 <h2 id="purpose">Purpose<a class="anchor" aria-label="anchor" href="#purpose"></a>
 </h2>
 <p>LakeEnsemblR.WQ is driven by two YAML configuration files, not by an
-R object you build up interactively. Almost everything the package does
-– exporting model configs, running the ensemble, calibrating, computing
-metrics – starts by reading one or both of these files:</p>
+R object you build up interactively. Since it is extension of
+LakeEnsemblR package, it also requires the physical LakeEnsemblR config
+file (<code>LakeEnsemblR.yaml</code>) and physical input files
+(meteorology, bathymetry, inflows) to be present in the project
+folder.</p>
+<p>In addition to LakeEnsemblR config and input files, the WQ package
+also requires its own configuration files:</p>
 <ul>
 <li>
 <strong><code>LakeEnsemblR_WQ.yaml</code></strong> – describes
@@ -90,6 +94,14 @@ calibration/plotting functions.</li>
 <p>This vignette documents both files that you can use in your setup as
 a template. If you’re looking for the step-by-step procedure instead,
 see <code><a href="../articles/full-workflow.html">vignette("full-workflow")</a></code>.</p>
+</div>
+<div class="section level2">
+<h2 id="example-projects">Example projects<a class="anchor" aria-label="anchor" href="#example-projects"></a>
+</h2>
+<p>Full, real-lake example setups (config files, inputs, and run
+scripts) are available at <a href="https://github.com/tubabucak/LERWQ_testcases" class="external-link">tubabucak/LERWQ_testcases</a>
+– useful as a starting template, or to see the full workflow applied
+end-to-end against actual data.</p>
 </div>
 <div class="section level2">
 <h2 id="lakeensemblr_wq-yaml">
@@ -176,8 +188,8 @@ GLM-AED2/GOTM-WET/GOTM-Selmaprotbas/ Simstrat-AED2 setup):</p>
 <td>Which coupled models to set up/run. Supported values:
 <code>GLM-AED2</code>, <code>GOTM-WET</code>,
 <code>GOTM-Selmaprotbas</code>, <code>Simstrat-AED2</code>
-(<code>MyLake</code>/<code>PCLake</code> are recognized but not fully
-supported yet).</td>
+(<code>MyLake</code>/<code>PCLake</code> are recognized but not
+supported).</td>
 </tr>
 <tr class="even">
 <td><code>config_files</code></td>
@@ -270,7 +282,7 @@ different underlying number in GLM’s namelist than in GOTM’s).</p>
 <div class="section level3">
 <h3 id="biogeochemical-modules">Biogeochemical modules<a class="anchor" aria-label="anchor" href="#biogeochemical-modules"></a>
 </h3>
-<p>Two shapes, depending on the module:</p>
+<p>Two key, depending on the module:</p>
 <p><strong>Simple modules</strong> (<code>oxygen</code>,
 <code>carbon</code>, <code>sediment</code>, <code>detritus</code>,
 <code>nitrogen</code>, <code>phosphorus</code>, <code>silicon</code>)
@@ -279,11 +291,10 @@ each take:</p>
 <span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a><span class="at">   </span><span class="fu">use</span><span class="kw">:</span><span class="at"> </span><span class="ch">true</span><span class="co">            # whether this module is active at all</span></span>
 <span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a><span class="at">   </span><span class="fu">par_file</span><span class="kw">:</span><span class="co">            # optional CSV overriding default parameter values;</span></span>
 <span id="cb2-4"><a href="#cb2-4" tabindex="-1"></a><span class="co">                         # blank = use dictionary defaults</span></span></code></pre></div>
-<p><strong>Group-aware modules</strong> (<code>phytoplankton</code>,
+<p><strong>Species group modules</strong> (<code>phytoplankton</code>,
 <code>zooplankton</code>, <code>fish</code>, <code>macrophytes</code>,
-<code>zoobenthos</code>, <code>pathogens</code>) instead nest one or
-more named groups under <code>groups:</code>, each with its own
-<code>par_file</code>:</p>
+<code>zoobenthos</code>) instead nest one or more named groups under
+<code>groups:</code>, each with its own <code>par_file</code>:</p>
 <div class="sourceCode" id="cb3"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a><span class="fu">&lt;module&gt;</span><span class="kw">:</span></span>
 <span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a><span class="at">   </span><span class="fu">use</span><span class="kw">:</span><span class="at"> </span><span class="ch">true</span></span>
 <span id="cb3-3"><a href="#cb3-3" tabindex="-1"></a><span class="at">   </span><span class="fu">groups</span><span class="kw">:</span></span>
@@ -298,15 +309,22 @@ more named groups under <code>groups:</code>, each with its own
 calibration tables (<code><a href="../reference/create_calibration_tables.html">create_calibration_tables()</a></code>), which
 matters because <strong>a parameter name can repeat across
 groups</strong> (e.g. <code>r0</code> for both <code>diatoms</code> and
-<code>cyanobacteria</code>) and needs <code>group_name</code> to
-disambiguate which one you’re calibrating or running sensitivity on.</p>
+<code>cyanobacteria</code>) and needs <code>group_name</code> to clarify
+which one you’re calibrating or running sensitivity on. So if you have
+more than one phytoplankton group, you may want to set different
+parameter ranges/values for each group, or you may need to active some
+modules for one group but not the other, for example turning on Silica
+uptake for diatoms but not cyanobacteria, or buoyancy for cyanobacteria
+but not diatoms. Before starting calibration check parameter
+dictionaries for each group to make sure you have the right parameters
+for the right group.</p>
 <p><code>prey</code> lists (zooplankton, fish) declare grazing/predation
 links between groups by <code>"&lt;module&gt;/&lt;group_name&gt;"</code>
 string, as seen in the <code>daphnia</code> example above eating both
 phytoplankton groups.</p>
 <p>If <code>use: false</code> for a module,
-<code><a href="../reference/export_config_wq.html">export_config_wq()</a></code> disables it in every model’s native
-config rather than leaving it partially configured.</p>
+<code><a href="../reference/export_config_wq.html">export_config_wq()</a></code> disables it in every model’s
+configuration file.</p>
 </div>
 </div>
 <div class="section level2">
@@ -320,9 +338,9 @@ config rather than leaving it partially configured.</p>
 <span id="cb4-4"><a href="#cb4-4" tabindex="-1"></a><span class="at">  </span><span class="fu">metric_yaml_file</span><span class="kw">:</span><span class="at"> </span><span class="st">"Output.yaml"</span></span>
 <span id="cb4-5"><a href="#cb4-5" tabindex="-1"></a><span class="at">  </span><span class="fu">LER_config_file</span><span class="kw">:</span><span class="at"> </span><span class="st">"LakeEnsemblR.yaml"</span></span>
 <span id="cb4-6"><a href="#cb4-6" tabindex="-1"></a><span class="fu">model_folders</span><span class="kw">:</span></span>
-<span id="cb4-7"><a href="#cb4-7" tabindex="-1"></a><span class="at">  </span><span class="fu">GLM</span><span class="kw">:</span><span class="at"> </span><span class="st">"GLM-AED2/Output"</span></span>
-<span id="cb4-8"><a href="#cb4-8" tabindex="-1"></a><span class="at">  </span><span class="fu">WET</span><span class="kw">:</span><span class="at"> </span><span class="st">"GOTM-WET/Output"</span></span>
-<span id="cb4-9"><a href="#cb4-9" tabindex="-1"></a><span class="at">  </span><span class="fu">SELMAPROTBAS</span><span class="kw">:</span><span class="at"> </span><span class="st">"GOTM-Selmaprotbas/Output"</span></span>
+<span id="cb4-7"><a href="#cb4-7" tabindex="-1"></a><span class="at">  </span><span class="fu">GLM</span><span class="kw">:</span><span class="at"> </span><span class="st">"GLM-AED2/output"</span></span>
+<span id="cb4-8"><a href="#cb4-8" tabindex="-1"></a><span class="at">  </span><span class="fu">WET</span><span class="kw">:</span><span class="at"> </span><span class="st">"GOTM-WET/output"</span></span>
+<span id="cb4-9"><a href="#cb4-9" tabindex="-1"></a><span class="at">  </span><span class="fu">SELMAPROTBAS</span><span class="kw">:</span><span class="at"> </span><span class="st">"GOTM-Selmaprotbas/output"</span></span>
 <span id="cb4-10"><a href="#cb4-10" tabindex="-1"></a><span class="at">  </span><span class="fu">SIMSTRAT</span><span class="kw">:</span><span class="at"> </span><span class="st">"Simstrat-AED2/output"</span></span>
 <span id="cb4-11"><a href="#cb4-11" tabindex="-1"></a><span class="fu">Level1</span><span class="kw">:</span></span>
 <span id="cb4-12"><a href="#cb4-12" tabindex="-1"></a><span class="at">   </span><span class="fu">LER</span><span class="kw">:</span></span>
@@ -342,12 +360,12 @@ config rather than leaving it partially configured.</p>
 <code>folder</code><a class="anchor" aria-label="anchor" href="#folder"></a>
 </h3>
 <p>Base directory every relative path in this file is resolved against.
-Leave it <strong>blank</strong> (as above) to default to the directory
-containing <code>Output.yaml</code> itself – this is what you want in
-almost every case, since it lets the same config work no matter where
-the project folder is checked out. Only set it explicitly if you’re
-pointing <code>Output.yaml</code> at files that live somewhere other
-than alongside it.</p>
+If you leave it <strong>blank</strong> (as above) to default to the
+directory containing <code>Output.yaml</code> itself – this is what is
+recommended. Only set it explicitly if you’re pointing
+<code>Output.yaml</code> at files that live somewhere other than
+alongside it but be careful when you move the project around, because
+<code>folder</code> is not automatically updated.</p>
 </div>
 <div class="section level3">
 <h3 id="files">
@@ -401,19 +419,19 @@ the metrics config lives without being told separately.</td>
 <tbody>
 <tr class="odd">
 <td><code>GLM</code></td>
-<td><code>GLM-AED2/Output</code></td>
+<td><code>GLM-AED2/output</code></td>
 </tr>
 <tr class="even">
 <td><code>WET</code></td>
-<td><code>GOTM-WET/Output</code></td>
+<td><code>GOTM-WET/output</code></td>
 </tr>
 <tr class="odd">
 <td><code>SELMAPROTBAS</code></td>
-<td><code>GOTM-Selmaprotbas/Output</code></td>
+<td><code>GOTM-Selmaprotbas/output</code></td>
 </tr>
 <tr class="even">
 <td><code>SIMSTRAT</code></td>
-<td><code>Simstrat-AED2/Output</code></td>
+<td><code>Simstrat-AED2/output</code></td>
 </tr>
 </tbody>
 </table>
@@ -424,8 +442,8 @@ right now. Several functions (<code><a href="../reference/cal_metrics.html">cal_
 <code><a href="../reference/run_lhc_wq.html">run_lhc_wq()</a></code>) accept a
 <code>required_models</code>/<code>model_filter</code> argument
 specifically to narrow this down to just the model(s) you’re actually
-using, which avoids failing on an unrelated model you haven’t run
-yet.</p>
+using, which avoids failing on an unrelated model you haven’t run yet.
+But you can only keep the models that you would like to run.</p>
 </div>
 <div class="section level3">
 <h3 id="level1-level2-level3">
@@ -462,6 +480,103 @@ it</strong> rather than deleting the line – this is the standard way
 these files get edited day to day (as seen throughout the shipped
 example, where most Level2/Level3 metrics are commented out by default).
 <code><a href="../reference/cal_metrics.html">cal_metrics()</a></code> only computes what’s left uncommented.</p>
+<p><strong>Finding valid metric names</strong>: check the package’s own
+metrics dictionary – <code>LakeEnsemblR.WQ::Metrics_dict</code> – which
+lists every supported metric name per model and level, alongside its
+units and the underlying computation function:</p>
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">metrics</span> <span class="op">&lt;-</span> <span class="fu">LakeEnsemblR.WQ</span><span class="fu">::</span><span class="va">Metrics_dict</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/unique.html" class="external-link">unique</a></span><span class="op">(</span><span class="va">metrics</span><span class="op">[</span><span class="va">metrics</span><span class="op">$</span><span class="va">level</span> <span class="op">==</span> <span class="st">"Level1"</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"metric_name"</span>, <span class="st">"variable_global_name"</span>, <span class="st">"unit_global"</span><span class="op">)</span><span class="op">]</span><span class="op">)</span></span></code></pre></div>
+<p>This is the same table <code>variable_global_name</code> values (see
+the observed-data CSV section below) are drawn from.</p>
+</div>
+</div>
+<div class="section level2">
+<h2 id="other-wq-specific-input-files">Other WQ-specific input files<a class="anchor" aria-label="anchor" href="#other-wq-specific-input-files"></a>
+</h2>
+<p>Both YAML files above mostly <em>point at</em> other files rather
+than containing data directly. These are the WQ-specific ones you’ll
+create/edit yourself (physical LakeEnsemblR inputs like
+meteorology/bathymetry/physical inflows belong to the base LakeEnsemblR
+package and aren’t covered here).</p>
+<div class="section level3">
+<h3 id="nutrient-inflow-csv-input-inflows">Nutrient inflow CSV (<code>input.inflows</code>)<a class="anchor" aria-label="anchor" href="#nutrient-inflow-csv-input-inflows"></a>
+</h3>
+<p>Referenced from <code>LakeEnsemblR_WQ.yaml</code>’s
+<code>input.inflows</code> key. Read by <code><a href="../reference/export_inputs.html">export_inputs()</a></code>,
+which distributes it into each coupled model’s own native inflow
+format.</p>
+<pre><code>datetime,wq_NO3_gramsPerCubicMeter_1,wq_NH4_gramsPerCubicMeter_1,wq_PO4_gramsPerCubicMeter_1
+1989-01-10 00:00:00,3.16,0.005,0.025</code></pre>
+<ul>
+<li>First column must be named <code>datetime</code>.</li>
+<li>Every other column must be named
+<code>wq_&lt;standard_name&gt;_&lt;inflow_index&gt;</code>, where
+<code>standard_name</code> is one of the package’s recognized nutrient
+variables: <code>wq_PO4_gramsPerCubicMeter</code>,
+<code>wq_POP_gramsPerCubicMeter</code>,
+<code>wq_DOP_gramsPerCubicMeter</code>,
+<code>wq_NO3_gramsPerCubicMeter</code>,
+<code>wq_NH4_gramsPerCubicMeter</code>,
+<code>wq_PON_gramsPerCubicMeter</code>,
+<code>wq_DON_gramsPerCubicMeter</code>,
+<code>wq_Silica_gramsPerCubicMeter</code>. Any other header name fails
+validation (<code>chk_names_nutr_flow()</code>) with an explicit list of
+what’s allowed.</li>
+<li>
+<code>inflow_index</code> (the trailing <code>_1</code>,
+<code>_2</code>, …) matches up with the physical LakeEnsemblR inflow
+file’s own inflow numbering – if there’s only one inflow, the suffix can
+be omitted entirely and it’s auto-assigned <code>_1</code>.</li>
+<li>Units are fixed per variable (grams per cubic meter, as the column
+names say) – conversion to each model’s native units (e.g. millimoles
+for GOTM-based models) happens automatically during the export
+process.</li>
+</ul>
+</div>
+<div class="section level3">
+<h3 id="parameter-override-csv-par_file">Parameter override CSV (<code>par_file</code>)<a class="anchor" aria-label="anchor" href="#parameter-override-csv-par_file"></a>
+</h3>
+<p>Referenced from a module’s <code>par_file:</code> entry in
+<code>LakeEnsemblR_WQ.yaml</code> (or a group’s, for group-aware
+modules). Optional – omit it (leave <code>par_file:</code> blank) to use
+the dictionary’s default values instead. Read by
+<code><a href="../reference/export_config_wq.html">export_config_wq()</a></code>, one row at a time, via
+<code><a href="../reference/set_value_config.html">set_value_config()</a></code>. But if you have parameters to override,
+the CSV must be given in the following format (example below):</p>
+<pre><code>domain,process,subprocess,model_coupled,parameter,value
+water,growth,growth_rate,GOTM-Selmaprotbas,r0,1.5</code></pre>
+<p>Required columns: <code>domain</code>, <code>process</code>,
+<code>subprocess</code>, <code>model_coupled</code>,
+<code>parameter</code>, <code>value</code>. These match the same
+vocabulary used in <code>calibration_master.csv</code> (see
+<code><a href="../reference/create_calibration_tables.html">create_calibration_tables()</a></code>) – in fact the easiest way to
+find valid values for a given parameter is to look it up there first,
+since that file already lists every known parameter’s
+<code>domain</code>/ <code>process</code>/<code>subprocess</code>
+combination.</p>
+</div>
+<div class="section level3">
+<h3 id="observed-data-csv-obs_file">Observed-data CSV (<code>obs_file</code>)<a class="anchor" aria-label="anchor" href="#observed-data-csv-obs_file"></a>
+</h3>
+<p>Not referenced from either YAML file directly – passed as the
+<code>obs_file</code> argument to <code><a href="../reference/run_lhc_wq.html">run_lhc_wq()</a></code>,
+<code><a href="../reference/cali_ensemble_wq.html">cali_ensemble_wq()</a></code>, and
+<code><a href="../reference/plot_model_vs_obs_wq.html">plot_model_vs_obs_wq()</a></code>. Used to score calibration runs and
+to plot model-vs-observations comparisons.</p>
+<pre><code>datetime,depth,variable_global_name,value
+1989-06-15 00:00:00,1,DO_gramsPerCubicMeter,8.4</code></pre>
+<p>Required columns: <code>datetime</code>, <code>depth</code>,
+<code>variable_global_name</code>, <code>value</code>.
+<code>variable_global_name</code> must match a name from the metrics
+dictionary –
+<code>LakeEnsemblR.WQ::Metrics_dict$variable_global_name</code> (see the
+<code>Level1</code>/<code>Level2</code>/<code>Level3</code> section
+above), e.g. <code>DO_gramsPerCubicMeter</code>,
+<code>Total_Chla_miligramsPerCubicMeter</code> – this is what lets
+<code><a href="../reference/plot_model_vs_obs_wq.html">plot_model_vs_obs_wq()</a></code> auto-derive which model-native
+variable to compare against, without you having to specify it
+manually.</p>
 </div>
 </div>
 <div class="section level2">

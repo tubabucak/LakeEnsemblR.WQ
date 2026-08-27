@@ -3,9 +3,13 @@
 ## Purpose
 
 LakeEnsemblR.WQ is driven by two YAML configuration files, not by an R
-object you build up interactively. Almost everything the package does –
-exporting model configs, running the ensemble, calibrating, computing
-metrics – starts by reading one or both of these files:
+object you build up interactively. Since it is extension of LakeEnsemblR
+package, it also requires the physical LakeEnsemblR config file
+(`LakeEnsemblR.yaml`) and physical input files (meteorology, bathymetry,
+inflows) to be present in the project folder.
+
+In addition to LakeEnsemblR config and input files, the WQ package also
+requires its own configuration files:
 
 - **`LakeEnsemblR_WQ.yaml`** – describes *which coupled models to run
   and which biogeochemical modules are active in them*. Read by
@@ -23,6 +27,14 @@ metrics – starts by reading one or both of these files:
 This vignette documents both files that you can use in your setup as a
 template. If you’re looking for the step-by-step procedure instead, see
 [`vignette("full-workflow")`](https://tubabucak.github.io/LakeEnsemblR.WQ/articles/full-workflow.md).
+
+## Example projects
+
+Full, real-lake example setups (config files, inputs, and run scripts)
+are available at
+[tubabucak/LERWQ_testcases](https://github.com/tubabucak/LERWQ_testcases)
+– useful as a starting template, or to see the full workflow applied
+end-to-end against actual data.
 
 ## `LakeEnsemblR_WQ.yaml`
 
@@ -97,7 +109,7 @@ fish:
 
 | Key | Purpose |
 |----|----|
-| `models` | Which coupled models to set up/run. Supported values: `GLM-AED2`, `GOTM-WET`, `GOTM-Selmaprotbas`, `Simstrat-AED2` (`MyLake`/`PCLake` are recognized but not fully supported yet). |
+| `models` | Which coupled models to set up/run. Supported values: `GLM-AED2`, `GOTM-WET`, `GOTM-Selmaprotbas`, `Simstrat-AED2` (`MyLake`/`PCLake` are recognized but not supported). |
 | `config_files` | One entry per model in `models`, pointing at that model’s own native biogeochemistry config file (`fabm.yaml` for GOTM-based models, `aed2.nml` for GLM/Simstrat). [`export_config_wq()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/export_config_wq.md) writes parameter values into these files. |
 | `run_settings` | Solver/numerics settings shared across models – see below. |
 | `input` | Currently just `inflows`: path to the nutrient-inflow CSV used by [`export_inputs()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/export_inputs.md). |
@@ -122,7 +134,7 @@ to a different underlying number in GLM’s namelist than in GOTM’s).
 
 ### Biogeochemical modules
 
-Two shapes, depending on the module:
+Two key, depending on the module:
 
 **Simple modules** (`oxygen`, `carbon`, `sediment`, `detritus`,
 `nitrogen`, `phosphorus`, `silicon`) each take:
@@ -134,9 +146,9 @@ Two shapes, depending on the module:
                          # blank = use dictionary defaults
 ```
 
-**Group-aware modules** (`phytoplankton`, `zooplankton`, `fish`,
-`macrophytes`, `zoobenthos`, `pathogens`) instead nest one or more named
-groups under `groups:`, each with its own `par_file`:
+**Species group modules** (`phytoplankton`, `zooplankton`, `fish`,
+`macrophytes`, `zoobenthos`) instead nest one or more named groups under
+`groups:`, each with its own `par_file`:
 
 ``` yaml
 <module>:
@@ -155,8 +167,14 @@ in calibration tables
 ([`create_calibration_tables()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/create_calibration_tables.md)),
 which matters because **a parameter name can repeat across groups**
 (e.g. `r0` for both `diatoms` and `cyanobacteria`) and needs
-`group_name` to disambiguate which one you’re calibrating or running
-sensitivity on.
+`group_name` to clarify which one you’re calibrating or running
+sensitivity on. So if you have more than one phytoplankton group, you
+may want to set different parameter ranges/values for each group, or you
+may need to active some modules for one group but not the other, for
+example turning on Silica uptake for diatoms but not cyanobacteria, or
+buoyancy for cyanobacteria but not diatoms. Before starting calibration
+check parameter dictionaries for each group to make sure you have the
+right parameters for the right group.
 
 `prey` lists (zooplankton, fish) declare grazing/predation links between
 groups by `"<module>/<group_name>"` string, as seen in the `daphnia`
@@ -164,8 +182,7 @@ example above eating both phytoplankton groups.
 
 If `use: false` for a module,
 [`export_config_wq()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/export_config_wq.md)
-disables it in every model’s native config rather than leaving it
-partially configured.
+disables it in every model’s configuration file.
 
 ## `Output.yaml`
 
@@ -178,9 +195,9 @@ files:
   metric_yaml_file: "Output.yaml"
   LER_config_file: "LakeEnsemblR.yaml"
 model_folders:
-  GLM: "GLM-AED2/Output"
-  WET: "GOTM-WET/Output"
-  SELMAPROTBAS: "GOTM-Selmaprotbas/Output"
+  GLM: "GLM-AED2/output"
+  WET: "GOTM-WET/output"
+  SELMAPROTBAS: "GOTM-Selmaprotbas/output"
   SIMSTRAT: "Simstrat-AED2/output"
 Level1:
    LER:
@@ -199,12 +216,12 @@ Level1:
 
 ### `folder`
 
-Base directory every relative path in this file is resolved against.
-Leave it **blank** (as above) to default to the directory containing
-`Output.yaml` itself – this is what you want in almost every case, since
-it lets the same config work no matter where the project folder is
-checked out. Only set it explicitly if you’re pointing `Output.yaml` at
-files that live somewhere other than alongside it.
+Base directory every relative path in this file is resolved against. If
+you leave it **blank** (as above) to default to the directory containing
+`Output.yaml` itself – this is what is recommended. Only set it
+explicitly if you’re pointing `Output.yaml` at files that live somewhere
+other than alongside it but be careful when you move the project around,
+because `folder` is not automatically updated.
 
 ### `files`
 
@@ -230,10 +247,10 @@ that model writes its NetCDF output:
 
 | Key            | Typical value              |
 |----------------|----------------------------|
-| `GLM`          | `GLM-AED2/Output`          |
-| `WET`          | `GOTM-WET/Output`          |
-| `SELMAPROTBAS` | `GOTM-Selmaprotbas/Output` |
-| `SIMSTRAT`     | `Simstrat-AED2/Output`     |
+| `GLM`          | `GLM-AED2/output`          |
+| `WET`          | `GOTM-WET/output`          |
+| `SELMAPROTBAS` | `GOTM-Selmaprotbas/output` |
+| `SIMSTRAT`     | `Simstrat-AED2/output`     |
 
 By default (`required_models = NULL`/`"all"`),
 [`load_config()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/load_config-colon.md)
@@ -243,7 +260,8 @@ intend to work with one model right now. Several functions
 [`run_lhc_wq()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/run_lhc_wq.md))
 accept a `required_models`/`model_filter` argument specifically to
 narrow this down to just the model(s) you’re actually using, which
-avoids failing on an unrelated model you haven’t run yet.
+avoids failing on an unrelated model you haven’t run yet. But you can
+only keep the models that you would like to run.
 
 ### `Level1` / `Level2` / `Level3`
 
@@ -277,6 +295,101 @@ seen throughout the shipped example, where most Level2/Level3 metrics
 are commented out by default).
 [`cal_metrics()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/cal_metrics.md)
 only computes what’s left uncommented.
+
+**Finding valid metric names**: check the package’s own metrics
+dictionary – `LakeEnsemblR.WQ::Metrics_dict` – which lists every
+supported metric name per model and level, alongside its units and the
+underlying computation function:
+
+``` r
+
+metrics <- LakeEnsemblR.WQ::Metrics_dict
+unique(metrics[metrics$level == "Level1", c("metric_name", "variable_global_name", "unit_global")])
+```
+
+This is the same table `variable_global_name` values (see the
+observed-data CSV section below) are drawn from.
+
+## Other WQ-specific input files
+
+Both YAML files above mostly *point at* other files rather than
+containing data directly. These are the WQ-specific ones you’ll
+create/edit yourself (physical LakeEnsemblR inputs like
+meteorology/bathymetry/physical inflows belong to the base LakeEnsemblR
+package and aren’t covered here).
+
+### Nutrient inflow CSV (`input.inflows`)
+
+Referenced from `LakeEnsemblR_WQ.yaml`’s `input.inflows` key. Read by
+[`export_inputs()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/export_inputs.md),
+which distributes it into each coupled model’s own native inflow format.
+
+    datetime,wq_NO3_gramsPerCubicMeter_1,wq_NH4_gramsPerCubicMeter_1,wq_PO4_gramsPerCubicMeter_1
+    1989-01-10 00:00:00,3.16,0.005,0.025
+
+- First column must be named `datetime`.
+- Every other column must be named `wq_<standard_name>_<inflow_index>`,
+  where `standard_name` is one of the package’s recognized nutrient
+  variables: `wq_PO4_gramsPerCubicMeter`, `wq_POP_gramsPerCubicMeter`,
+  `wq_DOP_gramsPerCubicMeter`, `wq_NO3_gramsPerCubicMeter`,
+  `wq_NH4_gramsPerCubicMeter`, `wq_PON_gramsPerCubicMeter`,
+  `wq_DON_gramsPerCubicMeter`, `wq_Silica_gramsPerCubicMeter`. Any other
+  header name fails validation (`chk_names_nutr_flow()`) with an
+  explicit list of what’s allowed.
+- `inflow_index` (the trailing `_1`, `_2`, …) matches up with the
+  physical LakeEnsemblR inflow file’s own inflow numbering – if there’s
+  only one inflow, the suffix can be omitted entirely and it’s
+  auto-assigned `_1`.
+- Units are fixed per variable (grams per cubic meter, as the column
+  names say) – conversion to each model’s native units (e.g. millimoles
+  for GOTM-based models) happens automatically during the export
+  process.
+
+### Parameter override CSV (`par_file`)
+
+Referenced from a module’s `par_file:` entry in `LakeEnsemblR_WQ.yaml`
+(or a group’s, for group-aware modules). Optional – omit it (leave
+`par_file:` blank) to use the dictionary’s default values instead. Read
+by
+[`export_config_wq()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/export_config_wq.md),
+one row at a time, via
+[`set_value_config()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/set_value_config.md).
+But if you have parameters to override, the CSV must be given in the
+following format (example below):
+
+    domain,process,subprocess,model_coupled,parameter,value
+    water,growth,growth_rate,GOTM-Selmaprotbas,r0,1.5
+
+Required columns: `domain`, `process`, `subprocess`, `model_coupled`,
+`parameter`, `value`. These match the same vocabulary used in
+`calibration_master.csv` (see
+[`create_calibration_tables()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/create_calibration_tables.md))
+– in fact the easiest way to find valid values for a given parameter is
+to look it up there first, since that file already lists every known
+parameter’s `domain`/ `process`/`subprocess` combination.
+
+### Observed-data CSV (`obs_file`)
+
+Not referenced from either YAML file directly – passed as the `obs_file`
+argument to
+[`run_lhc_wq()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/run_lhc_wq.md),
+[`cali_ensemble_wq()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/cali_ensemble_wq.md),
+and
+[`plot_model_vs_obs_wq()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/plot_model_vs_obs_wq.md).
+Used to score calibration runs and to plot model-vs-observations
+comparisons.
+
+    datetime,depth,variable_global_name,value
+    1989-06-15 00:00:00,1,DO_gramsPerCubicMeter,8.4
+
+Required columns: `datetime`, `depth`, `variable_global_name`, `value`.
+`variable_global_name` must match a name from the metrics dictionary –
+`LakeEnsemblR.WQ::Metrics_dict$variable_global_name` (see the
+`Level1`/`Level2`/`Level3` section above), e.g. `DO_gramsPerCubicMeter`,
+`Total_Chla_miligramsPerCubicMeter` – this is what lets
+[`plot_model_vs_obs_wq()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/plot_model_vs_obs_wq.md)
+auto-derive which model-native variable to compare against, without you
+having to specify it manually.
 
 ## Common pitfalls
 
