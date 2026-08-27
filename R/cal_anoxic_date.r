@@ -17,7 +17,8 @@
 #' @importFrom lubridate year
 #' @importFrom dplyr filter
 #' @export
-cal_anoxic_date <- function(oxy_data, bathy_file, threshold = 1, duration = "full"){
+cal_anoxic_date <- function(oxy_data, bathy_file, threshold = 1,
+                            duration = c("full", "longest")){
   duration <- match.arg(duration)
   if (is.character(bathy_file)) {
     bathy_file <- load_bathy_depth_area(bathy_file)
