@@ -93,23 +93,43 @@ create_calibration_tables <- function(folder = ".",
   calib_table$model_coupled <- sapply(calib_table$model_coupled,
                                        function(x) names(wq_models)[wq_models == x])
 
-  # Keep only models requested by the user and rows with a numeric default
+  # Keep only models requested by the user
   calib_table <- calib_table[calib_table$model_coupled %in% models_coupled, ]
+
+  # Skip integer- and boolean-typed parameters -- flagged in the dictionary's
+  # `unit` column as "(integer)"/"(boolean)" (e.g. mode selectors like
+  # n2o_piston_model, simN2O, or on/off switches like buoyancy_regulation,
+  # lNfix). A percentage-based bounds_factor produces a meaningless
+  # fractional lower/upper for either kind of value, and nothing downstream
+  # (run_lhc_wq()'s LHC/DE sampling, or the value written into the model
+  # config) rounds/coerces it back afterward -- so these were never safely
+  # calibratable via this bounds-percentage mechanism to begin with.
+  # Excluding them here means they never appear in the generated CSVs, so a
+  # user can't accidentally set include = TRUE on one and get a nonsensical
+  # sample written into an integer/boolean namelist field. This check has to
+  # run on `unit` *before* the numeric-default filter below -- boolean
+  # defaults are stored as literal "TRUE"/"FALSE" text, which the
+  # numeric-default filter would otherwise drop silently (as a side effect
+  # of failing to parse as numeric, not because of any explicit boolean
+  # check), masking the fact that they were never actually being considered.
+  is_skipped_type <- grepl("integer|boolean", calib_table$unit, ignore.case = TRUE)
+  if (any(is_skipped_type)) {
+    message("Skipping ", sum(is_skipped_type), " integer/boolean-typed parameter(s) ",
+            "(not calibratable via percentage-based bounds): ",
+            paste(unique(calib_table$parameter[is_skipped_type]), collapse = ", "))
+  }
+  calib_table <- calib_table[!is_skipped_type, ]
+
+  # Keep only rows with a numeric default
   calib_table <- calib_table[!is.na(suppressWarnings(as.numeric(calib_table$default))), ]
   calib_table$default <- as.numeric(calib_table$default)
 
-  # Build calibration columns
-  calib_table$include <- FALSE
-  calib_table$lower   <- calib_table$default * (1 - bounds_factor)
-  calib_table$upper   <- calib_table$default * (1 + bounds_factor)
-  calib_table$initial <- calib_table$default
-  calib_table$log     <- FALSE
-
-  # Dictionary-supplied min/max, carried through as reference columns only.
-  # These are not used to compute lower/upper -- they're shown alongside the
-  # percentage-based bounds so the user can manually widen/narrow lower/upper
-  # against them when editing the CSV. Older dictionaries without min/max
-  # columns simply get NA here.
+  # Dictionary-supplied min/max. Normally these are carried through purely as
+  # reference columns (dict_min/dict_max) alongside the percentage-based
+  # lower/upper, for the user to check by hand -- but they're also the fix
+  # for a real degenerate case below, so they need to be available before
+  # lower/upper are computed. Older dictionaries without min/max columns
+  # simply get NA here.
   calib_table$dict_min <- if ("min" %in% names(calib_table)) {
     suppressWarnings(as.numeric(calib_table$min))
   } else {
@@ -120,6 +140,38 @@ create_calibration_tables <- function(folder = ".",
   } else {
     NA_real_
   }
+
+  # Build calibration columns
+  calib_table$include <- FALSE
+  calib_table$lower   <- calib_table$default * (1 - bounds_factor)
+  calib_table$upper   <- calib_table$default * (1 + bounds_factor)
+  calib_table$initial <- calib_table$default
+  calib_table$log     <- FALSE
+
+  # default * (1 +/- bounds_factor) degenerates to lower = upper = 0 for any
+  # parameter whose default is exactly 0 -- a zero-width range that silently
+  # can't be calibrated (LHC/DE sampling has nothing to vary), regardless of
+  # bounds_factor. Where the dictionary supplies real min/max for that row,
+  # use those instead -- they're an actual usable range rather than a
+  # multiplicative artifact of a zero default. Where it doesn't, there's no
+  # way to derive a sensible range automatically, so exclude the row (same
+  # pattern as the integer/boolean skip above) rather than silently ship an
+  # uncalibratable zero-width one.
+  is_zero_default <- calib_table$default == 0
+  has_dict_range <- !is.na(calib_table$dict_min) & !is.na(calib_table$dict_max) &
+    calib_table$dict_max > calib_table$dict_min
+  use_dict_range <- is_zero_default & has_dict_range
+  calib_table$lower[use_dict_range] <- calib_table$dict_min[use_dict_range]
+  calib_table$upper[use_dict_range] <- calib_table$dict_max[use_dict_range]
+
+  drop_zero_default <- is_zero_default & !has_dict_range
+  if (any(drop_zero_default)) {
+    message("Skipping ", sum(drop_zero_default), " zero-default parameter(s) with no ",
+            "dictionary min/max to fall back on (default * bounds_factor gives a ",
+            "zero-width range): ",
+            paste(unique(calib_table$parameter[drop_zero_default]), collapse = ", "))
+  }
+  calib_table <- calib_table[!drop_zero_default, ]
 
   # Column order for output
   out_cols <- c("include", "module", "domain", "process", "subprocess",
