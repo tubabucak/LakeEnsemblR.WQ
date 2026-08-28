@@ -40,8 +40,18 @@ cal_strat_date <- function(temp_data, hemisphere = "N") {
   # Initialize a list to store results for each year to return
   results_list <- list()
   
-  # Get unique years from the dataset
-  uniq_year <- unique(temp_data_merged$Year)
+  # Get unique years from the dataset. For the Southern Hemisphere, the
+  # season-year grouping used to filter below is Year_upd (Jan-Jun rows
+  # belong to the previous calendar year's stratification season), not the
+  # raw Year -- looping over unique(Year) instead meant a dataset confined to
+  # Jan-Jun could have a raw Year that never matches any row's Year_upd,
+  # silently dropping all Southern Hemisphere results even when valid
+  # stratified data existed.
+  uniq_year <- if (hemisphere == "S") {
+    unique(temp_data_merged$Year_upd)
+  } else {
+    unique(temp_data_merged$Year)
+  }
   
   # Loop through each unique year
   for (i in 1:length(uniq_year)) {
