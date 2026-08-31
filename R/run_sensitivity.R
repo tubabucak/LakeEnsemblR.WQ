@@ -24,7 +24,7 @@
 #' @param group_name Character or `NULL`. Optional if a certain group (e.g. a phytoplankton
 #' group in a parameter CSV, or a FABM instance such as `"diatoms"` for GOTM-WET/GOTM-Selmaprotbas)
 #' should be selected. If provided, only updates the specified group/column in the parameter CSV
-#' (e.g., `"cyano"`, `"green"`, `"diatom"`), or substitutes into a `{group_name}` placeholder in a
+#' (e.g., `"cyano"`, `"green"`, `"diatom"`), or substitutes into a `\{group_name\}` placeholder in a
 #' GOTM-WET/GOTM-Selmaprotbas `path`. If `NULL`, all relevant rows in `calib_setup` for `param_name`
 #' are used.
 #' @param yaml_file_model Character or \code{NULL}. GOTM yaml filename (e.g. \code{"gotm.yaml"}),
@@ -84,7 +84,7 @@
 #' via \code{LakeEnsemblR::input_yaml_multiple()}). For `.csv` files, it automatically
 #' handles quoted column names and parameter names (e.g., `'p_name'`, `'R_growth'`) by stripping quotes.
 #' When `group_name` is provided, it only updates that specific group column (`.csv`) or substitutes
-#' it into the `{group_name}` placeholder of the `path` (`.yaml`/`.yml`). Otherwise, all columns
+#' it into the `\{group_name\}` placeholder of the `path` (`.yaml`/`.yml`). Otherwise, all columns
 #' (from column 2 onward, `.csv`) are updated for the matching parameter row.
 #'
 #' @importFrom readr read_csv write_csv

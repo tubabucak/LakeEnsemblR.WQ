@@ -28,11 +28,18 @@
 #'     -- see \code{\link{create_calibration_tables}}, which excludes
 #'     these from percentage-based calibration bounds.}
 #'   \item{default}{Default value shipped with the model/dictionary.}
+#'   \item{min}{Literature/plausible-range minimum for the parameter, when
+#'     known. Carried through by \code{\link{create_calibration_tables}} as
+#'     the \code{dict_min} reference column, and used as a fallback bound
+#'     when \code{default} is \code{0} (see \code{\link{create_calibration_tables}}
+#'     for why a percentage-of-default bound doesn't work in that case).}
+#'   \item{max}{Literature/plausible-range maximum for the parameter, when
+#'     known. Same role as \code{min}, carried through as \code{dict_max}.}
 #'   \item{version}{Dictionary/model version this row applies to.}
 #'   \item{note}{Free-text description of the parameter.}
 #' }
 #'
-#' @source \code{data-raw/LakeEnsemblR_WQ_dictionary.csv}
+#' @source \code{data-raw/LakeEnsemblR_WQ_dictionary_20260811.csv}
 "LakeEnsemblR_WQ_dictionary"
 
 #' Harmonized metrics dictionary
