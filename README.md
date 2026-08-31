@@ -14,6 +14,7 @@ public.](https://www.repostatus.org/badges/latest/wip.svg)](https://www.repostat
 experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html#experimental)
 [![License: GPL (\>=
 2)](https://img.shields.io/badge/License-GPL%20(%3E%3D%202)-blue.svg)](https://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html)
+[![R-CMD-check](https://github.com/tubabucak/LakeEnsemblR.WQ/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/tubabucak/LakeEnsemblR.WQ/actions/workflows/R-CMD-check.yaml)
 <!-- badges: end -->
 
 This package aims to facilitate the settin-up, running and calibrating
