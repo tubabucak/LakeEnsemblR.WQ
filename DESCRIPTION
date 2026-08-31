@@ -3,8 +3,8 @@ Type: Package
 Title: Run Ensembles of Water Quality 1D Lake Models
 Version: 0.0.1
 Date: 2026-08-28
-URL: https://github.com/aemon-j/LakeEnsemblR.WQ,
-    https://aemon-j.github.io/LakeEnsemblR.WQ
+URL: https://github.com/tubabucak/LakeEnsemblR.WQ,
+    https://tubabucak.github.io/LakeEnsemblR.WQ
 Authors@R: c(
     person("Tuba", "Bucak", role = c("aut", "cre"), email = "tbo@ecos.au.dk"),
     person("Robert", "Ladwig", role = "aut", email = "rladwig2@wisc.edu"),

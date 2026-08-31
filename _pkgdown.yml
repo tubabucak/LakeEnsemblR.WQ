@@ -89,6 +89,14 @@ reference:
       - convert_ler_to_lerwq
       - create_bathy_bth
 
+  - title: Data
+    desc: Package data objects -- dictionaries and conversion factors used throughout the calibration and metrics workflow.
+    contents:
+      - LakeEnsemblR_WQ_dictionary
+      - Metrics_dict
+      - wq_conv
+      - wq_var_dic
+
 articles:
   - title: Workflow Guides
     navbar: ~
