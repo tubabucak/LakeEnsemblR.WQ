@@ -21,6 +21,8 @@ create_input_tables(
 \item{folder_out}{path; in what folder should the files be placed}
 
 \item{input}{character vector; for what parameters do you want to fill in values}
+
+\item{models_coupled}{character vector; model couplings to generate tables for}
 }
 \description{
 \strong{Deprecated.} This function generates CSV scaffolds for parameter overrides but

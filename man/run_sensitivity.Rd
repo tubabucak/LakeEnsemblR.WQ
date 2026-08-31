@@ -10,15 +10,28 @@ run_sensitivity(
   yaml_file,
   model_dir,
   n_steps = 10,
-  model_filter = "GLM",
-  group_name = NULL
+  model = "GLM-AED2",
+  model_filter = NULL,
+  group_name = NULL,
+  yaml_file_model = NULL,
+  par_file = NULL,
+  wq_config_file = NULL,
+  output_mode = "metrics",
+  vars = NULL,
+  obs_depths = NULL,
+  depth_01 = 1,
+  conversion_factor = 1,
+  target_variable = NULL,
+  verbose = TRUE
 )
 }
 \arguments{
 \item{param_name}{Character. Name of the parameter to modify (must match `pars` in `calib_setup`).}
 
-\item{calib_setup}{Data frame. Calibration setup table containing parameter names, bounds (`lb`, `ub`), 
-initial values (`x0`), file names (`file`), and optionally a `group_name` column for group-specific parameters.}
+\item{calib_setup}{Data frame. Calibration setup table containing parameter names, bounds (`lb`, `ub`),
+initial values (`x0`), file/path names (`file`), and optionally a `group_name` column for group-specific
+parameters. This is the same table produced by \code{\link{calib_setup_from_tables}} and consumed by
+\code{\link{run_lhc_wq}}.}
 
 \item{yaml_file}{Character. Path to the YAML file defining which metrics to extract (output.yaml).}
 
@@ -26,35 +39,110 @@ initial values (`x0`), file names (`file`), and optionally a `group_name` column
 
 \item{n_steps}{Integer. Number of steps (iterations) in the parameter value sequence (default = 10).}
 
-\item{model_filter}{Character. Model identifier used by `cal_metrics()` to filter the results (default = `"GLM"`).}
+\item{model}{Character. One of \code{"GLM-AED2"}, \code{"GOTM-WET"},
+\code{"GOTM-Selmaprotbas"}, or \code{"Simstrat-AED2"}. Determines both how
+\code{param_name} is written to its target file and which model engine is run.
+Default \code{"GLM-AED2"} for backwards compatibility.}
 
-\item{group_name}{Character or `NULL`. Optional if certain pyhtoplankton group should be selected. If provided, only updates the specified group/column
-in the parameter CSV (e.g., `"cyano"`, `"green"`, `"diatom"`). If `NULL`, all relevant rows in `calib_setup`
-for `param_name` are used.}
+\item{model_filter}{Character or \code{NULL}. Model identifier used by `cal_metrics()` to
+filter the results. If \code{NULL} (default), auto-derived from \code{model} (e.g.
+\code{"GLM"}, \code{"WET"}, \code{"SELMAPROTBAS"}, \code{"SIMSTRAT"}).}
+
+\item{group_name}{Character or `NULL`. Optional if a certain group (e.g. a phytoplankton
+group in a parameter CSV, or a FABM instance such as `"diatoms"` for GOTM-WET/GOTM-Selmaprotbas)
+should be selected. If provided, only updates the specified group/column in the parameter CSV
+(e.g., `"cyano"`, `"green"`, `"diatom"`), or substitutes into a `{group_name}` placeholder in a
+GOTM-WET/GOTM-Selmaprotbas `path`. If `NULL`, all relevant rows in `calib_setup` for `param_name`
+are used.}
+
+\item{yaml_file_model}{Character or \code{NULL}. GOTM yaml filename (e.g. \code{"gotm.yaml"}),
+only used/required when \code{model} is \code{"GOTM-WET"} or \code{"GOTM-Selmaprotbas"}. If
+\code{NULL} (default), falls back to \code{"gotm.yaml"}.}
+
+\item{par_file}{Character or \code{NULL}. Simstrat par filename, only used/required when
+\code{model} is \code{"Simstrat-AED2"}. If \code{NULL} (default), falls back to
+\code{"simstrat.par"}.}
+
+\item{wq_config_file}{Character or \code{NULL}. Path to the LakeEnsemblR_WQ config file
+(e.g. \code{"LakeEnsemblR_WQ.yaml"}), passed through to \code{cal_metrics()}. Required
+when \code{output_mode = "metrics"} -- \code{cal_metrics()} uses it to expand
+phytoplankton/zooplankton group templates in the metrics dictionary and has no default
+of its own. Ignored when \code{output_mode = "raw"}.}
+
+\item{output_mode}{Character. \code{"metrics"} (default) runs each step through
+\code{cal_metrics()} -- the harmonized/derived-metric pipeline used elsewhere in this
+package, requiring \code{wq_config_file} and an entry for the metric(s) of interest in
+\code{yaml_file}. \code{"raw"} instead pulls one or more model output variables directly
+via \code{get_output_wq()}, bypassing the metrics dictionary/template machinery entirely
+-- useful for a quick look at how a raw output variable (e.g. \code{"sO2W"} for GOTM-WET)
+responds to \code{param_name} without needing \code{wq_config_file} or an \code{Output.yaml}
+entry for it.}
+
+\item{vars}{Character vector. Required when \code{output_mode = "raw"} -- the model output
+variable name(s) to extract at each step (as they appear in the model's native output,
+e.g. \code{"sO2W"} for GOTM-WET/GOTM-Selmaprotbas, \code{"OXY_oxy"} for GLM-AED2/Simstrat-AED2).
+Passed through to \code{get_output_wq()}'s \code{vars} argument.}
+
+\item{obs_depths}{Numeric vector or \code{NULL}. Only used when \code{output_mode = "raw"}.
+Passed through to \code{get_output_wq()} -- depths to interpolate the raw output to, when
+\code{depth_01 = 1}. \code{NULL} (default) returns output at the model's native depths.}
+
+\item{depth_01}{Integer. Only used when \code{output_mode = "raw"}. Passed through to
+\code{get_output_wq()}: \code{0} if \code{vars} has no depth dimension, \code{1} (default)
+if it does.}
+
+\item{conversion_factor}{Numeric. Only used when \code{output_mode = "raw"}. Passed through
+to \code{get_output_wq()}'s unit conversion factor. Default \code{1} (no conversion).}
+
+\item{target_variable}{Character vector or \code{NULL}. Only used when
+\code{output_mode = "metrics"}. If supplied, the \code{cal_metrics()} output for each step
+is filtered down to just these metric name(s) (i.e. \code{names(metrics)} in the returned
+\code{metrics} list, e.g. \code{"DO_gramsPerCubicMeter"}) instead of returning every metric
+defined in \code{yaml_file}. \code{NULL} (default) keeps all of them. Has no effect in
+\code{output_mode = "raw"} -- there, \code{vars} already selects exactly what's extracted.}
+
+\item{verbose}{Logical. Print progress messages and pass through to the model engine's
+own \code{verbose} argument. Default \code{TRUE}.}
 }
 \value{
 A list with one element per parameter value step. Each element contains:
 \describe{
   \item{param_value}{The value used in this iteration.}
-  \item{metrics}{The output from `cal_metrics()` for this iteration.}
+  \item{metrics}{The output from `cal_metrics()` for this iteration. Only present when
+  \code{output_mode = "metrics"}.}
+  \item{output}{The output from `get_output_wq()` for this iteration (raw model variable(s),
+  one data frame per variable in \code{vars}). Only present when \code{output_mode = "raw"}.}
 }
 }
 \description{
 Performs a one-at-a-time sensitivity analysis for a specified model parameter,
-optionally targeting a specific group (e.g., a phytoplankton group in a parameter CSV).
-The parameter value is iteratively changed across a defined range, the model is run,
-and the selected metrics are calculated at each step.
+optionally targeting a specific group (e.g., a phytoplankton group in a parameter CSV
+or a FABM instance for GOTM-WET/GOTM-Selmaprotbas). The parameter value is iteratively
+changed across a defined range, the model is run, and the selected metrics are
+calculated at each step.
 }
 \details{
-The function supports both `.nml` and `.csv` parameter files. For `.csv` files, it automatically
+The function supports `.nml` and `.csv` parameter files (used by \code{"GLM-AED2"} and
+\code{"Simstrat-AED2"}), as well as FABM `.yaml`/`.yml` parameter files (used by
+\code{"GOTM-WET"} and \code{"GOTM-Selmaprotbas"}, where `calib_setup$file` holds the FABM
+instance/key path, e.g. `"abiotic_water/parameters/hO2Nitr"`, written into `fabm.yaml`
+via \code{LakeEnsemblR::input_yaml_multiple()}). For `.csv` files, it automatically
 handles quoted column names and parameter names (e.g., `'p_name'`, `'R_growth'`) by stripping quotes.
-When `group_name` is provided, it only updates that specific group column. Otherwise, all columns
-(from column 2 onward) are updated for the matching parameter row.
+When `group_name` is provided, it only updates that specific group column (`.csv`) or substitutes
+it into the `{group_name}` placeholder of the `path` (`.yaml`/`.yml`). Otherwise, all columns
+(from column 2 onward, `.csv`) are updated for the matching parameter row.
 }
 \examples{
 \dontrun{
 results <- run_sensitivity("R_growth", calib_setup, yaml_file = "metrics.yaml",
-                           model_dir = "model/", n_steps = 10, group_name = "cyano")
+                           model_dir = "model/", n_steps = 10, model = "GLM-AED2",
+                           group_name = "cyano", wq_config_file = "LakeEnsemblR_WQ.yaml",
+                           target_variable = "DO_gramsPerCubicMeter")
+
+# raw model output instead of cal_metrics() -- no wq_config_file needed
+results <- run_sensitivity("hO2Nitr", calib_setup, yaml_file = "Output.yaml",
+                           model_dir = "GOTM-WET/", n_steps = 10, model = "GOTM-WET",
+                           output_mode = "raw", vars = "sO2W")
 }
 
 }

@@ -9,6 +9,7 @@
 #'@param config_file character; read groups of phytoplankton, zooplankton, etc. from here
 #'@param folder_out path; in what folder should the files be placed
 #'@param input character vector; for what parameters do you want to fill in values
+#'@param models_coupled character vector; model couplings to generate tables for
 #'
 #'@importFrom configr read.config
 #'@importFrom stringr str_extract

@@ -224,7 +224,7 @@ get_runner <- function(model) {
 
 
   for (m in models_to_run) {
-    msg("▶ Running ", m, " ...")
+    msg("Running ", m, " ...")
     rfun <- get_runner(m)
     sim_folder <- model_folders[[m]]
 
@@ -240,19 +240,19 @@ get_runner <- function(model) {
   #   }
   # }
 if (!isTRUE(res$ok)) {
-    msg("✖ ", m, " threw an error: ", res$error)
+    msg("ERROR: ", m, " threw an error: ", res$error)
     if (on_error == "stop") stop("Run failed for ", m, ": ", res$error, call. = FALSE)
     next
   }
 
-  # check the runner’s own ok flag
+  # check the runner's own ok flag
   runner_ok <- isTRUE(res$value$ok)
   nc <- res$value$nc_path %||% NA_character_
 
   if (runner_ok) {
-    msg("✔ Finished ", m, " (NetCDF: ", nc, ")")
+    msg("OK: Finished ", m, " (NetCDF: ", nc, ")")
   } else {
-    msg("⚠ Finished ", m, " but no valid NetCDF detected (nc_path: ", nc, ")")
+    msg("WARNING: Finished ", m, " but no valid NetCDF detected (nc_path: ", nc, ")")
     if (on_error == "stop") stop("Run did not produce expected outputs for ", m, call. = FALSE)
   }
 }

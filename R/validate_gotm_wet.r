@@ -39,7 +39,7 @@ validate_gotm_wet <- function(sim_folder = ".", file = "gotm.yaml", verbose = TR
   if (!file.exists(ypath)) {
     stop("Missing GOTM yaml file: ", ypath, call. = FALSE)
   }
-  msg("✔ Found GOTM yaml file: ", file)
+  msg("OK: Found GOTM yaml file: ", file)
 
   cfg <- yaml::read_yaml(ypath)
 
@@ -73,7 +73,7 @@ validate_gotm_wet <- function(sim_folder = ".", file = "gotm.yaml", verbose = TR
   }
 
   if (length(files) == 0) {
-    msg("ℹ No file references found in yaml (no checks performed).")
+    msg("INFO: No file references found in yaml (no checks performed).")
     msg("GOTM validation completed successfully")
     return(invisible(TRUE))
   }
@@ -90,15 +90,15 @@ validate_gotm_wet <- function(sim_folder = ".", file = "gotm.yaml", verbose = TR
          call. = FALSE)
   }
 
-  msg("✔ All referenced files found")
+  msg("OK: All referenced files found")
 
   # Optional: quick FABM sanity (if fabm is enabled)
   if (isTRUE(cfg$fabm$use)) {
-    msg("✔ FABM is enabled (fabm$use: true)")
+    msg("OK: FABM is enabled (fabm$use: true)")
     # If you later add a fabm config file path (common in some setups),
     # you can validate it here.
   } else if (!is.null(cfg$fabm$use)) {
-    msg("ℹ FABM not enabled (fabm$use is not TRUE)")
+    msg("INFO: FABM not enabled (fabm$use is not TRUE)")
   }
 
   msg("GOTM validation completed successfully")

@@ -242,8 +242,6 @@ format_aed_inflow_simstrat <- function(varname,
 #' @param sim_par Character; path to \code{simstrat.par}-style JSON config.
 #' @param out_dir Character; directory to which inflow \code{.dat} files
 #'   will be written.
-#' @param inflow_map Data frame mapping AED2 modules to inflow variable base
-#'   names; defaults to [aed2_inflow_map].
 #' @param levels Numeric vector; inflow depths (m). If \code{NULL} together
 #'   with \code{surf_flow}, a single surface inflow at 0 m is assumed.
 #' @param surf_flow Logical vector; TRUE for surface inflows, FALSE for deep
@@ -251,6 +249,9 @@ format_aed_inflow_simstrat <- function(varname,
 #' @param default_value Numeric; default initial inflow value (0 for most
 #'   tracers).
 #' @param unit Character; default unit string to use for non-pH variables.
+#' @param overwrite Logical; if \code{FALSE} (default), an existing inflow
+#'   \code{.dat} file for a given variable is left untouched rather than
+#'   regenerated.
 #'
 #' @return Invisibly returns the character vector of inflow variable names
 #'   for which files were written (without \code{.dat} extension).

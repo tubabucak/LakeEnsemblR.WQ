@@ -4,13 +4,11 @@
 #' Get output data for each model (so far GLM-AED, SELMAPROTBAS-GOTM, WET-GOTM) that is specified in the output.yaml
 #'
 #' @name get_output_wq
-##' @param LER_config_file character:filepath; To LER config yaml file. Only used if model = 'GOTM'
 #' @param config_file character:filepath; to Output yaml.
 #' @param model character; Model for which scaling parameters will be applied. So far options include
 #'    c('GLM', 'SELMAPROTBAS', 'WET')
 #' @param vars character vector; variables to be extracted to calculate the metric
 #' @param obs_depths numeric vector; Observation depths. Its required if we need to interpolate the modelled output with observation depths. Defaults to NULL
-#' @param folder character: main filepath; where all the model files are stored.
 #' @param depth_01 integer; Indicates if the variable has 'z' dimension. 0: The variable has no depth component, 1: variable has depth component
 #' @param conversion_factor numeric; unit conversion factors for common metric unit for each variable
 

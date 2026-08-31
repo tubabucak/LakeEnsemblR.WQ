@@ -5,10 +5,22 @@
 \alias{load_config}
 \title{Load and validate LakeEnsemblR.WQ configuration file}
 \usage{
-load_config(config_path)
+load_config(config_path, required_models = NULL)
 }
 \arguments{
 \item{config_path}{Full path to the YAML configuration file.}
+
+\item{required_models}{Character vector or \code{NULL}. When \code{NULL}
+(default), every entry under \code{model_folders} in the config must
+exist on disk -- the original, backward-compatible behavior. When set to
+a vector of model keys (e.g. \code{"WET"}, matching \code{cal_metrics()}'s
+\code{model_filter}), only those entries are required to exist; other
+models' folders are resolved but not validated. Use this when a config
+file lists multiple coupled models but only one has actually been run
+(e.g. a single-model calibration/sensitivity setup) -- without it, an
+unrelated model's missing output folder fails the whole call even though
+\code{model_filter} would never touch it. \code{"all"} is equivalent to
+\code{NULL}.}
 }
 \value{
 A named list with the following elements:

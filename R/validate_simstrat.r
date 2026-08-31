@@ -41,7 +41,7 @@ validate_simstrat <- function(sim_folder = ".",
 
   par_path <- file.path(sim_folder, file)
   if (!file.exists(par_path)) stop("Missing Simstrat parameter file: ", par_path, call. = FALSE)
-  msg("✔ Found Simstrat parameter file: ", file)
+  msg("OK: Found Simstrat parameter file: ", file)
 
   # ---- helper: read .par (JSON-like) into R list ----
   read_simstrat_par <- function(path) {
@@ -104,7 +104,7 @@ extract_time_values <- function(fp, n_head = 5000, n_tail = 5000) {
     for (nm in names(input_paths)) {
       f <- file.path(sim_folder, input_paths[[nm]])
       if (!file.exists(f)) stop("Missing input file (", nm, "): ", f, call. = FALSE)
-      msg("✔ Input OK: ", nm, " -> ", input_paths[[nm]])
+      msg("OK: Input OK: ", nm, " -> ", input_paths[[nm]])
     }
   }
 
@@ -117,7 +117,7 @@ extract_time_values <- function(fp, n_head = 5000, n_tail = 5000) {
       ok <- dir.create(od, recursive = TRUE, showWarnings = FALSE)
       if (!ok) stop("Cannot create output directory: ", od, call. = FALSE)
     }
-    msg("✔ Output directory OK: ", od)
+    msg("OK: Output directory OK: ", od)
   }
 
   # ---- AED2 check if coupled ----
@@ -128,7 +128,7 @@ extract_time_values <- function(fp, n_head = 5000, n_tail = 5000) {
     }
     aed2_path <- file.path(sim_folder, aed2_file)
     if (!file.exists(aed2_path)) stop("Missing AED2 config file: ", aed2_path, call. = FALSE)
-    msg("✔ AED2 config OK: ", aed2_file)
+    msg("OK: AED2 config OK: ", aed2_file)
   }
 
 
@@ -143,7 +143,7 @@ if (isTRUE(check_time_coverage)) {
 
     tvals <- extract_time_values(fp)
     if (length(tvals) == 0) {
-      msg("ℹ Skipping time coverage check (no numeric time values found): ", label)
+      msg("INFO: Skipping time coverage check (no numeric time values found): ", label)
       return(invisible(TRUE))
     }
 
@@ -157,14 +157,14 @@ if (isTRUE(check_time_coverage)) {
     tmax_used <- max(t_nonneg)
 
     if (!is.null(start_d) && is.numeric(start_d) && is.finite(start_d) && tmin_used > start_d) {
-      msg("⚠ ", label, " starts after simulation start (min t=", tmin_used, " > Start d=", start_d, ")")
+      msg("WARNING: ", label, " starts after simulation start (min t=", tmin_used, " > Start d=", start_d, ")")
     }
 
     if (!is.null(end_d) && is.numeric(end_d) && is.finite(end_d) && tmax_used < end_d) {
       stop(label, " does not cover simulation end (max t=", tmax_used, " < End d=", end_d, ")", call. = FALSE)
     }
 
-    msg("✔ Time coverage OK for ", label,
+    msg("OK: Time coverage OK for ", label,
         " (used: ", tmin_used, " .. ", tmax_used,
         "; raw min=", min(tvals), "; raw max=", max(tvals), ")")
     invisible(TRUE)

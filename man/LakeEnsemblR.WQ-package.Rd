@@ -6,7 +6,7 @@
 \alias{LakeEnsemblR.WQ-package}
 \title{LakeEnsemblR.WQ: Run Ensembles of Water Quality 1D Lake Models}
 \description{
-Run ensembles of lake models Water Quality 1D Lake Models.
+Run ensembles of Water Quality 1D Lake Models.
 }
 \seealso{
 Useful links:
@@ -21,6 +21,7 @@ Useful links:
 
 Authors:
 \itemize{
+  \item Tuba Bucak \email{tbo@ecos.au.dk}
   \item Robert Ladwig \email{rladwig2@wisc.edu}
   \item Johannes Feldbauer \email{johannes.feldbauer@tu-dresden.de}
   \item Jorrit Mesman \email{jorrit.mesman@unige.ch}

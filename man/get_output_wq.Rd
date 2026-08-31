@@ -26,10 +26,6 @@ c('GLM', 'SELMAPROTBAS', 'WET')}
 \item{depth_01}{integer; Indicates if the variable has 'z' dimension. 0: The variable has no depth component, 1: variable has depth component}
 
 \item{conversion_factor}{numeric; unit conversion factors for common metric unit for each variable}
-
-\item{LER_config_file}{character:filepath; To LER config yaml file. Only used if model = 'GOTM'}
-
-\item{folder}{character: main filepath; where all the model files are stored.}
 }
 \value{
 A list or dataframe of extracted variables from the specified model. If only one variable is extracted, a dataframe is returned. Otherwise, a list of dataframes is returned.

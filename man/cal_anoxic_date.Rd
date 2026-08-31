@@ -4,7 +4,12 @@
 \alias{cal_anoxic_date}
 \title{Calculate Anoxic Days}
 \usage{
-cal_anoxic_date(oxy_data, bathy_file, threshold = 1, duration = c("full", "longest"))
+cal_anoxic_date(
+  oxy_data,
+  bathy_file,
+  threshold = 1,
+  duration = c("full", "longest")
+)
 }
 \arguments{
 \item{oxy_data}{{data.frame} The output of the model/observed output. It should include Datetime and depth-specific values per column.}

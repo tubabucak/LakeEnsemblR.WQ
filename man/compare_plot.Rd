@@ -21,6 +21,8 @@ compare_plot(
 
 \item{data_selma}{dataframe. Timeseries output of SELMAPROTBAS model ...}
 
+\item{data_simstrat}{dataframe. Timeseries output of Simstrat model ...}
+
 \item{data_obs}{dataframe. Timeseries output of OBSERVED data ...}
 
 \item{depth}{numeric. Certain depth to be compared.}

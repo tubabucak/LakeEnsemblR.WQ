@@ -5,63 +5,127 @@
 \title{Run Multi-Parameter Sensitivity Analysis Using Latin Hypercube Sampling}
 \usage{
 run_multi_param_sensitivity(
-  param_names,
+  param_names = NULL,
   calib_setup,
-  rel_change,
+  rel_change = NULL,
   yaml_file,
   model_dir,
   n_steps = 10,
-  model_filter = "GLM"
+  model = "GLM-AED2",
+  model_filter = NULL,
+  yaml_file_model = NULL,
+  par_file = NULL,
+  wq_config_file = NULL,
+  output_mode = "metrics",
+  vars = NULL,
+  obs_depths = NULL,
+  depth_01 = 1,
+  conversion_factor = 1,
+  target_variable = NULL,
+  verbose = TRUE
 )
 }
 \arguments{
-\item{param_names}{A character vector of parameter names to vary in the sensitivity analysis.}
+\item{param_names}{Character vector or \code{NULL}. Parameter names to vary in the
+sensitivity analysis. May contain duplicate names (e.g. one physical parameter calibrated
+independently for two phytoplankton groups); each occurrence is matched to its own row in
+\code{calib_setup} in order, the same way \code{\link{run_lhc_wq}} disambiguates duplicate
+\code{pars} names. \code{NULL} (default) uses every row of \code{calib_setup$pars} as-is,
+in order -- i.e. by default every parameter in \code{calib_setup} is varied.}
 
-\item{calib_setup}{A data frame containing calibration setup information. Must include columns:
-\code{pars} (parameter names), \code{x0} (default values), \code{file}
-(file path relative to \code{model_dir}), and optionally \code{group_name}
-(for phytoplankton related parameters).}
+\item{calib_setup}{A data frame containing calibration setup information. Must include columns
+\code{pars} (parameter names), \code{file}/path, and \code{lb}/\code{ub} (used when
+\code{rel_change = NULL}) or \code{x0} (used when \code{rel_change} is supplied); optionally
+\code{group_name} for group-specific CSV columns or FABM instance paths.}
 
-\item{rel_change}{A numeric value specifying the relative range (e.g. 0.1
-for plus or minus 10 percent) around the default value \code{x0}.}
+\item{rel_change}{Numeric or \code{NULL}. When supplied, bounds are \code{x0 * (1 -
+rel_change)} to \code{x0 * (1 + rel_change)} for every parameter (e.g. \code{0.1} for
++/-10 percent). When \code{NULL} (default), bounds come from \code{calib_setup$lb}/\code{ub}.}
 
-\item{yaml_file}{Path to the YAML file used for metric extraction by
-\code{cal_metrics()}.}
+\item{yaml_file}{Path to the YAML file used for metric extraction by \code{cal_metrics()}/
+model-folder resolution by \code{get_output_wq()} (output.yaml).}
 
-\item{model_dir}{Path to the directory containing the lake model files and subdirectories. It should include the parameter files (e.g., for phytoplankton).}
+\item{model_dir}{Path to the directory containing the lake model files and subdirectories.}
 
 \item{n_steps}{Number of LHS iterations (i.e., model realizations).}
 
-\item{model_filter}{A character string specifying the model filter passed to
-\code{cal_metrics()} (default is \code{"GLM"}).}
+\item{model}{Character. One of \code{"GLM-AED2"}, \code{"GOTM-WET"},
+\code{"GOTM-Selmaprotbas"}, or \code{"Simstrat-AED2"}. Determines both how each parameter is
+written to its target file and which model engine is run. Default \code{"GLM-AED2"} for
+backwards compatibility.}
+
+\item{model_filter}{Character or \code{NULL}. Model identifier used by \code{cal_metrics()}/
+\code{get_output_wq()}. If \code{NULL} (default), auto-derived from \code{model}.}
+
+\item{yaml_file_model}{Character or \code{NULL}. GOTM yaml filename, only used/required when
+\code{model} is \code{"GOTM-WET"} or \code{"GOTM-Selmaprotbas"}. \code{NULL} (default) falls
+back to \code{"gotm.yaml"}.}
+
+\item{par_file}{Character or \code{NULL}. Simstrat par filename, only used/required when
+\code{model} is \code{"Simstrat-AED2"}. \code{NULL} (default) falls back to \code{"simstrat.par"}.}
+
+\item{wq_config_file}{Character or \code{NULL}. Path to the LakeEnsemblR_WQ config file, passed
+through to \code{cal_metrics()}. Required when \code{output_mode = "metrics"}; ignored when
+\code{output_mode = "raw"}.}
+
+\item{output_mode}{Character. \code{"metrics"} (default) runs each step through
+\code{cal_metrics()} (requires \code{wq_config_file}). \code{"raw"} instead pulls one or more
+model output variables directly via \code{get_output_wq()} (requires \code{vars}), bypassing
+the metrics dictionary/template machinery entirely.}
+
+\item{vars}{Character vector. Required when \code{output_mode = "raw"} -- the model output
+variable name(s) to extract at each step, passed through to \code{get_output_wq()}.}
+
+\item{obs_depths}{Numeric vector or \code{NULL}. Only used when \code{output_mode = "raw"};
+passed through to \code{get_output_wq()}.}
+
+\item{depth_01}{Integer. Only used when \code{output_mode = "raw"}; passed through to
+\code{get_output_wq()}.}
+
+\item{conversion_factor}{Numeric. Only used when \code{output_mode = "raw"}; passed through to
+\code{get_output_wq()}.}
+
+\item{target_variable}{Character vector or \code{NULL}. Only used when
+\code{output_mode = "metrics"}. If supplied, filters the \code{cal_metrics()} output for each
+step down to just these metric name(s) instead of returning every metric in \code{yaml_file}.}
+
+\item{verbose}{Logical. Print progress messages and pass through to the model engine's own
+\code{verbose} argument. Default \code{TRUE}.}
 }
 \value{
-A list of length \code{n_steps}, where each element contains
-  sampled parameter values and extracted metrics.
+A list of length \code{n_steps}. Each element contains \code{params} (the named list of
+  sampled values for that iteration) plus either \code{metrics} (\code{output_mode = "metrics"})
+  or \code{output} (\code{output_mode = "raw"}) -- see \code{\link{run_sensitivity}} for the
+  exact shape of each.
 }
 \description{
 This function performs a multi-parameter sensitivity analysis using
-Latin Hypercube Sampling (LHS) within a specified relative range for
-each parameter. It modifies the input files (either `.nml` or `.csv`)
-for a lake model, runs the model, and extracts defined metrics for each iteration.
-The function reads model configuration files (which are in the model directory), applies sampled parameter values,
-runs the lake model using (`run_glm()`), and collects metrics using (`cal_metrics()`).
-It supports modifying both `.nml` and `.csv` files. For `.csv`, the parameter is matched 
-using a column named (`pars`), and optionally updated using (`group_name`) if provided.
+Latin Hypercube Sampling (LHS): at each iteration, ALL parameters in
+\code{param_names} are varied simultaneously (unlike \code{\link{run_sensitivity}},
+which varies one parameter at a time). It modifies the input files for a coupled
+lake model, runs the model, and extracts either \code{cal_metrics()} output or raw
+model output for each iteration.
 }
 \details{
-Parameter sampling is based on Latin Hypercube Sampling (via (`lhs::randomLHS`)),
-and the sampled values are scaled to a symmetric range around (`x0`).
+Parameter sampling is based on Latin Hypercube Sampling (via \code{lhs::randomLHS}).
+Bounds are, per parameter, either \code{x0 * (1 +/- rel_change)} (when \code{rel_change}
+is supplied) or \code{calib_setup}'s own \code{lb}/\code{ub} columns (when
+\code{rel_change = NULL}, the default) -- the same bounds convention
+\code{\link{run_lhc_wq}}/\code{\link{run_sensitivity}} use.
 }
 \examples{
 \dontrun{
+# Joint sensitivity of DO to 10 parameters at once, GOTM-WET, raw output
 results <- run_multi_param_sensitivity(
-  param_names = c("kw", "sed_temp", "DO_sat"),
+  param_names = c("hO2Nitr", "kNitrW", "cTurbDifO2", "kO2Dif", "fRedMaxS",
+                  "kDMinW", "kDMinS", "hO2BOD", "cMuMax", "kDResp"),
   calib_setup = calib_setup,
-  rel_change = 0.1,
-  yaml_file = "config/metrics.yaml",
-  model_dir = "GLM",
-  n_steps = 20
+  yaml_file   = "Output.yaml",
+  model_dir   = "GOTM-WET",
+  n_steps     = 20,
+  model       = "GOTM-WET",
+  output_mode = "raw",
+  vars        = "sO2W"
 )
 }
 }

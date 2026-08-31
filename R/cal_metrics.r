@@ -6,7 +6,8 @@
 #' @name cal_metrics
 #' @param metric_yaml_file Character: Name of the YAML file containing the list of metrics.
 #' @param model_filter character: name of the model to be extracted (GLM, SELMAPROTBAS, WET). If all model outputs, it should be set to model= "all"
-#' 
+#' @param wq_config_file character: path to the LakeEnsemblR_WQ config file (e.g. "LakeEnsemblR_WQ.yaml"), used to expand phytoplankton/zooplankton group templates in the metrics dictionary.
+#'
 #' @return A list of extractedf variables for each model and for each metric defined in output.yaml
 #' 
 #' @importFrom utils read.csv 
@@ -146,7 +147,7 @@ if (!identical(model_filter, "all")) {
         if (nrow(sel_metric_sub) != 1) {
   stop(
     "metric_mod not unique: ", var_list[i],
-    " → rows found: ", nrow(sel_metric_sub)
+    " -> rows found: ", nrow(sel_metric_sub)
   )
 }
 

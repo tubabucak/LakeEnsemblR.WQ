@@ -38,8 +38,9 @@ tracers).}
 
 \item{unit}{Character; default unit string to use for non-pH variables.}
 
-\item{inflow_map}{Data frame mapping AED2 modules to inflow variable base
-names; defaults to [aed2_inflow_map].}
+\item{overwrite}{Logical; if \code{FALSE} (default), an existing inflow
+\code{.dat} file for a given variable is left untouched rather than
+regenerated.}
 }
 \value{
 Invisibly returns the character vector of inflow variable names

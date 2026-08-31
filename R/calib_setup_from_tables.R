@@ -124,7 +124,7 @@ calib_setup_from_tables <- function(folder_in,
   # Guard: warn about rows where lower >= upper
   bad_bounds <- selected$lower >= selected$upper
   if (any(bad_bounds, na.rm = TRUE)) {
-    warning("The following parameters have lower >= upper — check their bounds:\n  ",
+    warning("The following parameters have lower >= upper -- check their bounds:\n  ",
             paste(selected$parameter[bad_bounds], collapse = ", "))
   }
 

@@ -39,7 +39,7 @@ validate_glm_aed <- function(sim_folder = ".", file = "glm3.nml", verbose = TRUE
   if (!file.exists(nml_path)) {
     stop("Missing nml file: ", nml_path, call. = FALSE)
   }
-  msg("✔ Found nml file: ", file)
+  msg("OK: Found nml file: ", file)
   
   txt <- readLines(nml_path, warn = FALSE)
   
@@ -68,7 +68,7 @@ validate_glm_aed <- function(sim_folder = ".", file = "glm3.nml", verbose = TRUE
            call. = FALSE)
     }
     
-    msg("✔ All ", label, " files found")
+    msg("OK: All ", label, " files found")
     invisible(TRUE)
   }
   
@@ -91,7 +91,7 @@ validate_glm_aed <- function(sim_folder = ".", file = "glm3.nml", verbose = TRUE
       ok <- dir.create(od, recursive = TRUE, showWarnings = FALSE)
       if (!ok) stop("Cannot create output directory: ", od, call. = FALSE)
     }
-    msg("✔ Output directory OK: ", od)
+    msg("OK: Output directory OK: ", od)
   }
   
   msg("GLM validation completed successfully")

@@ -546,7 +546,7 @@ model_key <- names(cfg$model_folders)[toupper(names(cfg$model_folders)) == toupp
         )
       }
     } else {
-      # No depth dimension – direct time-series comparison
+      # No depth dimension -- direct time-series comparison
       obs_ts           <- obs_sub[, c("datetime", "value")]
 
       # Identify the datetime column (case-insensitive) and the value column(s).
@@ -601,7 +601,7 @@ model_key <- names(cfg$model_folders)[toupper(names(cfg$model_folders)) == toupp
     skip_msg <- if (length(skip_counts) > 0L)
       paste(names(skip_counts), unlist(skip_counts), sep = "=", collapse = ", ")
     else
-      "(no skip counts — obs_vars may be empty)"
+      "(no skip counts -- obs_vars may be empty)"
     message(
       "[LHC][obs-stats] No statistics produced.",
       "\n  obs variable_global_name values tried: ", paste(obs_vars, collapse = ", "),
@@ -687,6 +687,16 @@ model_key <- names(cfg$model_folders)[toupper(names(cfg$model_folders)) == toupp
 #'   under the project root rather than \code{tempdir()} -- see its docs.
 #' @param keep_worker_dirs Logical. Keep worker directories after completion
 #'   when \code{parallel = TRUE}. Passed to \code{run_lhc_wq_parallel()}.
+#' @param lhs_matrix Numeric matrix or \code{NULL}. Internal use -- a
+#'   precomputed Latin Hypercube sample matrix (in [0, 1] scale, one row per
+#'   sample, one column per parameter) to reuse instead of drawing a fresh
+#'   one. Used by \code{run_lhc_wq_parallel()} to share one sample matrix
+#'   across its worker processes.
+#' @param sample_indices Integer vector or \code{NULL}. Internal use -- which
+#'   rows of \code{lhs_matrix} (or of a freshly-drawn sample matrix) this call
+#'   should actually run, when only a subset is wanted. Used by
+#'   \code{run_lhc_wq_parallel()} to assign each worker its own slice of
+#'   samples.
 #' @param use_de Logical. If \code{TRUE}, run differential evolution after LHC
 #'   initialization using LHC results as generation 1. Default is \code{FALSE}
 #'   (LHC-only mode maintains backward compatibility).
@@ -704,6 +714,13 @@ model_key <- names(cfg$model_folders)[toupper(names(cfg$model_folders)) == toupp
 #' @param de_seed_from_lhc Logical. Initialize DE population from best LHC
 #'   results (default = \code{TRUE}). If \code{FALSE}, DE starts from random
 #'   population. Ignored when \code{use_de = FALSE}.
+#' @param de_parallel Logical. If \code{TRUE}, evaluate each DE generation's
+#'   population across a parallel cluster instead of sequentially. Default is
+#'   \code{FALSE}. Ignored when \code{use_de = FALSE}.
+#' @param de_n_workers Integer or \code{NULL}. Number of workers used when
+#'   \code{de_parallel = TRUE}. \code{NULL} (default) uses
+#'   \code{detectCores(logical = FALSE) - 1}. Ignored when
+#'   \code{de_parallel = FALSE}.
 #' @param precomputed_lhc_results Data frame or \code{NULL}. Internal use --
 #'   when supplied (already in the shape \code{run_lhc_wq()}'s own LHC phase
 #'   would produce, including the \code{attr(., "best_parameter_set")}
@@ -1466,7 +1483,7 @@ run_lhc_wq <- function(model,
 
     if (grepl("\\.nml$", file_or_path, ignore.case = TRUE)) {
       
-      # 🔹 SAFE INTERCEPT: If it's an AED2 file, do NOT use glmtools!
+      # SAFE INTERCEPT: If it's an AED2 file, do NOT use glmtools!
       if (model_upper %in% c("GLM-AED2", "SIMSTRAT-AED2") || grepl("aed2", basename(param_path), ignore.case = TRUE)) {
         
         path_parts <- strsplit(file_or_path, "/", fixed = TRUE)[[1]]
