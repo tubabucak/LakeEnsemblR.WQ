@@ -9,7 +9,7 @@ dictionary, and metric YAML), and model-specific output folders.
 ## Usage
 
 ``` r
-load_config(config_path)
+load_config(config_path, required_models = NULL)
 ```
 
 ## Arguments
@@ -17,6 +17,21 @@ load_config(config_path)
 - config_path:
 
   Full path to the YAML configuration file.
+
+- required_models:
+
+  Character vector or `NULL`. When `NULL` (default), every entry under
+  `model_folders` in the config must exist on disk – the original,
+  backward-compatible behavior. When set to a vector of model keys (e.g.
+  `"WET"`, matching
+  [`cal_metrics()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/cal_metrics.md)'s
+  `model_filter`), only those entries are required to exist; other
+  models' folders are resolved but not validated. Use this when a config
+  file lists multiple coupled models but only one has actually been run
+  (e.g. a single-model calibration/sensitivity setup) – without it, an
+  unrelated model's missing output folder fails the whole call even
+  though `model_filter` would never touch it. `"all"` is equivalent to
+  `NULL`.
 
 ## Value
 

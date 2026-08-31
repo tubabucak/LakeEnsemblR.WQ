@@ -37,3 +37,7 @@ create_input_tables(
 - input:
 
   character vector; for what parameters do you want to fill in values
+
+- models_coupled:
+
+  character vector; model couplings to generate tables for

@@ -29,7 +29,7 @@ either cal_metrics() outputs or observed-data statistics."></head><body>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json"></form></li>
-<li class="nav-item"><a class="external-link nav-link" href="https://github.com/aemon-j/LakeEnsemblR.WQ/" aria-label="GitHub"><span class="fa fab fa-github fa-lg"></span></a></li>
+<li class="nav-item"><a class="external-link nav-link" href="https://github.com/tubabucak/LakeEnsemblR.WQ/" aria-label="GitHub"><span class="fa fab fa-github fa-lg"></span></a></li>
       </ul></div>
 
 
@@ -39,7 +39,7 @@ either cal_metrics() outputs or observed-data statistics."></head><body>
   <main id="main" class="col-md-9"><div class="page-header">
 
       <h1>Run Latin Hypercube Calibration for Water Quality Models</h1>
-      <small class="dont-index">Source: <a href="https://github.com/aemon-j/LakeEnsemblR.WQ/blob/main/R/run_lhc_wq.r" class="external-link"><code>R/run_lhc_wq.r</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/tubabucak/LakeEnsemblR.WQ/blob/main/R/run_lhc_wq.r" class="external-link"><code>R/run_lhc_wq.r</code></a></small>
       <div class="d-none name"><code>run_lhc_wq.Rd</code></div>
     </div>
 
@@ -234,6 +234,22 @@ under the project root rather than <code><a href="https://rdrr.io/r/base/tempfil
 when <code>parallel = TRUE</code>. Passed to <code><a href="run_lhc_wq_parallel.html">run_lhc_wq_parallel()</a></code>.</p></dd>
 
 
+<dt id="arg-lhs-matrix">lhs_matrix<a class="anchor" aria-label="anchor" href="#arg-lhs-matrix"></a></dt>
+<dd><p>Numeric matrix or <code>NULL</code>. Internal use – a
+precomputed Latin Hypercube sample matrix (in [0, 1] scale, one row per
+sample, one column per parameter) to reuse instead of drawing a fresh
+one. Used by <code><a href="run_lhc_wq_parallel.html">run_lhc_wq_parallel()</a></code> to share one sample matrix
+across its worker processes.</p></dd>
+
+
+<dt id="arg-sample-indices">sample_indices<a class="anchor" aria-label="anchor" href="#arg-sample-indices"></a></dt>
+<dd><p>Integer vector or <code>NULL</code>. Internal use – which
+rows of <code>lhs_matrix</code> (or of a freshly-drawn sample matrix) this call
+should actually run, when only a subset is wanted. Used by
+<code><a href="run_lhc_wq_parallel.html">run_lhc_wq_parallel()</a></code> to assign each worker its own slice of
+samples.</p></dd>
+
+
 <dt id="arg-use-de">use_de<a class="anchor" aria-label="anchor" href="#arg-use-de"></a></dt>
 <dd><p>Logical. If <code>TRUE</code>, run differential evolution after LHC
 initialization using LHC results as generation 1. Default is <code>FALSE</code>
@@ -267,6 +283,19 @@ increase parameter exchange probability. Default is 0.9. Ignored when
 <dd><p>Logical. Initialize DE population from best LHC
 results (default = <code>TRUE</code>). If <code>FALSE</code>, DE starts from random
 population. Ignored when <code>use_de = FALSE</code>.</p></dd>
+
+
+<dt id="arg-de-parallel">de_parallel<a class="anchor" aria-label="anchor" href="#arg-de-parallel"></a></dt>
+<dd><p>Logical. If <code>TRUE</code>, evaluate each DE generation's
+population across a parallel cluster instead of sequentially. Default is
+<code>FALSE</code>. Ignored when <code>use_de = FALSE</code>.</p></dd>
+
+
+<dt id="arg-de-n-workers">de_n_workers<a class="anchor" aria-label="anchor" href="#arg-de-n-workers"></a></dt>
+<dd><p>Integer or <code>NULL</code>. Number of workers used when
+<code>de_parallel = TRUE</code>. <code>NULL</code> (default) uses
+<code>detectCores(logical = FALSE) - 1</code>. Ignored when
+<code>de_parallel = FALSE</code>.</p></dd>
 
 
 <dt id="arg-precomputed-lhc-results">precomputed_lhc_results<a class="anchor" aria-label="anchor" href="#arg-precomputed-lhc-results"></a></dt>

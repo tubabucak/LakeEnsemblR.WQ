@@ -20,6 +20,12 @@ cal_metrics(metric_yaml_file, model_filter = "all", wq_config_file)
   character: name of the model to be extracted (GLM, SELMAPROTBAS, WET).
   If all model outputs, it should be set to model= "all"
 
+- wq_config_file:
+
+  character: path to the LakeEnsemblR_WQ config file (e.g.
+  "LakeEnsemblR_WQ.yaml"), used to expand phytoplankton/zooplankton
+  group templates in the metrics dictionary.
+
 ## Value
 
 A list of extractedf variables for each model and for each metric

@@ -44,7 +44,7 @@
 <li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json">
 </form></li>
-<li class="nav-item"><a class="external-link nav-link" href="https://github.com/aemon-j/LakeEnsemblR.WQ/" aria-label="GitHub"><span class="fa fab fa-github fa-lg"></span></a></li>
+<li class="nav-item"><a class="external-link nav-link" href="https://github.com/tubabucak/LakeEnsemblR.WQ/" aria-label="GitHub"><span class="fa fab fa-github fa-lg"></span></a></li>
       </ul>
 </div>
 
@@ -61,7 +61,7 @@
       <h1>Configuration File Reference</h1>
             
       
-      <small class="dont-index">Source: <a href="https://github.com/aemon-j/LakeEnsemblR.WQ/blob/main/vignettes/config-reference.Rmd" class="external-link"><code>vignettes/config-reference.Rmd</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/tubabucak/LakeEnsemblR.WQ/blob/main/vignettes/config-reference.Rmd" class="external-link"><code>vignettes/config-reference.Rmd</code></a></small>
       <div class="d-none name"><code>config-reference.Rmd</code></div>
     </div>
 
@@ -482,11 +482,11 @@ these files get edited day to day (as seen throughout the shipped
 example, where most Level2/Level3 metrics are commented out by default).
 <code><a href="../reference/cal_metrics.html">cal_metrics()</a></code> only computes what’s left uncommented.</p>
 <p><strong>Finding valid metric names</strong>: check the package’s own
-metrics dictionary – <code>LakeEnsemblR.WQ::Metrics_dict</code> – which
+metrics dictionary – <code><a href="../reference/Metrics_dict.html">LakeEnsemblR.WQ::Metrics_dict</a></code> – which
 lists every supported metric name per model and level, alongside its
 units and the underlying computation function:</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">metrics</span> <span class="op">&lt;-</span> <span class="fu">LakeEnsemblR.WQ</span><span class="fu">::</span><span class="va">Metrics_dict</span></span>
+<code class="sourceCode R"><span><span class="va">metrics</span> <span class="op">&lt;-</span> <span class="fu">LakeEnsemblR.WQ</span><span class="fu">::</span><span class="va"><a href="../reference/Metrics_dict.html">Metrics_dict</a></span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/unique.html" class="external-link">unique</a></span><span class="op">(</span><span class="va">metrics</span><span class="op">[</span><span class="va">metrics</span><span class="op">$</span><span class="va">level</span> <span class="op">==</span> <span class="st">"Level1"</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"metric_name"</span>, <span class="st">"variable_global_name"</span>, <span class="st">"unit_global"</span><span class="op">)</span><span class="op">]</span><span class="op">)</span></span></code></pre></div>
 <p>This is the same table <code>variable_global_name</code> values (see
 the observed-data CSV section below) are drawn from.</p>

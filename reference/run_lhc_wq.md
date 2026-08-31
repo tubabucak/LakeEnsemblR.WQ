@@ -190,6 +190,22 @@ run_lhc_wq(
   `parallel = TRUE`. Passed to
   [`run_lhc_wq_parallel()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/run_lhc_wq_parallel.md).
 
+- lhs_matrix:
+
+  Numeric matrix or `NULL`. Internal use – a precomputed Latin Hypercube
+  sample matrix (in \[0, 1\] scale, one row per sample, one column per
+  parameter) to reuse instead of drawing a fresh one. Used by
+  [`run_lhc_wq_parallel()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/run_lhc_wq_parallel.md)
+  to share one sample matrix across its worker processes.
+
+- sample_indices:
+
+  Integer vector or `NULL`. Internal use – which rows of `lhs_matrix`
+  (or of a freshly-drawn sample matrix) this call should actually run,
+  when only a subset is wanted. Used by
+  [`run_lhc_wq_parallel()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/run_lhc_wq_parallel.md)
+  to assign each worker its own slice of samples.
+
 - use_de:
 
   Logical. If `TRUE`, run differential evolution after LHC
@@ -223,6 +239,18 @@ run_lhc_wq(
   Logical. Initialize DE population from best LHC results (default =
   `TRUE`). If `FALSE`, DE starts from random population. Ignored when
   `use_de = FALSE`.
+
+- de_parallel:
+
+  Logical. If `TRUE`, evaluate each DE generation's population across a
+  parallel cluster instead of sequentially. Default is `FALSE`. Ignored
+  when `use_de = FALSE`.
+
+- de_n_workers:
+
+  Integer or `NULL`. Number of workers used when `de_parallel = TRUE`.
+  `NULL` (default) uses `detectCores(logical = FALSE) - 1`. Ignored when
+  `de_parallel = FALSE`.
 
 - precomputed_lhc_results:
 

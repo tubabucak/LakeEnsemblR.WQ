@@ -6,7 +6,12 @@ each year/season
 ## Usage
 
 ``` r
-cal_anoxic_date(oxy_data, bathy_file, threshold = 1, duration = c("full", "longest"))
+cal_anoxic_date(
+  oxy_data,
+  bathy_file,
+  threshold = 1,
+  duration = c("full", "longest")
+)
 ```
 
 ## Arguments

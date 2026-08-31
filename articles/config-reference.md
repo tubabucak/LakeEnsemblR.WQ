@@ -297,9 +297,10 @@ are commented out by default).
 only computes what’s left uncommented.
 
 **Finding valid metric names**: check the package’s own metrics
-dictionary – `LakeEnsemblR.WQ::Metrics_dict` – which lists every
-supported metric name per model and level, alongside its units and the
-underlying computation function:
+dictionary –
+[`LakeEnsemblR.WQ::Metrics_dict`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/Metrics_dict.md)
+– which lists every supported metric name per model and level, alongside
+its units and the underlying computation function:
 
 ``` r
 

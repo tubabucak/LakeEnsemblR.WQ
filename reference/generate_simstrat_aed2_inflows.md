@@ -57,10 +57,10 @@ generate_simstrat_aed2_inflows(
 
   Character; default unit string to use for non-pH variables.
 
-- inflow_map:
+- overwrite:
 
-  Data frame mapping AED2 modules to inflow variable base names;
-  defaults to \[aed2_inflow_map\].
+  Logical; if `FALSE` (default), an existing inflow `.dat` file for a
+  given variable is left untouched rather than regenerated.
 
 ## Value
 

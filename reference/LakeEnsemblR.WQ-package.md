@@ -1,6 +1,6 @@
 # LakeEnsemblR.WQ: Run Ensembles of Water Quality 1D Lake Models
 
-Run ensembles of lake models Water Quality 1D Lake Models.
+Run ensembles of Water Quality 1D Lake Models.
 
 ## See also
 
@@ -15,6 +15,8 @@ Useful links:
 **Maintainer**: Tuba Bucak <tbo@ecos.au.dk>
 
 Authors:
+
+- Tuba Bucak <tbo@ecos.au.dk>
 
 - Robert Ladwig <rladwig2@wisc.edu>
 

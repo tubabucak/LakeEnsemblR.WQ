@@ -137,3 +137,17 @@ Create and manage NetCDF outputs.
   : Convert LakeEnsemblR configuration to LakeEnsemblR.WQ
 - [`create_bathy_bth()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/create_bathy_bth.md)
   : Create a Lake Analyzer bathymetry file (.bth)
+
+## Data
+
+Package data objects – dictionaries and conversion factors used
+throughout the calibration and metrics workflow.
+
+- [`LakeEnsemblR_WQ_dictionary`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/LakeEnsemblR_WQ_dictionary.md)
+  : LakeEnsemblR.WQ parameter dictionary
+- [`Metrics_dict`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/Metrics_dict.md)
+  : Harmonized metrics dictionary
+- [`wq_conv`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/wq_conv.md)
+  : Molar mass conversion factors
+- [`wq_var_dic`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/wq_var_dic.md)
+  : Nutrient inflow variable dictionary

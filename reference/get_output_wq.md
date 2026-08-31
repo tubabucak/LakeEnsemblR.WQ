@@ -47,15 +47,6 @@ get_output_wq(
   numeric; unit conversion factors for common metric unit for each
   variable
 
-- LER_config_file:
-
-  character:filepath; To LER config yaml file. Only used if model =
-  'GOTM'
-
-- folder:
-
-  character: main filepath; where all the model files are stored.
-
 ## Value
 
 A list or dataframe of extracted variables from the specified model. If

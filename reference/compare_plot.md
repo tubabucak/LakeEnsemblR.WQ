@@ -31,6 +31,10 @@ compare_plot(
 
   dataframe. Timeseries output of SELMAPROTBAS model ...
 
+- data_simstrat:
+
+  dataframe. Timeseries output of Simstrat model ...
+
 - data_obs:
 
   dataframe. Timeseries output of OBSERVED data ...

@@ -304,7 +304,7 @@ If you’re developing against a local clone and see errors like
 function’s source, your session is likely running a stale **installed**
 copy of the package rather than your edited source – reload with
 `devtools::load_all(".")` instead of
-[`library(LakeEnsemblR.WQ)`](https://github.com/aemon-j/LakeEnsemblR.WQ).
+[`library(LakeEnsemblR.WQ)`](https://github.com/tubabucak/LakeEnsemblR.WQ).
 
 ## Development
 
