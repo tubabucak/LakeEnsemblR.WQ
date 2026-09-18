@@ -50,7 +50,10 @@
 #'   \item{plot}{A ggplot2 object: one facet per observed depth, modeled line
 #'     vs. observed points, with per-depth KGE/RMSE in the facet strip.}
 #'   \item{data}{The joined long-format data frame (\code{datetime}, \code{depth},
-#'     \code{Predicted}, \code{Observed}) used to build the plot.}
+#'     \code{Predicted}, \code{Observed}) used to build the plot -- covers the
+#'     full simulated series at each observed depth, with \code{Observed}
+#'     \code{NA} wherever there's no matching observation at that
+#'     datetime/depth.}
 #'   \item{stats}{A data frame with one row per depth: \code{depth}, \code{NSE},
 #'     \code{RMSE}, \code{NRMSE}, \code{PBIAS}, \code{KGE}, \code{n}.}
 #' }
@@ -156,14 +159,18 @@ plot_model_vs_obs_wq <- function(config_file, model, vars = NULL, obs_data,
     sim_depths[which.min(abs(sim_depths - d))]
   }, numeric(1))
 
-  joined <- dplyr::inner_join(sim_long, obs_long, by = c("datetime", "depth"))
-  if (nrow(joined) == 0) {
+  # Left join keeps the full simulated series (so the modeled line stays
+  # continuous even where observations are sparse); Observed is NA wherever
+  # there's no matching observation at that datetime/depth.
+  joined <- dplyr::left_join(sim_long, obs_long, by = c("datetime", "depth"))
+  if (all(is.na(joined$Observed))) {
     stop("No overlapping datetime/depth rows between simulated and observed data. ",
          "Check that 'obs_data' datetimes fall within the model's simulation period.")
   }
 
-  stats_by_depth <- lapply(sort(unique(joined$depth)), function(d) {
-    sub <- joined[joined$depth == d, , drop = FALSE]
+  matched <- joined[!is.na(joined$Observed), , drop = FALSE]
+  stats_by_depth <- lapply(sort(unique(matched$depth)), function(d) {
+    sub <- matched[matched$depth == d, , drop = FALSE]
     st <- cal_stats(sub$Observed, sub$Predicted)
     data.frame(depth = d, NSE = st$NSE, RMSE = st$RMSE, NRMSE = st$NRMSE,
                PBIAS = st$PBIAS, KGE = st$KGE, n = nrow(sub))
