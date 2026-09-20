@@ -46,7 +46,7 @@ Some dependencies are GitHub-only wrappers around external lake model
 binaries: `GLM3r`, `WETr`, `SelmaprotbasR`, `SimstratR`, `MyLakeR`.
 These are optional – you only need the one(s) matching the model(s) you
 actually run. If a required one is missing,
-[`run_ensemble_wq()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/run_ensemble_wq.md)/[`run_lhc_wq()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/run_lhc_wq.md)
+[`run_ensemble_wq()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/run_ensemble_wq.md)/[`calib_wq()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/calib_wq.md)
 will tell you at call time rather than fail silently. All of them are
 listed in `Remotes:` in `DESCRIPTION`, so
 [`remotes::install_github()`](https://remotes.r-lib.org/reference/install_github.html)
@@ -200,7 +200,7 @@ article (or
 [`vignette("full-workflow")`](https://tubabucak.github.io/LakeEnsemblR.WQ/articles/full-workflow.md)
 if you installed with `build_vignettes = TRUE`) for the full calibration
 workflow, including single-model LHC/DE runs via
-[`run_lhc_wq()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/run_lhc_wq.md),
+[`calib_wq()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/calib_wq.md),
 writing best parameters back with
 [`write_best_calib_to_par_files()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/write_best_calib_to_par_files.md)
 and post-processing functions. See the [Configuration File
@@ -238,8 +238,8 @@ article for a field-by-field breakdown of `LakeEnsemblR_WQ.yaml` and
   - export_all_stats()
 - Calibration:
   - create_calibration_tables() / calib_setup_from_tables()
-  - run_lhc_wq() – single-model LHC sampling, with optional DE
-    refinement (`use_de = TRUE`) and optional internal parallelism
+  - calib_wq() – single-model LHC sampling, with optional DE refinement
+    (`use_de = TRUE`) and optional internal parallelism
     (`parallel`/`de_parallel`)
   - cali_ensemble_wq() – calibrate multiple coupled models at once,
     sequentially or concurrently (`parallel_models = TRUE`)

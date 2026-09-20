@@ -25,7 +25,8 @@ plot_model_vs_obs_wq(
   variable_global_name,
   y_title = variable_global_name,
   conversion_factor = NULL,
-  dict_file = NULL
+  dict_file = NULL,
+  wq_config_file = NULL
 )
 ```
 
@@ -74,7 +75,7 @@ plot_model_vs_obs_wq(
   is in model-native units (e.g. GLM's DO is mmol O2/m3, not grams/m3 as
   in a typical observed CSV). If `NULL` (default), auto-derived from the
   metrics dictionary the same way
-  [`run_lhc_wq()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/run_lhc_wq.md)'s
+  [`calib_wq()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/calib_wq.md)'s
   calibration scoring does: looked up by `model`/`variable_global_name`.
   Pass a number explicitly to override the dictionary lookup.
 
@@ -85,6 +86,18 @@ plot_model_vs_obs_wq(
   `vars`/`conversion_factor`. If `NULL` (default), uses
   `load_config(config_file)$metrics_dict_file`, falling back to the
   package's bundled default dictionary.
+
+- wq_config_file:
+
+  character or `NULL`. Path to the `LakeEnsemblR_WQ.yaml` config file.
+  Only needed for `model = "GOTM-Selmaprotbas"`/`"GOTM-WET"` when the
+  auto-derived `vars` resolves to the dictionary's generic
+  `"zooplankton_*"` placeholder – since SELMAPROTBAS/WET always create
+  one named FABM instance per configured zooplankton group (never a
+  literal instance called `"zooplankton"`), that placeholder is expanded
+  into each group's own output variable (e.g. `"daphnia_c"`,
+  `"cyclops_c"`), fetched, and summed into one total zooplankton series
+  before plotting.
 
 ## Value
 
@@ -98,7 +111,9 @@ A list with:
 - data:
 
   The joined long-format data frame (`datetime`, `depth`, `Predicted`,
-  `Observed`) used to build the plot.
+  `Observed`) used to build the plot – covers the full simulated series
+  at each observed depth, with `Observed` `NA` wherever there's no
+  matching observation at that datetime/depth.
 
 - stats:
 

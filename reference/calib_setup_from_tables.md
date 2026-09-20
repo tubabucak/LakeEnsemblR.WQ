@@ -4,7 +4,7 @@ Reads the per-module calibration CSV files produced by
 [`create_calibration_tables`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/create_calibration_tables.md),
 filters to rows where `include == TRUE`, and returns a `calib_setup`
 data frame in the format expected by
-[`run_lhc_wq`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/run_lhc_wq.md)
+[`calib_wq`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/calib_wq.md)
 and
 [`run_sensitivity`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/run_sensitivity.md).
 
@@ -32,15 +32,15 @@ calib_setup_from_tables(folder_in, model_coupled, group_name = NULL)
 
   character or `NULL`; for biological modules with multiple groups
   (phytoplankton, zooplankton, etc.) this maps to the `group_name`
-  column expected by `run_lhc_wq`. When `NULL` (default) the column is
-  set to `NA`.
+  column expected by `calib_wq`. When `NULL` (default) the column is set
+  to `NA`.
 
 ## Value
 
 A data frame with columns `model_coupled`, `module`, `domain`,
 `process`, `subprocess`, `pars`, `lb`, `ub`, `x0`, `log`, `file`,
 `group_name`, `unit`, `note`. When a single model is supplied, the
-result can be passed directly to `run_lhc_wq` or `run_sensitivity`. When
+result can be passed directly to `calib_wq` or `run_sensitivity`. When
 multiple models are supplied, the output is a combined reference table
 and should be filtered per model before running calibration.
 
@@ -63,7 +63,7 @@ calib_setup <- calib_setup_from_tables(
   model_coupled = "GOTM-Selmaprotbas"
 )
 
-results <- run_lhc_wq(
+results <- calib_wq(
   model          = "GOTM-Selmaprotbas",
   param_names    = calib_setup$pars,
   calib_setup    = calib_setup,

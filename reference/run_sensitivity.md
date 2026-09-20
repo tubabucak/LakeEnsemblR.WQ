@@ -47,7 +47,7 @@ run_sensitivity(
   This is the same table produced by
   [`calib_setup_from_tables`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/calib_setup_from_tables.md)
   and consumed by
-  [`run_lhc_wq`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/run_lhc_wq.md).
+  [`calib_wq`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/calib_wq.md).
 
 - yaml_file:
 

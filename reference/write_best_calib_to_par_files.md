@@ -1,7 +1,7 @@
 # Write best calibration parameter set back to par_file CSVs
 
 After running
-[`run_lhc_wq`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/run_lhc_wq.md)
+[`calib_wq`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/calib_wq.md)
 with `obs_file` supplied (which returns a data frame of parameter
 values + performance statistics), this function picks the
 best-performing row and writes the calibrated parameter values into the
@@ -30,7 +30,7 @@ write_best_calib_to_par_files(
 - lhc_results:
 
   data.frame; the output of
-  [`run_lhc_wq()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/run_lhc_wq.md)
+  [`calib_wq()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/calib_wq.md)
   when `obs_file` is supplied. Must contain one column per calibrated
   parameter and at least one performance-metric column (e.g. `NSE`,
   `KGE`).
@@ -38,7 +38,7 @@ write_best_calib_to_par_files(
 - calib_setup:
 
   data.frame; the calibration setup table used when running
-  [`run_lhc_wq()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/run_lhc_wq.md),
+  [`calib_wq()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/calib_wq.md),
   as produced by
   [`calib_setup_from_tables`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/calib_setup_from_tables.md).
   Must contain columns `pars`, `model_coupled`, `domain`, `process`,
@@ -105,7 +105,7 @@ calib_setup <- calib_setup_from_tables(
   model_coupled = "GOTM-Selmaprotbas"
 )
 
-lhc_results <- run_lhc_wq(
+lhc_results <- calib_wq(
   model          = "GOTM-Selmaprotbas",
   param_names    = calib_setup$pars,
   calib_setup    = calib_setup,

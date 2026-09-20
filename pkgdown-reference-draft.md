@@ -25,7 +25,7 @@ be used as a starting point for a pkgdown reference index.
 - run_ensemble_wq()
 - run_sensitivity()
 - run_multi_param_sensitivity()
-- run_lhc_wq()
+- calib_wq()
 
 ## Simstrat-AED2 helpers
 

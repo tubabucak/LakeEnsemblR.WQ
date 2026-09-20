@@ -17,15 +17,21 @@ and related setup functions). This version adds:
 - **Calibration and sensitivity**:
   [`create_calibration_tables()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/create_calibration_tables.md),
   [`calib_setup_from_tables()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/calib_setup_from_tables.md),
-  [`run_lhc_wq()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/run_lhc_wq.md)
+  [`calib_wq()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/calib_wq.md)
   (with an optional parallel backend,
-  [`run_lhc_wq_parallel()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/run_lhc_wq_parallel.md)),
+  [`calib_wq_parallel()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/calib_wq_parallel.md)),
   [`run_sensitivity()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/run_sensitivity.md),
   [`run_multi_param_sensitivity()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/run_multi_param_sensitivity.md),
   [`cali_ensemble_wq()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/cali_ensemble_wq.md)
   (multi-model calibration wrapper with optional Differential Evolution
   refinement via `DEoptim`),
   [`write_best_calib_to_par_files()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/write_best_calib_to_par_files.md).
+  Note:
+  [`calib_wq()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/calib_wq.md)
+  and
+  [`calib_wq_parallel()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/calib_wq_parallel.md)
+  were previously named `run_lhc_wq()` and `run_lhc_wq_parallel()`; the
+  old names have been removed (no deprecated aliases).
 - **Extraction and metrics**:
   [`get_output_wq()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/get_output_wq.md),
   [`extract_variable_list()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/extract_variable_list.md),

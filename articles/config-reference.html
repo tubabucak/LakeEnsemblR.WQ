@@ -89,7 +89,7 @@ everything downstream of it.</li>
 that the user would like to calculate after calibrationg the models:
 which support files (bathymetry, dictionary) to use, and which derived
 metrics to compute*. Read by <code><a href="../reference/load_config-colon.html">load_config()</a></code>,
-<code><a href="../reference/cal_metrics.html">cal_metrics()</a></code>, <code><a href="../reference/run_lhc_wq.html">run_lhc_wq()</a></code>, and most
+<code><a href="../reference/cal_metrics.html">cal_metrics()</a></code>, <code><a href="../reference/calib_wq.html">calib_wq()</a></code>, and most
 calibration/plotting functions.</li>
 </ul>
 <p>This vignette documents both files that you can use in your setup as
@@ -440,7 +440,7 @@ the metrics config lives without being told separately.</td>
 <code><a href="../reference/load_config-colon.html">load_config()</a></code> requires <strong>every</strong> entry listed
 here to exist on disk – even if you only intend to work with one model
 right now. Several functions (<code><a href="../reference/cal_metrics.html">cal_metrics()</a></code>,
-<code><a href="../reference/run_lhc_wq.html">run_lhc_wq()</a></code>) accept a
+<code><a href="../reference/calib_wq.html">calib_wq()</a></code>) accept a
 <code>required_models</code>/<code>model_filter</code> argument
 specifically to narrow this down to just the model(s) you’re actually
 using, which avoids failing on an unrelated model you haven’t run yet.
@@ -561,7 +561,7 @@ combination.</p>
 <h3 id="observed-data-csv-obs_file">Observed-data CSV (<code>obs_file</code>)<a class="anchor" aria-label="anchor" href="#observed-data-csv-obs_file"></a>
 </h3>
 <p>Not referenced from either YAML file directly – passed as the
-<code>obs_file</code> argument to <code><a href="../reference/run_lhc_wq.html">run_lhc_wq()</a></code>,
+<code>obs_file</code> argument to <code><a href="../reference/calib_wq.html">calib_wq()</a></code>,
 <code><a href="../reference/cali_ensemble_wq.html">cali_ensemble_wq()</a></code>, and
 <code><a href="../reference/plot_model_vs_obs_wq.html">plot_model_vs_obs_wq()</a></code>. Used to score calibration runs and
 to plot model-vs-observations comparisons.</p>

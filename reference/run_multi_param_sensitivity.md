@@ -43,7 +43,7 @@ run_multi_param_sensitivity(
   calibrated independently for two phytoplankton groups); each
   occurrence is matched to its own row in `calib_setup` in order, the
   same way
-  [`run_lhc_wq`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/run_lhc_wq.md)
+  [`calib_wq`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/calib_wq.md)
   disambiguates duplicate `pars` names. `NULL` (default) uses every row
   of `calib_setup$pars` as-is, in order – i.e. by default every
   parameter in `calib_setup` is varied.
@@ -174,7 +174,7 @@ Parameter sampling is based on Latin Hypercube Sampling (via
 are, per parameter, either `x0 * (1 +/- rel_change)` (when `rel_change`
 is supplied) or `calib_setup`'s own `lb`/`ub` columns (when
 `rel_change = NULL`, the default) – the same bounds convention
-[`run_lhc_wq`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/run_lhc_wq.md)/[`run_sensitivity`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/run_sensitivity.md)
+[`calib_wq`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/calib_wq.md)/[`run_sensitivity`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/run_sensitivity.md)
 use.
 
 ## Examples

@@ -41,7 +41,7 @@ library(LakeEnsemblR.WQ)
 ``` r
 
 # Export model-specific configuration and inputs for physical setup. This step is a must to create physical lake model folders
-export_config("LakeEnsemblR.yaml")
+export_config("LakeEnsemblR.yaml", model = c("GLM", "GOTM", "Simstrat"))
 
 # Export model-specific configuration and inputs for WQ setup
 export_config_wq("LakeEnsemblR_WQ.yaml")
@@ -199,7 +199,7 @@ res_sens <- run_sensitivity(
   calib_setup = cs_selma,
   yaml_file   = "Output.yaml",
   model_dir   = "GOTM-Selmaprotbas",
-  n_steps     = 10,
+  n_steps     = 5,
   model       = "GOTM-Selmaprotbas",
   output_mode = "raw",
   vars        = "selmaprotbas_DO_mg"
@@ -318,7 +318,7 @@ ggplot() +
 ### 5.4 Run small LHC test per model
 
 Run one model at a time.
-[`run_lhc_wq()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/run_lhc_wq.md)
+[`calib_wq()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/calib_wq.md)
 samples the parameter space with Latin Hypercube Sampling and, for each
 sample, edits the model’s own config files in `model_dir` in place, runs
 the model, and scores it. If `obs_file` is supplied it returns a
@@ -332,7 +332,7 @@ metrics only.
 cs_glm <- subset(cs_all, model_coupled == "GLM-AED2")
 
 param_glm <- unique(cs_glm$pars)
-res_glm <- run_lhc_wq(
+res_glm <- calib_wq(
   model          = "GLM-AED2",
   param_names    = param_glm,
   calib_setup    = cs_glm,
@@ -340,13 +340,13 @@ res_glm <- run_lhc_wq(
   model_dir      = "GLM-AED2",
   n_samples      = 10,
   wq_config_file = "LakeEnsemblR_WQ.yaml",
-  obs_file       = "standart_observed_DO.csv",   # datetime, depth, variable_global_name, value
+  obs_file       = "standart_observed_data.csv",   # datetime, depth, variable_global_name, value
   best_metric    = "KGE",
   verbose        = TRUE
 )
 
 # Note: model_dir's config files are restored to their pre-calibration state
-# once run_lhc_wq() returns (including on error) -- the function snapshots
+# once calib_wq() returns (including on error) -- the function snapshots
 # model_dir before sampling and copies that snapshot back via on.exit(). Your
 # working files are not left mutated at the last-tried parameter set.
 
@@ -364,13 +364,13 @@ the original LHC-phase best is still available under
 
 ``` r
 
-    res <- run_lhc_wq(
+    res <- calib_wq(
         model          = "GLM-AED2",
         param_names    = param_glm,
         calib_setup    = cs_glm,
         yaml_file      = "Output.yaml",
         model_dir      = "GLM-AED2",
-        obs_file       = "standart_observed_DO.csv",
+        obs_file       = "standart_observed_data.csv",
         wq_config_file = "LakeEnsemblR_WQ.yaml",
         verbose        = TRUE,
         save_results   = FALSE,
@@ -379,12 +379,12 @@ the original LHC-phase best is still available under
         best_metric    = "KGE",
         
         parallel       = TRUE,
-        n_workers      = 2,
-        n_samples      = 10,
+        n_workers      = 4,
+        n_samples      = 4,
         
        use_de         = TRUE,
        de_parallel    = TRUE,
-       de_n_workers   = 2,
+       de_n_workers   = 4,
        de_popsize     = 4,
        de_iterations  = 1,
       target_variables = c("DO_gramsPerCubicMeter")
@@ -406,7 +406,7 @@ folders for a final verification run.
 ``` r
 
 write_best_calib_to_par_files(
-  lhc_results  = res_glm,
+  lhc_results  = res,
   calib_setup  = cs_glm,
   config_file  = "LakeEnsemblR_WQ.yaml",
   folder       = ".",
@@ -432,7 +432,7 @@ run_ensemble_wq(
 
 [`cali_ensemble_wq()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/cali_ensemble_wq.md)
 is the multi-model wrapper around
-[`run_lhc_wq()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/run_lhc_wq.md):
+[`calib_wq()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/calib_wq.md):
 pass it the full `models` vector and the combined `cs_all` table (split
 automatically by `model_coupled`) and it runs, scores, and optionally
 writes back the best parameters for every model in one call.
@@ -447,12 +447,12 @@ and workers for a full calibration run.
 
 
 result_all <- cali_ensemble_wq(
-  models          = c("GOTM-WET", "GOTM-Selmaprotbas"),
+  models          = c("GOTM-Selmaprotbas"),
   calib_setup     = cs_all,
   yaml_file       = "Output.yaml",
   folder          = ".",
-  n_samples       = 4,
-  obs_file        = "standart_observed_DO.csv",
+  n_samples       = 300,
+  obs_file        = "standart_observed_data.csv",
   wq_config_file  = "LakeEnsemblR_WQ.yaml",
   ler_config_file = "LakeEnsemblR.yaml",
   best_metric     = "KGE",
@@ -508,7 +508,7 @@ metric_out <- cal_metrics(
 
 cmp <- compare_models_metric(
   metric_out = metric_out,
-  metric     = "Temp_degreeCelcius",
+  metric     = "DO_gramsPerCubicMeter",
   depth      = 1
 )
 cmp$plot
@@ -523,8 +523,8 @@ list
 ``` r
 
 cmp_nc <- compare_models_metric_netcdf(
-  nc_file = "output.nc",
-  metric  = "Temp_degreeCelcius",
+  nc_file = "output/ensemble_output.nc",
+  metric  = "TP_gramsPerCubicMeter",
   depth   = 1
 )
 cmp_nc$plot
@@ -571,7 +571,7 @@ create_netcdf_output(
   out_file        = "ensemble_output.nc"
 )
 
-plot_heatmap_wq("ensemble_output.nc", "Temp_degreeCelcius", spin_up = 30)
+plot_heatmap_wq("output/ensemble_output.nc", "Temp_degreeCelcius", spin_up = 30)
 ```
 
 ### 6.4 Anoxic and ice metrics across models and years
@@ -588,8 +588,8 @@ model per year.
 
 ``` r
 
-plot_anoxic_metrics("ensemble_output.nc")
-plot_ice_metrics("ensemble_output.nc", metric_name = "Ice_Thickness_meter")
+plot_anoxic_metrics("output/ensemble_output.nc")
+plot_ice_metrics("output/ensemble_output.nc", metric_name = "Ice_Thickness_meter")
 ```
 
 ### 6.5 Plot the best parameters (main config folder)
@@ -610,6 +610,7 @@ result <- plot_model_vs_obs_wq(
     y_title               = "DO (mmol/m3)"
 )
 
+result$plot
 result <- plot_model_vs_obs_wq(
     config_file           = "Output.yaml",
     model                 = "GLM-AED2",
@@ -618,7 +619,7 @@ result <- plot_model_vs_obs_wq(
     variable_global_name  = "DO_gramsPerCubicMeter", # matches obs_data's variable_global_name column
     y_title               = "DO (g/m3)"
 )
-
+result$plot
 # vars can be omitted -- it's then auto-derived from the metrics dictionary
 # using model + variable_global_name, which also works for the other coupled
 # models (not just GLM-AED2).
@@ -629,6 +630,31 @@ result <- plot_model_vs_obs_wq(
     variable_global_name  = "Total_Chla_miligramsPerCubicMeter", # matches obs_data's variable_global_name column
     y_title               = "Chl-a (mg/m3)"
 )
+
+result$plot
+
+
+
+result$plot
+result <- plot_model_vs_obs_wq(
+    config_file           = "Output.yaml",
+    model                 = "GOTM-SELMAPROTBAS",
+   # vars                  = "OXY_oxy",              # GLM-native variable name
+    obs_data              = "standart_observed_data.csv",
+    variable_global_name  = "DO_gramsPerCubicMeter", # matches obs_data's variable_global_name column
+    y_title               = "DO (g/m3)"
+)
+result$plot
+
+result <- plot_model_vs_obs_wq(
+    config_file           = "Output.yaml",
+    model                 = "GOTM-WET",
+    obs_data              = "standart_observed_data.csv",
+    variable_global_name  = "Total_Chla_miligramsPerCubicMeter", # matches obs_data's variable_global_name column
+    y_title               = "Chl-a (mg/m3)"
+)
+
+result$plot
 ```
 
 ### 6.6 Per-model time series and scatter plots against observations

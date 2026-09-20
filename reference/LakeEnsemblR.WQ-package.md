@@ -6,9 +6,9 @@ Run ensembles of Water Quality 1D Lake Models.
 
 Useful links:
 
-- <https://github.com/aemon-j/LakeEnsemblR.WQ>
+- <https://github.com/tubabucak/LakeEnsemblR.WQ>
 
-- <https://aemon-j.github.io/LakeEnsemblR.WQ>
+- <https://tubabucak.github.io/LakeEnsemblR.WQ>
 
 ## Author
 

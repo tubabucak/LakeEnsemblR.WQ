@@ -21,7 +21,7 @@ requires its own configuration files:
   compute\*. Read by
   [`load_config()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/load_config-colon.md),
   [`cal_metrics()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/cal_metrics.md),
-  [`run_lhc_wq()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/run_lhc_wq.md),
+  [`calib_wq()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/calib_wq.md),
   and most calibration/plotting functions.
 
 This vignette documents both files that you can use in your setup as a
@@ -257,7 +257,7 @@ By default (`required_models = NULL`/`"all"`),
 requires **every** entry listed here to exist on disk – even if you only
 intend to work with one model right now. Several functions
 ([`cal_metrics()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/cal_metrics.md),
-[`run_lhc_wq()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/run_lhc_wq.md))
+[`calib_wq()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/calib_wq.md))
 accept a `required_models`/`model_filter` argument specifically to
 narrow this down to just the model(s) you’re actually using, which
 avoids failing on an unrelated model you haven’t run yet. But you can
@@ -373,7 +373,7 @@ parameter’s `domain`/ `process`/`subprocess` combination.
 
 Not referenced from either YAML file directly – passed as the `obs_file`
 argument to
-[`run_lhc_wq()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/run_lhc_wq.md),
+[`calib_wq()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/calib_wq.md),
 [`cali_ensemble_wq()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/cali_ensemble_wq.md),
 and
 [`plot_model_vs_obs_wq()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/plot_model_vs_obs_wq.md).

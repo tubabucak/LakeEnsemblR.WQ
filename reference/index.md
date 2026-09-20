@@ -46,14 +46,14 @@ Create calibration tables and run calibration/sensitivity analyses.
   : Create calibration tables
 - [`calib_setup_from_tables()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/calib_setup_from_tables.md)
   : Build calib_setup from edited calibration CSVs
-- [`run_lhc_wq()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/run_lhc_wq.md)
+- [`calib_wq()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/calib_wq.md)
   : Run Latin Hypercube Calibration for Water Quality Models
 - [`run_sensitivity()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/run_sensitivity.md)
   : Run Sensitivity Analysis for a Model Parameter
 - [`run_multi_param_sensitivity()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/run_multi_param_sensitivity.md)
   : Run Multi-Parameter Sensitivity Analysis Using Latin Hypercube
   Sampling
-- [`run_lhc_wq_parallel()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/run_lhc_wq_parallel.md)
+- [`calib_wq_parallel()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/calib_wq_parallel.md)
   : Run Latin Hypercube Calibration in Parallel
 - [`cali_ensemble_wq()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/cali_ensemble_wq.md)
   : Calibrate an ensemble of LakeEnsemblR.WQ models

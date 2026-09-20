@@ -140,7 +140,7 @@ calib_setup_from_tables()▶
 Reads the edited CSVs into the calib_setup table every calibration
 function below consumes.
 
-run_lhc_wq()▶
+calib_wq()▶
 
 Latin Hypercube sampling (+ optional DE refinement) for one model: edits
 config files, runs, scores against obs_file, restores originals on exit.
@@ -148,14 +148,14 @@ config files, runs, scores against obs_file, restores originals on exit.
 **Takes in** calib_setup, observed CSV.  
 **Hands off** a results table with attr(., "best_parameter_set").
 
-run_lhc_wq_parallel()▶
+calib_wq_parallel()▶
 
 Same sampling, distributed across worker processes.
 
 cali_ensemble_wq()▶
 
-Multi-model wrapper — runs run_lhc_wq() per coupled model, sequentially
-or concurrently, one call.
+Multi-model wrapper — runs calib_wq() per coupled model, sequentially or
+concurrently, one call.
 
 write_best_calib_to_par_files()▶
 
