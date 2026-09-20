@@ -239,56 +239,18 @@ isn't obvious.
 
 #### 5.3.3 Visualizing an uncertainty envelope
 
-For `output_mode = "raw"` with a depth-resolved variable, stack every
-iteration into long format and summarize a band (e.g. a 90% interval) plus a
-central line per timestep:
+For `output_mode = "raw"` with a depth-resolved variable,
+`plot_sensitivity()` draws one line per parameter value, a shaded band for the
+5-95% range across them, and the median. A thin band means the parameter has
+little effect on this variable and is a poor calibration candidate.
+`sensitivity_to_long()` returns the same data as a tidy data frame if you want
+to make your own plot.
 
 ```{r eval = FALSE}
-library(dplyr)
-library(tidyr)
-library(ggplot2)
+plot_sensitivity(res_sens_diatoms, depth = 5, ylab = "DO (mg/m3)",
+                 title = "Sensitivity envelope: kc -> DO at 5 m")
 
-stack_sensitivity_raw <- function(res, depth = NULL) {
-  pieces <- lapply(seq_along(res), function(i) {
-    df <- res[[i]]$output
-    if (is.list(df) && !is.data.frame(df)) df <- df[[1]]
-    if (is.null(df) || !is.data.frame(df) || nrow(df) == 0) {
-      warning("Iteration ", i, " (param_value = ", res[[i]]$param_value,
-              ") has no usable output -- skipping.")
-      return(NULL)
-    }
-    long <- df %>%
-      pivot_longer(cols = starts_with("Depth_"), names_to = "depth_col", values_to = "value") %>%
-      mutate(depth = as.numeric(sub("Depth_", "", depth_col)))
-    if (!is.null(depth)) {
-      nearest <- long$depth[which.min(abs(long$depth - depth))]
-      long <- long[long$depth == nearest, ]
-    }
-    long$iteration <- i
-    long
-  })
-  do.call(rbind, pieces)
-}
-
-df_long <- stack_sensitivity_raw(res_sens_diatoms, depth = 5)
-
-df_env <- df_long %>%
-  group_by(datetime) %>%
-  summarise(
-    q_lo   = quantile(value, 0.05, na.rm = TRUE),
-    q_hi   = quantile(value, 0.95, na.rm = TRUE),
-    median = median(value, na.rm = TRUE),
-    .groups = "drop"
-  )
-
-ggplot() +
-  geom_line(data = df_long, aes(datetime, value, group = iteration),
-            color = "grey70", alpha = 0.25, linewidth = 0.3) +
-  geom_ribbon(data = df_env, aes(datetime, ymin = q_lo, ymax = q_hi),
-              fill = "steelblue", alpha = 0.25) +
-  geom_line(data = df_env, aes(datetime, median), color = "steelblue", linewidth = 0.8) +
-  labs(x = NULL, y = "DO (mg/m3)", title = "Sensitivity envelope: kc -> DO at 5 m") +
-  theme_minimal()
+long <- sensitivity_to_long(res_sens_diatoms, depth = 5)
 ```
 
 

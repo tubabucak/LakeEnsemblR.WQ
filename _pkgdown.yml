@@ -41,6 +41,7 @@ reference:
       - calib_setup_from_tables
       - calib_wq
       - run_sensitivity
+      - sensitivity_to_long
       - run_multi_param_sensitivity
       - calib_wq_parallel
       - cali_ensemble_wq
@@ -72,6 +73,7 @@ reference:
     desc: Plot model outputs and derived metrics.
     contents:
       - plot_model_vs_obs_wq
+      - plot_sensitivity
       - plot_heatmap_wq
       - plot_strat_metrics
       - plot_anoxic_metrics

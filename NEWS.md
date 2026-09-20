@@ -21,6 +21,9 @@ upstream had only the physical/WQ configuration export functions in place
   (`cal_stats()`, `cal_anoxic_date()`, `cal_bot_surf_temp_dif()`,
   `cal_DO_exceedance()`, `cal_epi_depth()`, `cal_ice_duration()`,
   `cal_meta_depth()`, `cal_nitrif_selma()`, `cal_strat_date()`).
+* **Sensitivity plots**: `plot_sensitivity()` and `sensitivity_to_long()`
+  turn `run_sensitivity(output_mode = "raw")` results into an envelope plot or a
+  tidy data frame.
 * **Post-processing and comparison**: `compare_plot()`, `scat_plot()`,
   `compare_models_metric()`, `compare_models_metric_netcdf()`.
 * **Visualization**: `plot_model_vs_obs_wq()`, `plot_heatmap_wq()`,

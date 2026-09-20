@@ -1060,7 +1060,11 @@ calib_wq <- function(model,
     model_ok <- tryCatch({
       old_wd <- getwd()
       setwd(eval_dir)
-      on.exit(setwd(old_wd), add = TRUE)
+      # after = FALSE: restore the working directory BEFORE the earlier
+      # on.exit(unlink(eval_dir)) runs. On Windows a directory that is the
+      # current working directory can't be deleted, which left every
+      # de_worker_* sandbox behind.
+      on.exit(setwd(old_wd), add = TRUE, after = FALSE)
       run_model_in_eval_dir()
       cat(sprintf("[%s] worker pid=%s eval=%s uid=%s model run OK dir=%s\n",
                   format(Sys.time(), "%Y-%m-%d %H:%M:%OS3"), Sys.getpid(), thread_eval_counter,
