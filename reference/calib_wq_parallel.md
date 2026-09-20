@@ -5,7 +5,8 @@ Runs
 in parallel by distributing LHS samples across multiple workers. Each
 worker gets its own isolated sandbox copy of `model_dir` (under
 `parallel_dir`) and runs/scores its assigned samples there – `model_dir`
-itself is never written to.
+itself is only written to for the worker log
+(`lhc_debug_logs/lhc_workers.log`) and the final results file.
 
 ## Usage
 
