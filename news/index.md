@@ -47,6 +47,12 @@ and related setup functions). This version adds:
   [`cal_meta_depth()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/cal_meta_depth.md),
   [`cal_nitrif_selma()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/cal_nitrif_selma.md),
   [`cal_strat_date()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/cal_strat_date.md)).
+- **Sensitivity plots**:
+  [`plot_sensitivity()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/plot_sensitivity.md)
+  and
+  [`sensitivity_to_long()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/sensitivity_to_long.md)
+  turn `run_sensitivity(output_mode = "raw")` results into an envelope
+  plot or a tidy data frame.
 - **Post-processing and comparison**:
   [`compare_plot()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/compare_plot.md),
   [`scat_plot()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/scat_plot.md),

@@ -50,6 +50,8 @@ Create calibration tables and run calibration/sensitivity analyses.
   : Run Latin Hypercube Calibration for Water Quality Models
 - [`run_sensitivity()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/run_sensitivity.md)
   : Run Sensitivity Analysis for a Model Parameter
+- [`sensitivity_to_long()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/sensitivity_to_long.md)
+  : Convert raw sensitivity output to a long data frame
 - [`run_multi_param_sensitivity()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/run_multi_param_sensitivity.md)
   : Run Multi-Parameter Sensitivity Analysis Using Latin Hypercube
   Sampling
@@ -108,6 +110,8 @@ Plot model outputs and derived metrics.
 - [`plot_model_vs_obs_wq()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/plot_model_vs_obs_wq.md)
   : Plot a single model's output against observed data at matching
   depths
+- [`plot_sensitivity()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/plot_sensitivity.md)
+  : Plot a sensitivity envelope from run_sensitivity() output
 - [`plot_heatmap_wq()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/plot_heatmap_wq.md)
   : Plot heat map from LakeEnsemblR.WQ NetCDF output
 - [`plot_strat_metrics()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/plot_strat_metrics.md)
