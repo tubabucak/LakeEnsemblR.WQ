@@ -65,7 +65,11 @@ following metrics:
 - **NRMSE**: Normalized Root Mean Squared Error (normalized by range of
   observed values)
 
-- **PBIAS**: Percent Bias
+- **PBIAS**: Percent Bias,
+  `100 * sum(observed - predicted) / sum(observed)`. Positive values
+  indicate underestimation. Returns `NA` when `sum(observed)` is zero.
+  Because it is a ratio to the observed total, it is unreliable when
+  observations are mostly near zero.
 
 - **lnlikelihood**: Log-likelihood assuming normal distribution
 
@@ -73,7 +77,3 @@ following metrics:
   [`hydroGOF::KGE`](https://hzambran.github.io/hydroGOF/reference/KGE.html))
 
 - **residual**: Vector of observed - predicted residuals
-
-For very small observed or predicted values (\< 1e-3), a minimum
-threshold is applied to avoid division by near-zero values in the PBIAS
-calculation.

@@ -90,12 +90,14 @@
     <p>The function first removes any NA values and then calculates the following metrics:</p><ul><li><p><strong>NSE</strong>: Nash-Sutcliffe Efficiency</p></li>
 <li><p><strong>RMSE</strong>: Root Mean Squared Error</p></li>
 <li><p><strong>NRMSE</strong>: Normalized Root Mean Squared Error (normalized by range of observed values)</p></li>
-<li><p><strong>PBIAS</strong>: Percent Bias</p></li>
+<li><p><strong>PBIAS</strong>: Percent Bias, <code>100 * sum(observed - predicted) / sum(observed)</code>.
+    Positive values indicate underestimation. Returns <code>NA</code> when
+    <code>sum(observed)</code> is zero. Because it is a ratio to the observed
+    total, it is unreliable when observations are mostly near zero.</p></li>
 <li><p><strong>lnlikelihood</strong>: Log-likelihood assuming normal distribution</p></li>
 <li><p><strong>KGE</strong>: Kling-Gupta Efficiency (from <code><a href="https://hzambran.github.io/hydroGOF/reference/KGE.html" class="external-link">hydroGOF::KGE</a></code>)</p></li>
 <li><p><strong>residual</strong>: Vector of observed - predicted residuals</p></li>
-</ul><p>For very small observed or predicted values (&lt; 1e-3), a minimum threshold is applied to avoid division by near-zero values in the PBIAS calculation.</p>
-    </div>
+</ul></div>
 
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside></div>
