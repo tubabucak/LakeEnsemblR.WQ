@@ -1,5 +1,5 @@
-# .de_best_parameter_set() is the pure helper extracted from run_lhc_wq()'s
-# DE phase. It's what makes run_lhc_wq() report DE's actual optimum (instead
+# .de_best_parameter_set() is the pure helper extracted from calib_wq()'s
+# DE phase. It's what makes calib_wq() report DE's actual optimum (instead
 # of silently falling back to the LHC seed's best) once DE has run -- see the
 # "best_parameter_set" attribute discussion in R/run_lhc_wq.r.
 

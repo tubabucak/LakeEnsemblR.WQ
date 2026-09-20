@@ -50,7 +50,7 @@ hand, when editing the CSV.
     reference for the parameter's plausible physical range, where available.
   \item Call \code{\link{calib_setup_from_tables}} to read the edited CSVs
     and build the \code{calib_setup} data frame expected by
-    \code{\link{run_lhc_wq}} and \code{\link{run_sensitivity}}.
+    \code{\link{calib_wq}} and \code{\link{run_sensitivity}}.
 }
 }
 \examples{

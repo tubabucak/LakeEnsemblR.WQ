@@ -58,7 +58,7 @@ named list of such data frames. If a data frame is supplied and contains
 \code{model_coupled}, rows are split by model.}
 
 \item{yaml_file}{Character scalar, vector, or named list. Path(s) to metric
-YAML file(s) passed to \code{run_lhc_wq()}.}
+YAML file(s) passed to \code{calib_wq()}.}
 
 \item{folder}{Character. Base folder used to resolve relative paths and for
 optional write-back operations.}
@@ -72,82 +72,82 @@ or a named list/vector by model. If \code{NULL}, uses
 \code{calib_setup$pars} per model (including duplicate names across
 group-specific rows -- see Details).}
 
-\item{model_filter}{Optional model filter(s) passed to \code{run_lhc_wq()}.
+\item{model_filter}{Optional model filter(s) passed to \code{calib_wq()}.
 Accepts scalar, length-\code{length(models)} vector, or named vector/list.}
 
 \item{wq_config_file}{Character scalar, vector, or named list of WQ config
-path(s) (e.g. \code{"LakeEnsemblR_WQ.yaml"}). Passed to \code{run_lhc_wq()}
+path(s) (e.g. \code{"LakeEnsemblR_WQ.yaml"}). Passed to \code{calib_wq()}
 and, when \code{write_best = TRUE}, also used as the \code{config_file}
 for \code{write_best_calib_to_par_files()}.}
 
 \item{n_samples}{Integer. Number of LHS samples per model.}
 
 \item{yaml_file_model}{Character scalar/vector/list, or \code{NULL}
-(default). GOTM YAML file name(s) passed to \code{run_lhc_wq()}. If
+(default). GOTM YAML file name(s) passed to \code{calib_wq()}. If
 \code{NULL}, auto-derived per model from \code{ler_config_file}.}
 
 \item{par_file}{Character scalar/vector/list, or \code{NULL} (default).
-Simstrat \code{.par} file name(s) passed to \code{run_lhc_wq()}. If
+Simstrat \code{.par} file name(s) passed to \code{calib_wq()}. If
 \code{NULL}, auto-derived per model from \code{ler_config_file}.}
 
 \item{ler_config_file}{Character or \code{NULL}. Path to the LakeEnsemblR
 config file (e.g. \code{"LakeEnsemblR.yaml"}), used to auto-derive
 \code{yaml_file_model}/\code{par_file} per model when they are not
-explicitly set. Passed through to \code{run_lhc_wq()}.}
+explicitly set. Passed through to \code{calib_wq()}.}
 
 \item{obs_file}{Optional observed-data CSV path. When supplied, each model
-returns the flattened stats data.frame from \code{run_lhc_wq()}.}
+returns the flattened stats data.frame from \code{calib_wq()}.}
 
-\item{obs_to_model_units}{Logical. Passed to \code{run_lhc_wq()}.}
+\item{obs_to_model_units}{Logical. Passed to \code{calib_wq()}.}
 
 \item{target_variables}{Character vector or \code{NULL}. Passed to
-\code{run_lhc_wq()} -- restricts scoring to these \code{variable_global_name}
+\code{calib_wq()} -- restricts scoring to these \code{variable_global_name}
 value(s) from \code{obs_file} (e.g. \code{"DO_gramsPerCubicMeter"}) instead
 of averaging across every observed variable. \code{NULL} (default) uses all.}
 
-\item{spin_up_days}{Numeric or \code{NULL}. Passed to \code{run_lhc_wq()}.}
+\item{spin_up_days}{Numeric or \code{NULL}. Passed to \code{calib_wq()}.}
 
-\item{stats_by_depth}{Logical. Passed to \code{run_lhc_wq()}.}
+\item{stats_by_depth}{Logical. Passed to \code{calib_wq()}.}
 
-\item{return_best}{Logical. Passed to \code{run_lhc_wq()}.}
+\item{return_best}{Logical. Passed to \code{calib_wq()}.}
 
-\item{best_metric}{Character. Passed to \code{run_lhc_wq()}.}
+\item{best_metric}{Character. Passed to \code{calib_wq()}.}
 
-\item{parallel}{Logical. Passed to \code{run_lhc_wq()} (parallelizes LHC
+\item{parallel}{Logical. Passed to \code{calib_wq()} (parallelizes LHC
 samples \emph{within} a single model's run).}
 
 \item{force_parallel_glm_simstrat}{Logical. GLM-AED2 and Simstrat-AED2 edit
 their config files in-place during each LHC sample; by default (\code{FALSE})
 their LHC phase always runs sequentially even when \code{parallel = TRUE},
-to avoid file write collisions. \code{run_lhc_wq_parallel()} isolates each
+to avoid file write collisions. \code{calib_wq_parallel()} isolates each
 worker onto its own copy of \code{model_dir}, the same mechanism DE already
 uses safely -- set \code{TRUE} to test parallel LHC for these two models too.}
 
-\item{n_workers}{Integer or \code{NULL}. Passed to \code{run_lhc_wq()}.}
+\item{n_workers}{Integer or \code{NULL}. Passed to \code{calib_wq()}.}
 
-\item{parallel_dir}{Character or \code{NULL}. Passed to \code{run_lhc_wq()},
+\item{parallel_dir}{Character or \code{NULL}. Passed to \code{calib_wq()},
 which defaults it (when \code{NULL}) to a sibling of each model's own
 directory under the project root rather than \code{tempdir()}.}
 
-\item{keep_worker_dirs}{Logical. Passed to \code{run_lhc_wq()}.}
+\item{keep_worker_dirs}{Logical. Passed to \code{calib_wq()}.}
 
-\item{use_de}{Logical. Passed to \code{run_lhc_wq()}. Scalar, length
+\item{use_de}{Logical. Passed to \code{calib_wq()}. Scalar, length
 \code{length(models)}, or named by model.}
 
-\item{de_iterations}{Integer. Passed to \code{run_lhc_wq()}.}
+\item{de_iterations}{Integer. Passed to \code{calib_wq()}.}
 
-\item{de_popsize}{Integer or \code{NULL}. Passed to \code{run_lhc_wq()}.}
+\item{de_popsize}{Integer or \code{NULL}. Passed to \code{calib_wq()}.}
 
-\item{de_f}{Numeric. Passed to \code{run_lhc_wq()}.}
+\item{de_f}{Numeric. Passed to \code{calib_wq()}.}
 
-\item{de_cr}{Numeric. Passed to \code{run_lhc_wq()}.}
+\item{de_cr}{Numeric. Passed to \code{calib_wq()}.}
 
-\item{de_seed_from_lhc}{Logical. Passed to \code{run_lhc_wq()}.}
+\item{de_seed_from_lhc}{Logical. Passed to \code{calib_wq()}.}
 
-\item{de_parallel}{Logical. Passed to \code{run_lhc_wq()} (parallelizes DE
+\item{de_parallel}{Logical. Passed to \code{calib_wq()} (parallelizes DE
 evaluations \emph{within} a single model's run).}
 
-\item{de_n_workers}{Integer or \code{NULL}. Passed to \code{run_lhc_wq()}.}
+\item{de_n_workers}{Integer or \code{NULL}. Passed to \code{calib_wq()}.}
 
 \item{parallel_models}{Logical. If \code{TRUE}, calibrate all requested
 \code{models} concurrently (one worker process per model) instead of
@@ -185,7 +185,7 @@ processes used when \code{parallel_models = TRUE}. Defaults to
 \value{
 A list with:
 \describe{
-  \item{results}{Named list of per-model outputs from \code{run_lhc_wq()}.}
+  \item{results}{Named list of per-model outputs from \code{calib_wq()}.}
   \item{summary}{Data frame with one row per requested model and run status.}
   \item{best_parameter_sets}{Named list of per-model best summaries (or \code{NULL}).}
   \item{write_back}{Named list with best-write status per model (when enabled).}
@@ -194,7 +194,7 @@ A list with:
 \description{
 High-level calibration wrapper inspired by LakeEnsemblR
 \code{cali_ensemble()}, implemented for the LakeEnsemblR.WQ calibration
-workflow. The function runs \code{run_lhc_wq()} model-by-model, using either
+workflow. The function runs \code{calib_wq()} model-by-model, using either
 a combined \code{calib_setup} table (with \code{model_coupled}) or a named
 list of per-model setup tables.
 }

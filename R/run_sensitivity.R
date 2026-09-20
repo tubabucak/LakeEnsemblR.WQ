@@ -10,7 +10,7 @@
 #' @param calib_setup Data frame. Calibration setup table containing parameter names, bounds (`lb`, `ub`),
 #' initial values (`x0`), file/path names (`file`), and optionally a `group_name` column for group-specific
 #' parameters. This is the same table produced by \code{\link{calib_setup_from_tables}} and consumed by
-#' \code{\link{run_lhc_wq}}.
+#' \code{\link{calib_wq}}.
 #' @param yaml_file Character. Path to the YAML file defining which metrics to extract (output.yaml).
 #' @param model_dir Character. Path to the model directory where the input files and outputs are located.
 #' @param n_steps Integer. Number of steps (iterations) in the parameter value sequence (default = 10).
@@ -132,7 +132,7 @@ run_sensitivity <- function(param_name, calib_setup, yaml_file, model_dir, n_ste
   }
 
   # Auto-derive model_filter from model if not provided -- same mapping used
-  # by run_lhc_wq()/run_lhc_wq_parallel() so cal_metrics() sees a consistent
+  # by calib_wq()/calib_wq_parallel() so cal_metrics() sees a consistent
   # model key regardless of which calibration entry point was used.
   if (is.null(model_filter)) {
     model_filter <- switch(model_upper,

@@ -16,13 +16,13 @@ write_best_calib_to_par_files(
 )
 }
 \arguments{
-\item{lhc_results}{data.frame; the output of \code{run_lhc_wq()} when
+\item{lhc_results}{data.frame; the output of \code{calib_wq()} when
 \code{obs_file} is supplied.  Must contain one column per calibrated
 parameter and at least one performance-metric column (e.g. \code{NSE},
 \code{KGE}).}
 
 \item{calib_setup}{data.frame; the calibration setup table used when running
-\code{run_lhc_wq()}, as produced by \code{\link{calib_setup_from_tables}}.
+\code{calib_wq()}, as produced by \code{\link{calib_setup_from_tables}}.
 Must contain columns \code{pars}, \code{model_coupled}, \code{domain},
 \code{process}, \code{subprocess}, and optionally \code{group_name}.}
 
@@ -55,7 +55,7 @@ Invisibly returns a named list of the best parameter values that were
   written.
 }
 \description{
-After running \code{\link{run_lhc_wq}} with \code{obs_file} supplied (which
+After running \code{\link{calib_wq}} with \code{obs_file} supplied (which
 returns a data frame of parameter values + performance statistics), this
 function picks the best-performing row and writes the calibrated parameter
 values into the \code{par_file} CSVs referenced in the
@@ -81,7 +81,7 @@ calib_setup <- calib_setup_from_tables(
   model_coupled = "GOTM-Selmaprotbas"
 )
 
-lhc_results <- run_lhc_wq(
+lhc_results <- calib_wq(
   model          = "GOTM-Selmaprotbas",
   param_names    = calib_setup$pars,
   calib_setup    = calib_setup,

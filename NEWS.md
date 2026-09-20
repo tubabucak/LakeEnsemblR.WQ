@@ -8,11 +8,14 @@ upstream had only the physical/WQ configuration export functions in place
 * **Validation and run**: `validate_glm_aed()`, `validate_gotm_wet()`,
   `validate_simstrat()`, `run_ensemble_wq()`.
 * **Calibration and sensitivity**: `create_calibration_tables()`,
-  `calib_setup_from_tables()`, `run_lhc_wq()` (with an optional parallel
-  backend, `run_lhc_wq_parallel()`), `run_sensitivity()`,
+  `calib_setup_from_tables()`, `calib_wq()` (with an optional parallel
+  backend, `calib_wq_parallel()`), `run_sensitivity()`,
   `run_multi_param_sensitivity()`, `cali_ensemble_wq()` (multi-model
   calibration wrapper with optional Differential Evolution refinement via
-  `DEoptim`), `write_best_calib_to_par_files()`.
+  `DEoptim`), `write_best_calib_to_par_files()`. Note: `calib_wq()` and
+  `calib_wq_parallel()` were previously named `run_lhc_wq()` and
+  `run_lhc_wq_parallel()`; the old names have been removed (no deprecated
+  aliases).
 * **Extraction and metrics**: `get_output_wq()`, `extract_variable_list()`,
   `integrate_depths()`, `cal_metrics()` and the harmonized-metric family
   (`cal_stats()`, `cal_anoxic_date()`, `cal_bot_surf_temp_dif()`,

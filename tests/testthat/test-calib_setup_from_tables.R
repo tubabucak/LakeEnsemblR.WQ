@@ -1,7 +1,7 @@
 # calib_setup_from_tables() reads back the calibration_<module>.csv files
 # produced by create_calibration_tables() (after a user has hand-edited
 # `include`), filters to include == TRUE, and builds the calib_setup table
-# run_lhc_wq()/run_sensitivity() expect. This is the exact mechanism behind
+# calib_wq()/run_sensitivity() expect. This is the exact mechanism behind
 # two real confusions hit in practice: a parameter silently missing because
 # its `include` was never flipped to TRUE, and group_name inference for
 # per-group modules (phytoplankton/zooplankton/etc.).

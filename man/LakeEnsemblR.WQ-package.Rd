@@ -11,8 +11,8 @@ Run ensembles of Water Quality 1D Lake Models.
 \seealso{
 Useful links:
 \itemize{
-  \item \url{https://github.com/aemon-j/LakeEnsemblR.WQ}
-  \item \url{https://aemon-j.github.io/LakeEnsemblR.WQ}
+  \item \url{https://github.com/tubabucak/LakeEnsemblR.WQ}
+  \item \url{https://tubabucak.github.io/LakeEnsemblR.WQ}
 }
 
 }

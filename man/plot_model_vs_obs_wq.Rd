@@ -12,7 +12,8 @@ plot_model_vs_obs_wq(
   variable_global_name,
   y_title = variable_global_name,
   conversion_factor = NULL,
-  dict_file = NULL
+  dict_file = NULL,
+  wq_config_file = NULL
 )
 }
 \arguments{
@@ -46,7 +47,7 @@ output so it matches \code{obs_data}'s (harmonized) units, since model
 output from \code{get_output_wq()} is in model-native units (e.g. GLM's
 DO is mmol O2/m3, not grams/m3 as in a typical observed CSV). If
 \code{NULL} (default), auto-derived from the metrics dictionary the same
-way \code{run_lhc_wq()}'s calibration scoring does: looked up by
+way \code{calib_wq()}'s calibration scoring does: looked up by
 \code{model}/\code{variable_global_name}. Pass a number explicitly to
 override the dictionary lookup.}
 
@@ -55,6 +56,17 @@ source passed to the internal dictionary loader when auto-deriving
 \code{vars}/\code{conversion_factor}. If \code{NULL} (default), uses
 \code{load_config(config_file)$metrics_dict_file}, falling back to the
 package's bundled default dictionary.}
+
+\item{wq_config_file}{character or \code{NULL}. Path to the
+\code{LakeEnsemblR_WQ.yaml} config file. Only needed for
+\code{model = "GOTM-Selmaprotbas"}/\code{"GOTM-WET"} when the
+auto-derived \code{vars} resolves to the dictionary's generic
+\code{"zooplankton_*"} placeholder -- since SELMAPROTBAS/WET always
+create one named FABM instance per configured zooplankton group (never
+a literal instance called \code{"zooplankton"}), that placeholder is
+expanded into each group's own output variable (e.g. \code{"daphnia_c"},
+\code{"cyclops_c"}), fetched, and summed into one total zooplankton
+series before plotting.}
 }
 \value{
 A list with:
@@ -62,7 +74,10 @@ A list with:
   \item{plot}{A ggplot2 object: one facet per observed depth, modeled line
     vs. observed points, with per-depth KGE/RMSE in the facet strip.}
   \item{data}{The joined long-format data frame (\code{datetime}, \code{depth},
-    \code{Predicted}, \code{Observed}) used to build the plot.}
+    \code{Predicted}, \code{Observed}) used to build the plot -- covers the
+    full simulated series at each observed depth, with \code{Observed}
+    \code{NA} wherever there's no matching observation at that
+    datetime/depth.}
   \item{stats}{A data frame with one row per depth: \code{depth}, \code{NSE},
     \code{RMSE}, \code{NRMSE}, \code{PBIAS}, \code{KGE}, \code{n}.}
 }

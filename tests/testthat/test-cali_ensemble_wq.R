@@ -1,5 +1,5 @@
 # These tests exercise cali_ensemble_wq()'s argument-resolution and
-# model-name canonicalization logic via paths that never reach run_lhc_wq()
+# model-name canonicalization logic via paths that never reach calib_wq()
 # (empty calib_setup => "no calib_setup rows for model" short-circuit), so no
 # real model directories or binaries are required.
 
@@ -62,7 +62,7 @@ test_that("cali_ensemble_wq splits a combined calib_setup by model_coupled", {
 
   # Both models will still fail (no real model_dir/binary to run), but the
   # per-model split itself -- one param each, not zero -- is what's under
-  # test here: it should reach run_lhc_wq() (and fail *there*, e.g. on a
+  # test here: it should reach calib_wq() (and fail *there*, e.g. on a
   # missing model_dir), not bail out early with "No parameter names".
   result <- cali_ensemble_wq(
     models = c("GLM-AED2", "GOTM-WET"),

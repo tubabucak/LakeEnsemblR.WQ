@@ -2,7 +2,7 @@
 #'
 #' High-level calibration wrapper inspired by LakeEnsemblR
 #' \code{cali_ensemble()}, implemented for the LakeEnsemblR.WQ calibration
-#' workflow. The function runs \code{run_lhc_wq()} model-by-model, using either
+#' workflow. The function runs \code{calib_wq()} model-by-model, using either
 #' a combined \code{calib_setup} table (with \code{model_coupled}) or a named
 #' list of per-model setup tables.
 #'
@@ -13,7 +13,7 @@
 #'   named list of such data frames. If a data frame is supplied and contains
 #'   \code{model_coupled}, rows are split by model.
 #' @param yaml_file Character scalar, vector, or named list. Path(s) to metric
-#'   YAML file(s) passed to \code{run_lhc_wq()}.
+#'   YAML file(s) passed to \code{calib_wq()}.
 #' @param folder Character. Base folder used to resolve relative paths and for
 #'   optional write-back operations.
 #' @param model_dirs Character vector/list of model directories. Can be scalar
@@ -23,57 +23,57 @@
 #'   or a named list/vector by model. If \code{NULL}, uses
 #'   \code{calib_setup$pars} per model (including duplicate names across
 #'   group-specific rows -- see Details).
-#' @param model_filter Optional model filter(s) passed to \code{run_lhc_wq()}.
+#' @param model_filter Optional model filter(s) passed to \code{calib_wq()}.
 #'   Accepts scalar, length-\code{length(models)} vector, or named vector/list.
 #' @param wq_config_file Character scalar, vector, or named list of WQ config
-#'   path(s) (e.g. \code{"LakeEnsemblR_WQ.yaml"}). Passed to \code{run_lhc_wq()}
+#'   path(s) (e.g. \code{"LakeEnsemblR_WQ.yaml"}). Passed to \code{calib_wq()}
 #'   and, when \code{write_best = TRUE}, also used as the \code{config_file}
 #'   for \code{write_best_calib_to_par_files()}.
 #' @param n_samples Integer. Number of LHS samples per model.
 #' @param yaml_file_model Character scalar/vector/list, or \code{NULL}
-#'   (default). GOTM YAML file name(s) passed to \code{run_lhc_wq()}. If
+#'   (default). GOTM YAML file name(s) passed to \code{calib_wq()}. If
 #'   \code{NULL}, auto-derived per model from \code{ler_config_file}.
 #' @param par_file Character scalar/vector/list, or \code{NULL} (default).
-#'   Simstrat \code{.par} file name(s) passed to \code{run_lhc_wq()}. If
+#'   Simstrat \code{.par} file name(s) passed to \code{calib_wq()}. If
 #'   \code{NULL}, auto-derived per model from \code{ler_config_file}.
 #' @param ler_config_file Character or \code{NULL}. Path to the LakeEnsemblR
 #'   config file (e.g. \code{"LakeEnsemblR.yaml"}), used to auto-derive
 #'   \code{yaml_file_model}/\code{par_file} per model when they are not
-#'   explicitly set. Passed through to \code{run_lhc_wq()}.
+#'   explicitly set. Passed through to \code{calib_wq()}.
 #' @param obs_file Optional observed-data CSV path. When supplied, each model
-#'   returns the flattened stats data.frame from \code{run_lhc_wq()}.
-#' @param obs_to_model_units Logical. Passed to \code{run_lhc_wq()}.
+#'   returns the flattened stats data.frame from \code{calib_wq()}.
+#' @param obs_to_model_units Logical. Passed to \code{calib_wq()}.
 #' @param target_variables Character vector or \code{NULL}. Passed to
-#'   \code{run_lhc_wq()} -- restricts scoring to these \code{variable_global_name}
+#'   \code{calib_wq()} -- restricts scoring to these \code{variable_global_name}
 #'   value(s) from \code{obs_file} (e.g. \code{"DO_gramsPerCubicMeter"}) instead
 #'   of averaging across every observed variable. \code{NULL} (default) uses all.
-#' @param spin_up_days Numeric or \code{NULL}. Passed to \code{run_lhc_wq()}.
-#' @param stats_by_depth Logical. Passed to \code{run_lhc_wq()}.
-#' @param return_best Logical. Passed to \code{run_lhc_wq()}.
-#' @param best_metric Character. Passed to \code{run_lhc_wq()}.
-#' @param parallel Logical. Passed to \code{run_lhc_wq()} (parallelizes LHC
+#' @param spin_up_days Numeric or \code{NULL}. Passed to \code{calib_wq()}.
+#' @param stats_by_depth Logical. Passed to \code{calib_wq()}.
+#' @param return_best Logical. Passed to \code{calib_wq()}.
+#' @param best_metric Character. Passed to \code{calib_wq()}.
+#' @param parallel Logical. Passed to \code{calib_wq()} (parallelizes LHC
 #'   samples \emph{within} a single model's run).
 #' @param force_parallel_glm_simstrat Logical. GLM-AED2 and Simstrat-AED2 edit
 #'   their config files in-place during each LHC sample; by default (\code{FALSE})
 #'   their LHC phase always runs sequentially even when \code{parallel = TRUE},
-#'   to avoid file write collisions. \code{run_lhc_wq_parallel()} isolates each
+#'   to avoid file write collisions. \code{calib_wq_parallel()} isolates each
 #'   worker onto its own copy of \code{model_dir}, the same mechanism DE already
 #'   uses safely -- set \code{TRUE} to test parallel LHC for these two models too.
-#' @param n_workers Integer or \code{NULL}. Passed to \code{run_lhc_wq()}.
-#' @param parallel_dir Character or \code{NULL}. Passed to \code{run_lhc_wq()},
+#' @param n_workers Integer or \code{NULL}. Passed to \code{calib_wq()}.
+#' @param parallel_dir Character or \code{NULL}. Passed to \code{calib_wq()},
 #'   which defaults it (when \code{NULL}) to a sibling of each model's own
 #'   directory under the project root rather than \code{tempdir()}.
-#' @param keep_worker_dirs Logical. Passed to \code{run_lhc_wq()}.
-#' @param use_de Logical. Passed to \code{run_lhc_wq()}. Scalar, length
+#' @param keep_worker_dirs Logical. Passed to \code{calib_wq()}.
+#' @param use_de Logical. Passed to \code{calib_wq()}. Scalar, length
 #'   \code{length(models)}, or named by model.
-#' @param de_iterations Integer. Passed to \code{run_lhc_wq()}.
-#' @param de_popsize Integer or \code{NULL}. Passed to \code{run_lhc_wq()}.
-#' @param de_f Numeric. Passed to \code{run_lhc_wq()}.
-#' @param de_cr Numeric. Passed to \code{run_lhc_wq()}.
-#' @param de_seed_from_lhc Logical. Passed to \code{run_lhc_wq()}.
-#' @param de_parallel Logical. Passed to \code{run_lhc_wq()} (parallelizes DE
+#' @param de_iterations Integer. Passed to \code{calib_wq()}.
+#' @param de_popsize Integer or \code{NULL}. Passed to \code{calib_wq()}.
+#' @param de_f Numeric. Passed to \code{calib_wq()}.
+#' @param de_cr Numeric. Passed to \code{calib_wq()}.
+#' @param de_seed_from_lhc Logical. Passed to \code{calib_wq()}.
+#' @param de_parallel Logical. Passed to \code{calib_wq()} (parallelizes DE
 #'   evaluations \emph{within} a single model's run).
-#' @param de_n_workers Integer or \code{NULL}. Passed to \code{run_lhc_wq()}.
+#' @param de_n_workers Integer or \code{NULL}. Passed to \code{calib_wq()}.
 #' @param parallel_models Logical. If \code{TRUE}, calibrate all requested
 #'   \code{models} concurrently (one worker process per model) instead of
 #'   sequentially. Each model has its own \code{model_dir}, so running them
@@ -101,7 +101,7 @@
 #'
 #' @return A list with:
 #' \describe{
-#'   \item{results}{Named list of per-model outputs from \code{run_lhc_wq()}.}
+#'   \item{results}{Named list of per-model outputs from \code{calib_wq()}.}
 #'   \item{summary}{Data frame with one row per requested model and run status.}
 #'   \item{best_parameter_sets}{Named list of per-model best summaries (or \code{NULL}).}
 #'   \item{write_back}{Named list with best-write status per model (when enabled).}
@@ -336,10 +336,10 @@ cali_ensemble_wq <- function(models = c("GLM-AED2", "GOTM-WET", "GOTM-Selmaprotb
       # NOT unique(cs$pars): two calib_setup rows can share one `pars`
       # string on purpose (e.g. one physical parameter calibrated
       # separately per phytoplankton/zooplankton/etc. group, told apart by
-      # group_name). run_lhc_wq() relies on seeing every row -- including
+      # group_name). calib_wq() relies on seeing every row -- including
       # duplicated names -- to give each group its own LHS dimension and
       # independently-optimized value; deduplicating here would silently
-      # collapse them onto a single shared value before run_lhc_wq() ever
+      # collapse them onto a single shared value before calib_wq() ever
       # sees them, the same way passing param_names = unique(calib_setup$pars)
       # manually does.
       param_by_model[[m]] <- if (is.null(cs) || nrow(cs) == 0L) character(0) else cs$pars
@@ -357,7 +357,7 @@ cali_ensemble_wq <- function(models = c("GLM-AED2", "GOTM-WET", "GOTM-Selmaprotb
   write_back <- stats::setNames(vector("list", length(models)), models)
   summary_rows <- vector("list", length(models))
 
-  .call_run_lhc_wq <- function(model_name, param_names_i, calib_setup_i,
+  .call_calib_wq <- function(model_name, param_names_i, calib_setup_i,
                                yaml_i, model_dir_i, model_filter_i,
                                wq_cfg_i, yaml_model_i, par_file_i,
                                parallel_i, n_workers_i, use_de_i,
@@ -366,17 +366,17 @@ cali_ensemble_wq <- function(models = c("GLM-AED2", "GOTM-WET", "GOTM-Selmaprotb
                                de_n_workers_i) {
     # Resolved explicitly from the currently-loaded LakeEnsemblR.WQ namespace
     # on WHATEVER process is executing this code, rather than via
-    # get(..., inherits = TRUE) (which walks .call_run_lhc_wq's own lexical
+    # get(..., inherits = TRUE) (which walks .call_calib_wq's own lexical
     # scope chain first). That distinction matters when this closure has
     # been shipped to a parallel_models = TRUE worker via parLapply(): the
     # closure's inherited environment chain is captured from the *master*
     # session's cali_ensemble_wq() call, so an inherits = TRUE lookup can
-    # resolve to whatever "run_lhc_wq" existed there at definition time --
+    # resolve to whatever "calib_wq" existed there at definition time --
     # possibly stale -- before ever reaching the worker's own fresh
     # library(LakeEnsemblR.WQ) load. getExportedValue() sidesteps that
     # entirely by asking the namespace directly (see the analogous fix in
     # run_lhc_wq_parallel.R's clusterEvalQ/library() switch).
-    run_lhc_fn <- getExportedValue("LakeEnsemblR.WQ", "run_lhc_wq")
+    run_lhc_fn <- getExportedValue("LakeEnsemblR.WQ", "calib_wq")
     run_lhc_formals <- names(formals(run_lhc_fn))
 
     args_to_pass <- list(
@@ -459,7 +459,7 @@ cali_ensemble_wq <- function(models = c("GLM-AED2", "GOTM-WET", "GOTM-Selmaprotb
     }
 
     # GLM/SIMSTRAT parameter files are edited in-place during each LHC run.
-    # run_lhc_wq_parallel() already isolates each worker onto its own copy of
+    # calib_wq_parallel() already isolates each worker onto its own copy of
     # model_dir (the same mechanism DE already relies on safely), so this is
     # conservative rather than a known-necessary restriction -- kept off by
     # default (force_parallel_glm_simstrat = FALSE) since GLM-AED2/Simstrat-AED2
@@ -510,7 +510,7 @@ cali_ensemble_wq <- function(models = c("GLM-AED2", "GOTM-WET", "GOTM-Selmaprotb
     de_n_workers_i <- de_n_workers_by_model[[m]]
 
     one_result <- tryCatch(
-      .call_run_lhc_wq(
+      .call_calib_wq(
         model_name = m,
         param_names_i = ps,
         calib_setup_i = cs,
@@ -551,7 +551,7 @@ cali_ensemble_wq <- function(models = c("GLM-AED2", "GOTM-WET", "GOTM-Selmaprotb
   # ------------------------------------------------------------------------
   .run_models_in_parallel <- function(worker_fn, models_to_run, n_workers_pool, log_file = "") {
     # PSOCK workers have no console attached, so message()/cat() output from
-    # inside worker_fn (and from run_lhc_wq()/DEoptim's own progress logging)
+    # inside worker_fn (and from calib_wq()/DEoptim's own progress logging)
     # is silently discarded by default. Passing a real file path as `outfile`
     # redirects every worker's stdout/stderr there so progress is visible
     # while the ensemble runs (tail the file, or open it after each check).
@@ -559,12 +559,12 @@ cali_ensemble_wq <- function(models = c("GLM-AED2", "GOTM-WET", "GOTM-Selmaprotb
     on.exit(parallel::stopCluster(cl), add = TRUE)
 
     # Load LakeEnsemblR.WQ itself via library() on each worker, rather than
-    # clusterExport()'ing run_lhc_wq()/run_lhc_wq_parallel() etc. as bare
+    # clusterExport()'ing calib_wq()/calib_wq_parallel() etc. as bare
     # function objects. The latter risks a worker silently receiving a
     # stale copy of the function -- confirmed directly while debugging
-    # run_lhc_wq_parallel()'s own cluster: clusterExport(cl, "run_lhc_wq",
+    # calib_wq_parallel()'s own cluster: clusterExport(cl, "calib_wq",
     # ...) shipped an outdated body() to the worker even though the master
-    # session's own "run_lhc_wq" was current, a devtools::load_all()-vs-
+    # session's own "calib_wq" was current, a devtools::load_all()-vs-
     # clusterExport namespace resolution mismatch. library() gives every
     # worker one canonical, independently-loaded copy of the *installed*
     # package -- requires devtools::install() (not just load_all()) before

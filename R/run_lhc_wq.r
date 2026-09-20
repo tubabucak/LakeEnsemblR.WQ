@@ -1,10 +1,10 @@
 # ---------------------------------------------------------------------------
 # Internal helper: turn a completed DEoptim result into a one-row
-# best_parameter_set data.frame in the same shape run_lhc_wq() produces for
+# best_parameter_set data.frame in the same shape calib_wq() produces for
 # the LHC phase (sample_index, n_stats, n_obs_vars, n_obs_vars_with_stats,
 # best_metric, objective_score, objective_value, <one column per param>).
 #
-# Pulled out of run_lhc_wq()'s DE block as a pure function -- both so it's
+# Pulled out of calib_wq()'s DE block as a pure function -- both so it's
 # unit-testable without running an actual model, and because getting the
 # metric sign convention right here matters: DEoptim always minimizes, so
 # .make_de_objective() flips the sign for KGE/NSE (maximize) vs RMSE/NRMSE
@@ -678,24 +678,24 @@ model_key <- names(cfg$model_folders)[toupper(names(cfg$model_folders)) == toupp
 #'   \code{"KGE"}.
 #' @param target_variables Character. Vector of variables to be included in the objective function
 #' @param parallel Logical. If \code{TRUE}, run in parallel by delegating to
-#'   \code{run_lhc_wq_parallel()}. Default is \code{FALSE}.
+#'   \code{calib_wq_parallel()}. Default is \code{FALSE}.
 #' @param n_workers Integer or \code{NULL}. Number of workers used when
-#'   \code{parallel = TRUE}. Passed to \code{run_lhc_wq_parallel()}.
+#'   \code{parallel = TRUE}. Passed to \code{calib_wq_parallel()}.
 #' @param parallel_dir Character or \code{NULL}. Parent directory for worker
-#'   copies when \code{parallel = TRUE}. Passed to \code{run_lhc_wq_parallel()},
+#'   copies when \code{parallel = TRUE}. Passed to \code{calib_wq_parallel()},
 #'   which defaults it (when \code{NULL}) to a sibling of \code{model_dir}
 #'   under the project root rather than \code{tempdir()} -- see its docs.
 #' @param keep_worker_dirs Logical. Keep worker directories after completion
-#'   when \code{parallel = TRUE}. Passed to \code{run_lhc_wq_parallel()}.
+#'   when \code{parallel = TRUE}. Passed to \code{calib_wq_parallel()}.
 #' @param lhs_matrix Numeric matrix or \code{NULL}. Internal use -- a
 #'   precomputed Latin Hypercube sample matrix (in [0, 1] scale, one row per
 #'   sample, one column per parameter) to reuse instead of drawing a fresh
-#'   one. Used by \code{run_lhc_wq_parallel()} to share one sample matrix
+#'   one. Used by \code{calib_wq_parallel()} to share one sample matrix
 #'   across its worker processes.
 #' @param sample_indices Integer vector or \code{NULL}. Internal use -- which
 #'   rows of \code{lhs_matrix} (or of a freshly-drawn sample matrix) this call
 #'   should actually run, when only a subset is wanted. Used by
-#'   \code{run_lhc_wq_parallel()} to assign each worker its own slice of
+#'   \code{calib_wq_parallel()} to assign each worker its own slice of
 #'   samples.
 #' @param use_de Logical. If \code{TRUE}, run differential evolution after LHC
 #'   initialization using LHC results as generation 1. Default is \code{FALSE}
@@ -722,11 +722,11 @@ model_key <- names(cfg$model_folders)[toupper(names(cfg$model_folders)) == toupp
 #'   \code{detectCores(logical = FALSE) - 1}. Ignored when
 #'   \code{de_parallel = FALSE}.
 #' @param precomputed_lhc_results Data frame or \code{NULL}. Internal use --
-#'   when supplied (already in the shape \code{run_lhc_wq()}'s own LHC phase
+#'   when supplied (already in the shape \code{calib_wq()}'s own LHC phase
 #'   would produce, including the \code{attr(., "best_parameter_set")}
 #'   attribute when applicable), the LHC sampling loop is skipped entirely and
 #'   these results are used directly to seed the DE phase. Used by
-#'   \code{run_lhc_wq_parallel()} to seed DE from its already-computed
+#'   \code{calib_wq_parallel()} to seed DE from its already-computed
 #'   parallel LHC results instead of re-running LHC sequentially.
 #'
 #' @return If \code{obs_file = NULL}, a list of length \code{n_samples} with
@@ -747,7 +747,7 @@ model_key <- names(cfg$model_folders)[toupper(names(cfg$model_folders)) == toupp
 #'   \code{de_phase} and \code{de_best_params}.
 #' @export
 
-run_lhc_wq <- function(model,
+calib_wq <- function(model,
                        param_names,
                        calib_setup,
                        yaml_file,
@@ -971,7 +971,7 @@ run_lhc_wq <- function(model,
     # single evaluation this way, each one just returning the 1e6 penalty,
     # producing a perfectly flat "convergence" trace with nothing behind it.
     # Sandbox yaml_file itself under a collision-safe name below instead --
-    # the same fix already applied to run_lhc_wq_parallel.R's worker
+    # the same fix already applied to calib_wq_parallel.R's worker
     # sandboxing, just missing here since this is a separate code path.
     root_yamls_all <- list.files(project_root, pattern = "\\.yaml$", full.names = TRUE)
     yaml_file_src <- root_yamls_all[tolower(basename(root_yamls_all)) == tolower(basename(yaml_file))][1]
@@ -1159,7 +1159,7 @@ run_lhc_wq <- function(model,
   }
 
   if (isTRUE(parallel)) {
-    return(run_lhc_wq_parallel(
+    return(calib_wq_parallel(
       model = model,
       param_names = param_names,
       calib_setup = calib_setup,
@@ -1556,7 +1556,7 @@ run_lhc_wq <- function(model,
 
       # wq_config_file. may live directly in current_dir (DE-worker sandbox,
       # where root *.yaml files are copied alongside the model folder) or one
-      # level up in the real project folder (plain run_lhc_wq() calls, where
+      # level up in the real project folder (plain calib_wq() calls, where
       # current_dir is model_dir itself). Try both, plus the path as given.
       wq_yaml_candidates <- c(
         file.path(current_dir, basename(wq_config_file.)),
@@ -1642,7 +1642,7 @@ run_lhc_wq <- function(model,
 
   if (!is.null(precomputed_lhc_results)) {
     # Skip LHC sampling entirely -- reuse already-computed results (e.g. from
-    # run_lhc_wq_parallel()'s parallel LHC phase) instead of re-running it
+    # calib_wq_parallel()'s parallel LHC phase) instead of re-running it
     # sequentially just to seed DE.
     results <- precomputed_lhc_results
   } else {

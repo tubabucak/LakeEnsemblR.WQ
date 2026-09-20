@@ -31,7 +31,7 @@ run_sensitivity(
 \item{calib_setup}{Data frame. Calibration setup table containing parameter names, bounds (`lb`, `ub`),
 initial values (`x0`), file/path names (`file`), and optionally a `group_name` column for group-specific
 parameters. This is the same table produced by \code{\link{calib_setup_from_tables}} and consumed by
-\code{\link{run_lhc_wq}}.}
+\code{\link{calib_wq}}.}
 
 \item{yaml_file}{Character. Path to the YAML file defining which metrics to extract (output.yaml).}
 

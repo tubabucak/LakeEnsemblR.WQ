@@ -62,7 +62,7 @@ Some dependencies are GitHub-only wrappers around external lake model
 binaries: `GLM3r`, `WETr`, `SelmaprotbasR`, `SimstratR`, `MyLakeR`.
 These are optional – you only need the one(s) matching the model(s) you
 actually run. If a required one is missing,
-`run_ensemble_wq()`/`run_lhc_wq()` will tell you at call time rather
+`run_ensemble_wq()`/`calib_wq()` will tell you at call time rather
 than fail silently. All of them are listed in `Remotes:` in
 `DESCRIPTION`, so `remotes::install_github()` installs them
 automatically along with everything else.
@@ -211,7 +211,7 @@ See the [Full
 Workflow](https://tubabucak.github.io/LakeEnsemblR.WQ/articles/full-workflow.html)
 article (or `vignette("full-workflow")` if you installed with
 `build_vignettes = TRUE`) for the full calibration workflow, including
-single-model LHC/DE runs via `run_lhc_wq()`, writing best parameters
+single-model LHC/DE runs via `calib_wq()`, writing best parameters
 back with `write_best_calib_to_par_files()` and post-processing
 functions. See the [Configuration File
 Reference](https://tubabucak.github.io/LakeEnsemblR.WQ/articles/config-reference.html)
@@ -248,7 +248,7 @@ article for a field-by-field breakdown of `LakeEnsemblR_WQ.yaml` and
   - export_all_stats()
 - Calibration:
   - create_calibration_tables() / calib_setup_from_tables()
-  - run_lhc_wq() – single-model LHC sampling, with optional DE
+  - calib_wq() – single-model LHC sampling, with optional DE
     refinement (`use_de = TRUE`) and optional internal parallelism
     (`parallel`/`de_parallel`)
   - cali_ensemble_wq() – calibrate multiple coupled models at once,

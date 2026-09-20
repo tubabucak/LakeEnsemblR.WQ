@@ -36,7 +36,7 @@
 #'   output from \code{get_output_wq()} is in model-native units (e.g. GLM's
 #'   DO is mmol O2/m3, not grams/m3 as in a typical observed CSV). If
 #'   \code{NULL} (default), auto-derived from the metrics dictionary the same
-#'   way \code{run_lhc_wq()}'s calibration scoring does: looked up by
+#'   way \code{calib_wq()}'s calibration scoring does: looked up by
 #'   \code{model}/\code{variable_global_name}. Pass a number explicitly to
 #'   override the dictionary lookup.
 #' @param dict_file character, data.frame, or \code{NULL}. Metrics dictionary
@@ -44,6 +44,16 @@
 #'   \code{vars}/\code{conversion_factor}. If \code{NULL} (default), uses
 #'   \code{load_config(config_file)$metrics_dict_file}, falling back to the
 #'   package's bundled default dictionary.
+#' @param wq_config_file character or \code{NULL}. Path to the
+#'   \code{LakeEnsemblR_WQ.yaml} config file. Only needed for
+#'   \code{model = "GOTM-Selmaprotbas"}/\code{"GOTM-WET"} when the
+#'   auto-derived \code{vars} resolves to the dictionary's generic
+#'   \code{"zooplankton_*"} placeholder -- since SELMAPROTBAS/WET always
+#'   create one named FABM instance per configured zooplankton group (never
+#'   a literal instance called \code{"zooplankton"}), that placeholder is
+#'   expanded into each group's own output variable (e.g. \code{"daphnia_c"},
+#'   \code{"cyclops_c"}), fetched, and summed into one total zooplankton
+#'   series before plotting.
 #'
 #' @return A list with:
 #' \describe{
@@ -65,7 +75,8 @@
 #' @export
 plot_model_vs_obs_wq <- function(config_file, model, vars = NULL, obs_data,
                                  variable_global_name, y_title = variable_global_name,
-                                 conversion_factor = NULL, dict_file = NULL) {
+                                 conversion_factor = NULL, dict_file = NULL,
+                                 wq_config_file = NULL) {
 
   if (is.character(obs_data)) {
     obs_data <- utils::read.csv(obs_data, stringsAsFactors = FALSE)
@@ -127,15 +138,55 @@ plot_model_vs_obs_wq <- function(config_file, model, vars = NULL, obs_data,
     }
   }
 
-  sim_list <- get_output_wq(
-    config_file       = config_file,
-    model             = model_short,
-    vars              = vars,
-    obs_depths        = obs_depths,
-    depth_01          = 1,
-    conversion_factor = conversion_factor
-  )
-  sim_df <- sim_list[[1]]
+  # SELMAPROTBAS/WET always name their zooplankton FABM instance(s) after the
+  # configured group(s) (e.g. "daphnia", "cyclops") -- never a literal
+  # instance called "zooplankton". The dictionary's generic "zooplankton_*"
+  # entries are a placeholder for that: resolve it to one real per-group
+  # variable name each, fetch them all, and sum into one total series.
+  is_generic_zoo_var <- model_short %in% c("SELMAPROTBAS", "WET") &&
+    grepl("^zooplankton_", vars)
+
+  if (is_generic_zoo_var) {
+    if (is.null(wq_config_file)) {
+      stop("model = '", model_short, "', variable_global_name = '", variable_global_name,
+           "' resolves to the dictionary's generic 'zooplankton_*' variable, which needs ",
+           "per-group expansion. Pass 'wq_config_file' (path to LakeEnsemblR_WQ.yaml) so the ",
+           "configured zooplankton group names can be resolved.")
+    }
+    wq_cfg <- yaml::read_yaml(wq_config_file)
+    zoo_groups <- names(wq_cfg[["zooplankton"]][["groups"]])
+    if (length(zoo_groups) == 0) {
+      stop("No zooplankton groups found under 'zooplankton/groups' in '", wq_config_file, "'.")
+    }
+
+    suffix <- sub("^zooplankton", "", vars)
+    group_vars <- paste0(zoo_groups, suffix)
+
+    sim_list <- get_output_wq(
+      config_file       = config_file,
+      model             = model_short,
+      vars              = group_vars,
+      obs_depths        = obs_depths,
+      depth_01          = 1,
+      conversion_factor = conversion_factor
+    )
+    # Sum every group's (already unit-converted) series into one total.
+    sim_df <- Reduce(function(a, b) {
+      stopifnot(identical(a$datetime, b$datetime), identical(names(a), names(b)))
+      a[, -1] <- a[, -1] + b[, -1]
+      a
+    }, sim_list)
+  } else {
+    sim_list <- get_output_wq(
+      config_file       = config_file,
+      model             = model_short,
+      vars              = vars,
+      obs_depths        = obs_depths,
+      depth_01          = 1,
+      conversion_factor = conversion_factor
+    )
+    sim_df <- sim_list[[1]]
+  }
   if (is.null(sim_df) || nrow(sim_df) == 0) {
     stop("get_output_wq() returned no data for model = '", model_short,
          "', vars = '", vars, "'.")
@@ -158,6 +209,13 @@ plot_model_vs_obs_wq <- function(config_file, model, vars = NULL, obs_data,
     sim_depths <- unique(sim_long$depth)
     sim_depths[which.min(abs(sim_depths - d))]
   }, numeric(1))
+
+  # get_output_wq() returns the model's whole native output depth grid (per
+  # Output.yaml's output/depths spacing), which is almost always much finer
+  # than the observed depths. Restrict faceting to just the (snapped) depths
+  # observations actually matched to, so the plot doesn't fill up with empty
+  # "NA" facets for every unobserved grid depth in between.
+  sim_long <- sim_long[sim_long$depth %in% unique(obs_long$depth), , drop = FALSE]
 
   # Left join keeps the full simulated series (so the modeled line stays
   # continuous even where observations are sparse); Observed is NA wherever

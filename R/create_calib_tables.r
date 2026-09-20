@@ -22,7 +22,7 @@
 #'     reference for the parameter's plausible physical range, where available.
 #'   \item Call \code{\link{calib_setup_from_tables}} to read the edited CSVs
 #'     and build the \code{calib_setup} data frame expected by
-#'     \code{\link{run_lhc_wq}} and \code{\link{run_sensitivity}}.
+#'     \code{\link{calib_wq}} and \code{\link{run_sensitivity}}.
 #' }
 #'
 #' @param folder path; directory containing the config file.
@@ -101,7 +101,7 @@ create_calibration_tables <- function(folder = ".",
   # n2o_piston_model, simN2O, or on/off switches like buoyancy_regulation,
   # lNfix). A percentage-based bounds_factor produces a meaningless
   # fractional lower/upper for either kind of value, and nothing downstream
-  # (run_lhc_wq()'s LHC/DE sampling, or the value written into the model
+  # (calib_wq()'s LHC/DE sampling, or the value written into the model
   # config) rounds/coerces it back afterward -- so these were never safely
   # calibratable via this bounds-percentage mechanism to begin with.
   # Excluding them here means they never appear in the generated CSVs, so a
@@ -215,6 +215,6 @@ create_calibration_tables <- function(folder = ".",
   }
 
   message("\nEdit the per-module CSVs: set include = TRUE for parameters to calibrate.")
-  message("Then call calib_setup_from_tables() to build the calib_setup for run_lhc_wq().")
+  message("Then call calib_setup_from_tables() to build the calib_setup for calib_wq().")
   invisible(calib_table)
 }

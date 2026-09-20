@@ -25,7 +25,7 @@ In addition to LakeEnsemblR config and input files, the WQ package also requires
   `export_config_wq()` and everything downstream of it.
 - **`Output.yaml`** -- describes the metrics that the user would like to calculate after calibrationg the models: which
   support files (bathymetry, dictionary) to use, and which derived metrics to
-  compute*. Read by `load_config()`, `cal_metrics()`, `run_lhc_wq()`, and
+  compute*. Read by `load_config()`, `cal_metrics()`, `calib_wq()`, and
   most calibration/plotting functions.
 
 This vignette documents both files that you can use in your setup as a template.
@@ -253,7 +253,7 @@ model writes its NetCDF output:
 By default (`required_models = NULL`/`"all"`), `load_config()` requires
 **every** entry listed here to exist on disk -- even if you only intend to
 work with one model right now. Several functions (`cal_metrics()`,
-`run_lhc_wq()`) accept a `required_models`/`model_filter` argument
+`calib_wq()`) accept a `required_models`/`model_filter` argument
 specifically to narrow this down to just the model(s) you're actually using,
 which avoids failing on an unrelated model you haven't run yet. But you can only keep the models that you would like to run.
 
@@ -358,7 +358,7 @@ there first, since that file already lists every known parameter's `domain`/
 ### Observed-data CSV (`obs_file`)
 
 Not referenced from either YAML file directly -- passed as the `obs_file`
-argument to `run_lhc_wq()`, `cali_ensemble_wq()`, and
+argument to `calib_wq()`, `cali_ensemble_wq()`, and
 `plot_model_vs_obs_wq()`. Used to score calibration runs and to plot
 model-vs-observations comparisons.
 

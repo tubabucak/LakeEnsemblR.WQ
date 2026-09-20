@@ -16,7 +16,7 @@ seed <- 123
 cat("Running sequential benchmark...\n")
 set.seed(seed)
 seq_time <- system.time({
-  results_seq <- run_lhc_wq(
+  results_seq <- calib_wq(
     model          = "GLM-AED2",
     param_names    = param_names,
     calib_setup    = calib_setup,
@@ -33,7 +33,7 @@ seq_time <- system.time({
 cat("\nRunning parallel benchmark...\n")
 set.seed(seed)
 par_time <- system.time({
-  results_par <- run_lhc_wq_parallel(
+  results_par <- calib_wq_parallel(
     model            = "GLM-AED2",
     param_names      = param_names,
     calib_setup      = calib_setup,

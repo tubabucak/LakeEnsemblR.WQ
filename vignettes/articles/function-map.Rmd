@@ -458,17 +458,17 @@ pkgdown:
             <p class="one-liner">Reads the edited CSVs into the <span class="mono">calib_setup</span> table every calibration function below consumes.</p>
           </details>
           <details class="card">
-            <summary><span class="fn-name mono">run_lhc_wq()</span><span class="chev">&#9654;</span></summary>
+            <summary><span class="fn-name mono">calib_wq()</span><span class="chev">&#9654;</span></summary>
             <p class="one-liner">Latin Hypercube sampling (+ optional DE refinement) for one model: edits config files, runs, scores against <span class="mono">obs_file</span>, restores originals on exit.</p>
             <p class="detail"><b>Takes in</b> <span class="mono">calib_setup</span>, observed CSV.<br><b>Hands off</b> a results table with <span class="mono">attr(., "best_parameter_set")</span>.</p>
           </details>
           <details class="card">
-            <summary><span class="fn-name mono">run_lhc_wq_parallel()</span><span class="chev">&#9654;</span></summary>
+            <summary><span class="fn-name mono">calib_wq_parallel()</span><span class="chev">&#9654;</span></summary>
             <p class="one-liner">Same sampling, distributed across worker processes.</p>
           </details>
           <details class="card">
             <summary><span class="fn-name mono">cali_ensemble_wq()</span><span class="chev">&#9654;</span></summary>
-            <p class="one-liner">Multi-model wrapper &mdash; runs <span class="mono">run_lhc_wq()</span> per coupled model, sequentially or concurrently, one call.</p>
+            <p class="one-liner">Multi-model wrapper &mdash; runs <span class="mono">calib_wq()</span> per coupled model, sequentially or concurrently, one call.</p>
           </details>
           <details class="card">
             <summary><span class="fn-name mono">write_best_calib_to_par_files()</span><span class="chev">&#9654;</span></summary>

@@ -49,7 +49,7 @@ test_that("write_best_calib_to_par_files prefers the best_parameter_set attribut
     stringsAsFactors = FALSE
   )
   # Simulate DE having refined beyond anything in the LHC table -- this is
-  # exactly the situation run_lhc_wq()'s DE phase produces.
+  # exactly the situation calib_wq()'s DE phase produces.
   attr(lhc_results, "best_parameter_set") <- data.frame(
     sample_index = NA_integer_,
     p1 = 42,

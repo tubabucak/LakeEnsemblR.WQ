@@ -1,6 +1,6 @@
 #' Write best calibration parameter set back to par_file CSVs
 #'
-#' After running \code{\link{run_lhc_wq}} with \code{obs_file} supplied (which
+#' After running \code{\link{calib_wq}} with \code{obs_file} supplied (which
 #' returns a data frame of parameter values + performance statistics), this
 #' function picks the best-performing row and writes the calibrated parameter
 #' values into the \code{par_file} CSVs referenced in the
@@ -8,12 +8,12 @@
 #' calibration workflow and the parameter-override files consumed by
 #' \code{\link{export_config_wq}}.
 #'
-#' @param lhc_results data.frame; the output of \code{run_lhc_wq()} when
+#' @param lhc_results data.frame; the output of \code{calib_wq()} when
 #'   \code{obs_file} is supplied.  Must contain one column per calibrated
 #'   parameter and at least one performance-metric column (e.g. \code{NSE},
 #'   \code{KGE}).
 #' @param calib_setup data.frame; the calibration setup table used when running
-#'   \code{run_lhc_wq()}, as produced by \code{\link{calib_setup_from_tables}}.
+#'   \code{calib_wq()}, as produced by \code{\link{calib_setup_from_tables}}.
 #'   Must contain columns \code{pars}, \code{model_coupled}, \code{domain},
 #'   \code{process}, \code{subprocess}, and optionally \code{group_name}.
 #' @param config_file character; name of the \code{LakeEnsemblR_WQ.yaml} master
@@ -56,7 +56,7 @@
 #'   model_coupled = "GOTM-Selmaprotbas"
 #' )
 #'
-#' lhc_results <- run_lhc_wq(
+#' lhc_results <- calib_wq(
 #'   model          = "GOTM-Selmaprotbas",
 #'   param_names    = calib_setup$pars,
 #'   calib_setup    = calib_setup,
@@ -93,7 +93,7 @@ write_best_calib_to_par_files <- function(lhc_results,
 
   # ---- input checks --------------------------------------------------------
   if (!is.data.frame(lhc_results) || nrow(lhc_results) == 0) {
-    stop("'lhc_results' must be a non-empty data frame (output of run_lhc_wq() ",
+    stop("'lhc_results' must be a non-empty data frame (output of calib_wq() ",
          "with obs_file supplied).")
   }
 
@@ -106,7 +106,7 @@ write_best_calib_to_par_files <- function(lhc_results,
   }
 
   # ---- identify parameter columns in lhc_results ---------------------------
-  # run_lhc_wq() names its output parameter columns by make.unique(pars) --
+  # calib_wq() names its output parameter columns by make.unique(pars) --
   # not the raw `pars` column -- so that two calib_setup rows sharing one
   # `pars` string (e.g. the same physical parameter calibrated separately
   # per phytoplankton group) get distinct columns/values instead of

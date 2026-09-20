@@ -11,12 +11,12 @@
 #' Bounds are, per parameter, either \code{x0 * (1 +/- rel_change)} (when \code{rel_change}
 #' is supplied) or \code{calib_setup}'s own \code{lb}/\code{ub} columns (when
 #' \code{rel_change = NULL}, the default) -- the same bounds convention
-#' \code{\link{run_lhc_wq}}/\code{\link{run_sensitivity}} use.
+#' \code{\link{calib_wq}}/\code{\link{run_sensitivity}} use.
 #'
 #' @param param_names Character vector or \code{NULL}. Parameter names to vary in the
 #'   sensitivity analysis. May contain duplicate names (e.g. one physical parameter calibrated
 #'   independently for two phytoplankton groups); each occurrence is matched to its own row in
-#'   \code{calib_setup} in order, the same way \code{\link{run_lhc_wq}} disambiguates duplicate
+#'   \code{calib_setup} in order, the same way \code{\link{calib_wq}} disambiguates duplicate
 #'   \code{pars} names. \code{NULL} (default) uses every row of \code{calib_setup$pars} as-is,
 #'   in order -- i.e. by default every parameter in \code{calib_setup} is varied.
 #' @param calib_setup A data frame containing calibration setup information. Must include columns
@@ -160,7 +160,7 @@ run_multi_param_sensitivity <- function(param_names = NULL, calib_setup, rel_cha
 
   # Disambiguate duplicate `pars` names across groups -- e.g. one physical
   # parameter calibrated independently for two phytoplankton groups -- the
-  # same occurrence-matching approach run_lhc_wq() uses, so each position in
+  # same occurrence-matching approach calib_wq() uses, so each position in
   # param_names is pinned to its own distinct calib_setup row instead of
   # every duplicate-named row collapsing onto whichever is found first.
   .occurrence_index <- function(x) stats::ave(seq_along(x), x, FUN = seq_along)

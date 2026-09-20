@@ -3,7 +3,7 @@
 #' Reads the per-module calibration CSV files produced by
 #' \code{\link{create_calibration_tables}}, filters to rows where
 #' \code{include == TRUE}, and returns a \code{calib_setup} data frame in the
-#' format expected by \code{\link{run_lhc_wq}} and \code{\link{run_sensitivity}}.
+#' format expected by \code{\link{calib_wq}} and \code{\link{run_sensitivity}}.
 #'
 #' @param folder_in character; path to the folder containing the
 #'   \code{calibration_<module>.csv} files (same as \code{folder_out} used in
@@ -14,14 +14,14 @@
 #'   output.
 #' @param group_name character or \code{NULL}; for biological modules with
 #'   multiple groups (phytoplankton, zooplankton, etc.) this maps to the
-#'   \code{group_name} column expected by \code{run_lhc_wq}. When \code{NULL}
+#'   \code{group_name} column expected by \code{calib_wq}. When \code{NULL}
 #'   (default) the column is set to \code{NA}.
 #'
 #' @return A data frame with columns \code{model_coupled}, \code{module},
 #'   \code{domain}, \code{process}, \code{subprocess}, \code{pars},
 #'   \code{lb}, \code{ub}, \code{x0}, \code{log}, \code{file},
 #'   \code{group_name}, \code{unit}, \code{note}. When a single model is
-#'   supplied, the result can be passed directly to \code{run_lhc_wq} or
+#'   supplied, the result can be passed directly to \code{calib_wq} or
 #'   \code{run_sensitivity}. When multiple models are supplied, the output is a
 #'   combined reference table and should be filtered per model before running
 #'   calibration.
@@ -42,7 +42,7 @@
 #'   model_coupled = "GOTM-Selmaprotbas"
 #' )
 #'
-#' results <- run_lhc_wq(
+#' results <- calib_wq(
 #'   model          = "GOTM-Selmaprotbas",
 #'   param_names    = calib_setup$pars,
 #'   calib_setup    = calib_setup,
@@ -137,7 +137,7 @@ calib_setup_from_tables <- function(folder_in,
     inferred_group_name[] <- group_name
   }
 
-  # Build calib_setup in the format run_lhc_wq / run_sensitivity expect
+  # Build calib_setup in the format calib_wq / run_sensitivity expect
   calib_setup <- data.frame(
     model_coupled = selected$model_coupled,
     module     = selected$module,

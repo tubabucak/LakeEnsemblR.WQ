@@ -1,6 +1,6 @@
 #' Run Latin Hypercube Calibration in Parallel
 #'
-#' Runs \code{run_lhc_wq()} in parallel by distributing LHS samples across
+#' Runs \code{calib_wq()} in parallel by distributing LHS samples across
 #' multiple workers. Each worker gets its own isolated sandbox copy of
 #' \code{model_dir} (under \code{parallel_dir}) and runs/scores its assigned
 #' samples there -- \code{model_dir} itself is never written to.
@@ -16,53 +16,53 @@
 #'   \code{cal_metrics()}.
 #' @param wq_config_file Character or \code{NULL}. Path to WQ config file.
 #' @param yaml_file_model Character or \code{NULL}. GOTM yaml filename. If
-#'   \code{NULL}, derived from \code{ler_config_file} (see \code{run_lhc_wq()}).
+#'   \code{NULL}, derived from \code{ler_config_file} (see \code{calib_wq()}).
 #' @param par_file Character or \code{NULL}. Simstrat par filename. If
-#'   \code{NULL}, derived from \code{ler_config_file} (see \code{run_lhc_wq()}).
+#'   \code{NULL}, derived from \code{ler_config_file} (see \code{calib_wq()}).
 #' @param ler_config_file Character or \code{NULL}. Path to the LakeEnsemblR
 #'   config file, used to auto-derive \code{yaml_file_model}/\code{par_file}
-#'   when they are not explicitly set. Passed through to \code{run_lhc_wq()}.
+#'   when they are not explicitly set. Passed through to \code{calib_wq()}.
 #' @param verbose Logical. Print progress messages.
 #' @param save_results Logical. If \code{TRUE}, save the combined result to
 #'   \code{output_file} in the original \code{model_dir}.
 #' @param output_file Character. RDS output filename when
 #'   \code{save_results = TRUE}.
 #' @param obs_file Character or \code{NULL}. Optional observed-data CSV.
-#' @param obs_to_model_units Logical. Passed to \code{run_lhc_wq()} when
+#' @param obs_to_model_units Logical. Passed to \code{calib_wq()} when
 #'   \code{obs_file} is provided. If \code{TRUE} (default), observed values
 #'   are converted from harmonized/global units back to model-specific units
 #'   before computing statistics.
-#' @param spin_up_days Numeric or \code{NULL}. Passed to \code{run_lhc_wq()}.
+#' @param spin_up_days Numeric or \code{NULL}. Passed to \code{calib_wq()}.
 #'   Number of days after simulation start to exclude from observed-data
 #'   comparison in \code{obs_file} mode.
-#' @param stats_by_depth Logical. Passed to \code{run_lhc_wq()} in
+#' @param stats_by_depth Logical. Passed to \code{calib_wq()} in
 #'   \code{obs_file} mode. If \code{TRUE}, compute depth-wise statistics.
-#' @param return_best Logical. Passed to \code{run_lhc_wq()} in
+#' @param return_best Logical. Passed to \code{calib_wq()} in
 #'   \code{obs_file} mode. If \code{TRUE}, mark the best parameter set.
 #' @param best_metric Character. Objective metric used when
 #'   \code{return_best = TRUE}. One of \code{"KGE"}, \code{"NSE"},
 #'   \code{"RMSE"}, \code{"NRMSE"}, or \code{"PBIAS"}.
 #' @param target_variables Character vector or \code{NULL}. Passed to
-#'   \code{run_lhc_wq()} -- restricts scoring to these
+#'   \code{calib_wq()} -- restricts scoring to these
 #'   \code{variable_global_name} value(s) from \code{obs_file} instead of
 #'   averaging across every observed variable. \code{NULL} (default) uses all.
 #' @param n_workers Integer. Number of parallel workers. Defaults to all
 #'   physical cores minus one, capped at \code{n_samples}.
 #' @param use_de Logical. If \code{TRUE}, run a Differential Evolution
-#'   refinement phase (via \code{run_lhc_wq()}) after the parallel LHC phase
+#'   refinement phase (via \code{calib_wq()}) after the parallel LHC phase
 #'   completes, seeded from the LHC results already computed here.
-#' @param de_parallel Logical. Passed to \code{run_lhc_wq()}'s DE phase --
+#' @param de_parallel Logical. Passed to \code{calib_wq()}'s DE phase --
 #'   parallelizes DE evaluations across workers.
 #' @param de_n_workers Integer or \code{NULL}. Number of workers for the DE
 #'   phase when \code{de_parallel = TRUE}.
 #' @param de_iterations Integer. Number of DE generations. Passed to
-#'   \code{run_lhc_wq()}'s DE phase.
+#'   \code{calib_wq()}'s DE phase.
 #' @param de_popsize Integer or \code{NULL}. DE population size. Passed to
-#'   \code{run_lhc_wq()}'s DE phase.
-#' @param de_f Numeric. DE differential weight. Passed to \code{run_lhc_wq()}'s
+#'   \code{calib_wq()}'s DE phase.
+#' @param de_f Numeric. DE differential weight. Passed to \code{calib_wq()}'s
 #'   DE phase.
 #' @param de_cr Numeric. DE crossover probability. Passed to
-#'   \code{run_lhc_wq()}'s DE phase.
+#'   \code{calib_wq()}'s DE phase.
 #' @param de_seed_from_lhc Logical. If \code{TRUE} (default), seed the DE
 #'   population from the best parallel-LHC results instead of re-sampling.
 #' @param parallel_dir Character or \code{NULL}. Parent directory for the
@@ -76,10 +76,10 @@
 #'   useful for debugging, but accumulates disk usage across repeated runs.
 #'   Default \code{FALSE} (deleted automatically).
 #'
-#' @return Same structure as \code{run_lhc_wq()}, with results combined across
+#' @return Same structure as \code{calib_wq()}, with results combined across
 #'   workers in iteration order.
 #' @export
-run_lhc_wq_parallel <- function(model,
+calib_wq_parallel <- function(model,
                                 param_names,
                                 calib_setup,
                                 yaml_file,
@@ -112,7 +112,7 @@ run_lhc_wq_parallel <- function(model,
                                 parallel_dir    = NULL,
                                 keep_worker_dirs = FALSE) {
 
-  # run_lhc_wq() defaults parallel_dir to NULL and passes it through
+  # calib_wq() defaults parallel_dir to NULL and passes it through
   # explicitly, which overrides any default= on this function's own
   # signature -- so a plain default here is not enough. Must be resolved
   # here in the body, or worker code below does file.path(NULL, "worker_1")
@@ -145,7 +145,7 @@ run_lhc_wq_parallel <- function(model,
     if (isTRUE(verbose)) {
       message("[LHC] Only 1 worker requested; running sequentially.")
     }
-    return(run_lhc_wq(
+    return(calib_wq(
       model           = model,
       param_names     = param_names,
       calib_setup     = calib_setup,
@@ -186,11 +186,11 @@ run_lhc_wq_parallel <- function(model,
   n_params <- length(param_names)
   lhs_matrix <- lhs::randomLHS(n_samples, n_params)
 
-  # Each worker below calls run_lhc_wq(), which disambiguates duplicate
+  # Each worker below calls calib_wq(), which disambiguates duplicate
   # `pars` names (e.g. one physical parameter calibrated separately per
   # phytoplankton group) by naming its result columns with make.unique()
   # rather than raw param_names -- see row_for_param/param_key in
-  # run_lhc_wq(). Reproduced here (deterministically the same, since it's a
+  # calib_wq(). Reproduced here (deterministically the same, since it's a
   # pure function of param_names in the same order) so the global-best
   # aggregation below reads the correct, matching column names instead of
   # colliding on the raw (possibly duplicated) param_names.
@@ -212,7 +212,7 @@ run_lhc_wq_parallel <- function(model,
   # unless outfile points somewhere -- without this, a worker-side failure
   # just looks like an opaque "checkForRemoteErrors" message with no visible
   # cause.
-  worker_log <- tempfile("run_lhc_wq_parallel_workers_", tmpdir = tempdir(), fileext = ".log")
+  worker_log <- tempfile("run_calib_wq_parallel_workers_", tmpdir = tempdir(), fileext = ".log")
   if (isTRUE(verbose)) {
     message("[LHC] Worker progress/errors written to: ", worker_log)
   }
@@ -220,7 +220,7 @@ run_lhc_wq_parallel <- function(model,
   on.exit(parallel::stopCluster(cl), add = TRUE)
 
   # Load required packages on workers, including THIS package itself, via
-  # library() rather than clusterExport()'ing run_lhc_wq() as a bare
+  # library() rather than clusterExport()'ing calib_wq() as a bare
   # function -- clusterExport() has shipped stale copies of it to workers
   # before. library() always loads the installed package, so run
   # devtools::install() (not just load_all()) before testing parallel runs.
@@ -241,7 +241,7 @@ run_lhc_wq_parallel <- function(model,
 
   worker_dir_tag <- paste0(Sys.getpid(), "_", format(Sys.time(), "%Y%m%d%H%M%OS3"))
 
-  # Export data to workers. Function objects (run_lhc_wq() and its internal
+  # Export data to workers. Function objects (calib_wq() and its internal
   # helpers) are NOT exported here -- they now come from library() loading
   # the installed package fresh on each worker (see clusterEvalQ above),
   # which is what avoids the stale-copy problem clusterExport() had.
@@ -425,7 +425,7 @@ result_parts <- parallel::parLapply(cl, seq_len(n_workers), function(worker_idx)
   # Run LHC
   # ------------------------------------------------------------
  res <- tryCatch(
-  run_lhc_wq(
+  calib_wq(
     model              = model,
     param_names        = param_names,
     calib_setup        = calib_setup,
@@ -535,7 +535,7 @@ result_parts <- parallel::parLapply(cl, seq_len(n_workers), function(worker_idx)
           out$objective_value <- if (best_metric_upper == "PBIAS") -objective
                                  else objective * score_sign
           # first_row's parameter columns are named by param_key (each
-          # worker's run_lhc_wq() call produces them that way) -- see note
+          # worker's calib_wq() call produces them that way) -- see note
           # near param_key's definition above.
           for (p in param_key) {
             out[[p]] <- first_row[[p]]
@@ -575,7 +575,7 @@ result_parts <- parallel::parLapply(cl, seq_len(n_workers), function(worker_idx)
   # DE phase: seed from the parallel LHC results just combined above instead
   # of re-sampling LHC from scratch. Previously this branch lived *inside*
   # `if (isTRUE(verbose))` above (so use_de = TRUE was silently skipped
-  # whenever verbose = FALSE) and called run_lhc_wq() without passing the
+  # whenever verbose = FALSE) and called calib_wq() without passing the
   # results just computed here -- which made it generate its own brand new
   # random lhs_matrix and re-run the full LHC loop sequentially before DE,
   # discarding the parallel workers' output entirely and roughly doubling
@@ -588,7 +588,7 @@ result_parts <- parallel::parLapply(cl, seq_len(n_workers), function(worker_idx)
 
     # reuse same function but now WITHOUT parallel, seeding from the results
     # already computed by the parallel workers above.
-    de_results <- run_lhc_wq(
+    de_results <- calib_wq(
       model = model,
       param_names = param_names,
       calib_setup = calib_setup,

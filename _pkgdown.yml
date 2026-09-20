@@ -39,10 +39,10 @@ reference:
     contents:
       - create_calibration_tables
       - calib_setup_from_tables
-      - run_lhc_wq
+      - calib_wq
       - run_sensitivity
       - run_multi_param_sensitivity
-      - run_lhc_wq_parallel
+      - calib_wq_parallel
       - cali_ensemble_wq
       - write_best_calib_to_par_files
 
