@@ -235,9 +235,20 @@ plot_model_vs_obs_wq <- function(config_file, model, vars = NULL, obs_data,
   })
   stats_df <- do.call(rbind, stats_by_depth)
 
+  # Label every facet, not just depths with matched observations: a facet
+  # whose depth has no obs/sim datetime overlap would otherwise get an "NA"
+  # strip (as_labeller() finds no name for it).
+  facet_depths <- sort(unique(joined$depth))
   strip_labels <- stats::setNames(
-    sprintf("Depth %.2g m  (KGE=%.2f, RMSE=%.2f)", stats_df$depth, stats_df$KGE, stats_df$RMSE),
-    as.character(stats_df$depth)
+    vapply(facet_depths, function(d) {
+      i <- match(d, stats_df$depth)
+      if (is.na(i)) {
+        sprintf("Depth %.2g m  (no matching obs)", d)
+      } else {
+        sprintf("Depth %.2g m  (KGE=%.2f, RMSE=%.2f)", d, stats_df$KGE[i], stats_df$RMSE[i])
+      }
+    }, character(1)),
+    as.character(facet_depths)
   )
 
   p <- ggplot2::ggplot(joined, ggplot2::aes(x = datetime)) +
