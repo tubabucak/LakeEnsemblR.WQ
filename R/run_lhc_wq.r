@@ -1966,7 +1966,7 @@ calib_wq <- function(model,
       NP = de_popsize,
       F = de_f,
       CR = de_cr,
-      trace = if (isTRUE(verbose)) 10 else FALSE,
+      trace = if (isTRUE(verbose)) 1 else FALSE,
       packages = c("stats", "utils", "yaml", "readr", "dplyr", "ncdf4", "lubridate", "glmtools", "gotmtools", "configr", "GLM3r")
     )
 
@@ -1984,10 +1984,18 @@ calib_wq <- function(model,
     parallel_mode_used <- FALSE
     de_cluster <- NULL
     if (de_parallel_enabled && "cluster" %in% de_control_formals) {
-      de_cluster <- parallel::makeCluster(de_n_workers)
+      # PSOCK workers have no console, so worker-side cat()/message()/errors
+      # (the "[DE eval N]" lines, model engine output) are discarded unless
+      # outfile points somewhere -- same reason as calib_wq_parallel()'s
+      # cluster. Fixed path under model_dir so the log is easy to find.
+      de_debug_dir <- file.path(model_dir, "de_debug_logs")
+      if (!dir.exists(de_debug_dir)) dir.create(de_debug_dir, recursive = TRUE, showWarnings = FALSE)
+      de_worker_log <- file.path(de_debug_dir, "de_workers.log")
+      de_cluster <- parallel::makeCluster(de_n_workers, outfile = de_worker_log)
       de_control_args$cluster <- de_cluster
       parallel_mode_used <- TRUE
       if (isTRUE(verbose)) {
+        message("[DE] Worker progress/errors written to: ", de_worker_log)
         message("[DE] Created parallel cluster with ", de_n_workers, " workers")
       }
       worker_pids <- parallel::clusterCall(de_cluster, Sys.getpid)

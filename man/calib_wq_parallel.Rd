@@ -150,5 +150,6 @@ Same structure as \code{calib_wq()}, with results combined across
 Runs \code{calib_wq()} in parallel by distributing LHS samples across
 multiple workers. Each worker gets its own isolated sandbox copy of
 \code{model_dir} (under \code{parallel_dir}) and runs/scores its assigned
-samples there -- \code{model_dir} itself is never written to.
+samples there -- \code{model_dir} itself is only written to for the worker
+log (\code{lhc_debug_logs/lhc_workers.log}) and the final results file.
 }

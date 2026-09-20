@@ -3,7 +3,8 @@
 #' Runs \code{calib_wq()} in parallel by distributing LHS samples across
 #' multiple workers. Each worker gets its own isolated sandbox copy of
 #' \code{model_dir} (under \code{parallel_dir}) and runs/scores its assigned
-#' samples there -- \code{model_dir} itself is never written to.
+#' samples there -- \code{model_dir} itself is only written to for the worker
+#' log (\code{lhc_debug_logs/lhc_workers.log}) and the final results file.
 #'
 #' @param model Character. One of \code{"GLM-AED2"}, \code{"GOTM-WET"},
 #'   \code{"GOTM-Selmaprotbas"}, or \code{"Simstrat-AED2"}.
@@ -212,7 +213,11 @@ calib_wq_parallel <- function(model,
   # unless outfile points somewhere -- without this, a worker-side failure
   # just looks like an opaque "checkForRemoteErrors" message with no visible
   # cause.
-  worker_log <- tempfile("run_calib_wq_parallel_workers_", tmpdir = tempdir(), fileext = ".log")
+  # Written to a fixed path under model_dir (like DE's de_debug_logs/) so it
+  # survives the R session; worker sandboxes skip this folder when copying.
+  lhc_log_dir <- file.path(model_dir, "lhc_debug_logs")
+  if (!dir.exists(lhc_log_dir)) dir.create(lhc_log_dir, recursive = TRUE, showWarnings = FALSE)
+  worker_log <- file.path(lhc_log_dir, "lhc_workers.log")
   if (isTRUE(verbose)) {
     message("[LHC] Worker progress/errors written to: ", worker_log)
   }
@@ -274,8 +279,10 @@ result_parts <- parallel::parLapply(cl, seq_len(n_workers), function(worker_idx)
   dir.create(worker_dir, recursive = TRUE)
 
   # ✅ Copy CONTENTS of model_dir
+  # (except the shared worker log folder, which workers hold open)
+  model_entries <- list.files(model_dir, full.names = TRUE)
   file.copy(
-    from = list.files(model_dir, full.names = TRUE),
+    from = model_entries[!basename(model_entries) %in% "lhc_debug_logs"],
     to   = worker_dir,
     recursive = TRUE,
     overwrite = TRUE
