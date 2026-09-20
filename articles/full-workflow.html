@@ -528,16 +528,6 @@ structure).</p>
 <span>  depth      <span class="op">=</span> <span class="fl">1</span></span>
 <span><span class="op">)</span></span>
 <span><span class="va">cmp</span><span class="op">$</span><span class="va">plot</span></span></code></pre></div>
-<p><code><a href="../reference/compare_models_metric_netcdf.html">compare_models_metric_netcdf()</a></code> does the same comparison
-but reads straight from a NetCDF file (see 7.3) instead of a
-<code><a href="../reference/cal_metrics.html">cal_metrics()</a></code> list</p>
-<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">cmp_nc</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/compare_models_metric_netcdf.html">compare_models_metric_netcdf</a></span><span class="op">(</span></span>
-<span>  nc_file <span class="op">=</span> <span class="st">"output/ensemble_output.nc"</span>,</span>
-<span>  metric  <span class="op">=</span> <span class="st">"TP_gramsPerCubicMeter"</span>,</span>
-<span>  depth   <span class="op">=</span> <span class="fl">1</span></span>
-<span><span class="op">)</span></span>
-<span><span class="va">cmp_nc</span><span class="op">$</span><span class="va">plot</span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="stratification-metrics-across-models-and-years">6.2 Stratification metrics across models and years<a class="anchor" aria-label="anchor" href="#stratification-metrics-across-models-and-years"></a>
@@ -546,7 +536,7 @@ but reads straight from a NetCDF file (see 7.3) instead of a
 <code><a href="../reference/cal_metrics.html">cal_metrics()</a></code> list (or a NetCDF path) and produces three
 plots per model: stratification duration, onset day of year, and mixing
 onset day of year.</p>
-<div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">strat</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/plot_strat_metrics.html">plot_strat_metrics</a></span><span class="op">(</span><span class="va">metric_out</span>, metric_name <span class="op">=</span> <span class="st">"Duration_of_Stratification"</span><span class="op">)</span></span>
 <span><span class="va">strat</span><span class="op">$</span><span class="va">duration_plot</span></span>
 <span><span class="va">strat</span><span class="op">$</span><span class="va">onset_plot</span></span>
@@ -563,7 +553,7 @@ for any metric name present in <code>Output.yaml</code>
 (e.g. <code>DO_gramsPerCubicMeter</code>,
 <code>NH4_gramsPerCubicMeter</code>, <code>TP_gramsPerCubicMeter</code>,
 <code>Total_Chla_miligramsPerCubicMeter</code>).</p>
-<div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/create_netcdf_output.html">create_netcdf_output</a></span><span class="op">(</span></span>
 <span>  output_lists    <span class="op">=</span> <span class="va">metric_out</span>,</span>
 <span>  folder          <span class="op">=</span> <span class="st">"."</span>,</span>
@@ -583,7 +573,7 @@ for any metric name present in <code>Output.yaml</code>
 <code><a href="../reference/plot_strat_metrics.html">plot_strat_metrics()</a></code> (7.2) – a <code><a href="../reference/cal_metrics.html">cal_metrics()</a></code>
 list or a NetCDF path – and plot their respective derived metrics per
 model per year.</p>
-<div class="sourceCode" id="cb21"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/plot_anoxic_metrics.html">plot_anoxic_metrics</a></span><span class="op">(</span><span class="st">"output/ensemble_output.nc"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="../reference/plot_ice_metrics.html">plot_ice_metrics</a></span><span class="op">(</span><span class="st">"output/ensemble_output.nc"</span>, metric_name <span class="op">=</span> <span class="st">"Ice_Thickness_meter"</span><span class="op">)</span></span></code></pre></div>
 </div>
@@ -594,7 +584,7 @@ model per year.</p>
 observed data, and use it to plot the model vs observed data. The
 variable_global_name should match the variable_global_name column in the
 observed data file.</p>
-<div class="sourceCode" id="cb22"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb21"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">result</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/plot_model_vs_obs_wq.html">plot_model_vs_obs_wq</a></span><span class="op">(</span></span>
 <span>    config_file           <span class="op">=</span> <span class="st">"Output.yaml"</span>,</span>
 <span>    model                 <span class="op">=</span> <span class="st">"GLM-AED2"</span>,</span>
@@ -649,39 +639,6 @@ observed data file.</p>
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">result</span><span class="op">$</span><span class="va">plot</span></span></code></pre></div>
-</div>
-<div class="section level3">
-<h3 id="per-model-time-series-and-scatter-plots-against-observations">6.6 Per-model time series and scatter plots against
-observations<a class="anchor" aria-label="anchor" href="#per-model-time-series-and-scatter-plots-against-observations"></a>
-</h3>
-<p><code><a href="../reference/compare_plot.html">compare_plot()</a></code> and <code><a href="../reference/scat_plot.html">scat_plot()</a></code> work at a
-lower level than the functions above: instead of a
-<code><a href="../reference/cal_metrics.html">cal_metrics()</a></code> list, each takes one
-<strong>wide-format</strong> data frame per model (<code>datetime</code>
-+ <code>Depth_&lt;n&gt;</code> columns – the shape
-<code><a href="../reference/get_output_wq.html">get_output_wq()</a></code> returns) plus one for observations, and
-compute <code><a href="../reference/cal_stats.html">cal_stats()</a></code> against the observed values internally.
-They’re most useful once you already have per-model output pulled out
-via <code><a href="../reference/get_output_wq.html">get_output_wq()</a></code> (see <code><a href="../reference/compare_plot.html">?compare_plot</a></code> and
-<code><a href="../reference/scat_plot.html">?scat_plot</a></code> for the full column/argument requirements) – for
-example:</p>
-<div class="sourceCode" id="cb23"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">data_glm</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/get_output_wq.html">get_output_wq</a></span><span class="op">(</span></span>
-<span>  config_file <span class="op">=</span> <span class="st">"Output.yaml"</span>,</span>
-<span>  model       <span class="op">=</span> <span class="st">"GLM"</span>,</span>
-<span>  vars        <span class="op">=</span> <span class="st">"temp"</span>,</span>
-<span>  depth_01    <span class="op">=</span> <span class="fl">1</span></span>
-<span><span class="op">)</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span></span>
-<span></span>
-<span><span class="co"># ...similarly for data_wet, data_selma, data_simstrat, and data_obs</span></span>
-<span></span>
-<span><span class="va">res</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/compare_plot.html">compare_plot</a></span><span class="op">(</span></span>
-<span>  <span class="va">data_glm</span>, <span class="va">data_wet</span>, <span class="va">data_selma</span>, <span class="va">data_simstrat</span>, <span class="va">data_obs</span>,</span>
-<span>  depth   <span class="op">=</span> <span class="fl">1</span>,</span>
-<span>  y_title <span class="op">=</span> <span class="st">"Temperature (°C)"</span></span>
-<span><span class="op">)</span></span>
-<span><span class="va">res</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span>        <span class="co"># the plot</span></span>
-<span><span class="va">res</span><span class="op">[[</span><span class="fl">2</span><span class="op">]</span><span class="op">]</span>        <span class="co"># cal_stats() output for GLM at this depth</span></span></code></pre></div>
 </div>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

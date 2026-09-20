@@ -478,22 +478,6 @@ cmp <- compare_models_metric(
 cmp$plot
 ```
 
-[`compare_models_metric_netcdf()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/compare_models_metric_netcdf.md)
-does the same comparison but reads straight from a NetCDF file (see 7.3)
-instead of a
-[`cal_metrics()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/cal_metrics.md)
-list
-
-``` r
-
-cmp_nc <- compare_models_metric_netcdf(
-  nc_file = "output/ensemble_output.nc",
-  metric  = "TP_gramsPerCubicMeter",
-  depth   = 1
-)
-cmp_nc$plot
-```
-
 ### 6.2 Stratification metrics across models and years
 
 [`plot_strat_metrics()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/plot_strat_metrics.md)
@@ -619,45 +603,4 @@ result <- plot_model_vs_obs_wq(
 )
 
 result$plot
-```
-
-### 6.6 Per-model time series and scatter plots against observations
-
-[`compare_plot()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/compare_plot.md)
-and
-[`scat_plot()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/scat_plot.md)
-work at a lower level than the functions above: instead of a
-[`cal_metrics()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/cal_metrics.md)
-list, each takes one **wide-format** data frame per model (`datetime` +
-`Depth_<n>` columns – the shape
-[`get_output_wq()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/get_output_wq.md)
-returns) plus one for observations, and compute
-[`cal_stats()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/cal_stats.md)
-against the observed values internally. They’re most useful once you
-already have per-model output pulled out via
-[`get_output_wq()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/get_output_wq.md)
-(see
-[`?compare_plot`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/compare_plot.md)
-and
-[`?scat_plot`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/scat_plot.md)
-for the full column/argument requirements) – for example:
-
-``` r
-
-data_glm <- get_output_wq(
-  config_file = "Output.yaml",
-  model       = "GLM",
-  vars        = "temp",
-  depth_01    = 1
-)[[1]]
-
-# ...similarly for data_wet, data_selma, data_simstrat, and data_obs
-
-res <- compare_plot(
-  data_glm, data_wet, data_selma, data_simstrat, data_obs,
-  depth   = 1,
-  y_title = "Temperature (°C)"
-)
-res[[1]]        # the plot
-res[[2]]        # cal_stats() output for GLM at this depth
 ```
