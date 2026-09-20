@@ -67,3 +67,24 @@ test_that("cal_stats NSE is NA when observed has zero variance", {
 
   expect_true(is.na(st$NSE))
 })
+
+test_that("cal_stats PBIAS is the standard total percent bias", {
+  obs  <- c(2, 4, 6, 8)
+  pred <- c(1, 3, 5, 7)
+
+  st <- cal_stats(obs, pred)
+
+  # 100 * sum(obs - pred) / sum(obs) = 100 * 4 / 20; positive = underestimate
+  expect_equal(st$PBIAS, 20)
+})
+
+test_that("cal_stats PBIAS is robust to zero observations", {
+  obs  <- c(0, 0, 5, 10)
+  pred <- c(3000, 2000, 5, 10)
+
+  st <- cal_stats(obs, pred)
+
+  # 100 * (-5000) / 15; no blow-up from dividing by individual zeros
+  expect_equal(st$PBIAS, 100 * (-5000) / 15)
+  expect_true(is.na(cal_stats(c(0, 0), c(1, 2))$PBIAS))
+})

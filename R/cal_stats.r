@@ -12,13 +12,14 @@
 #'   \item \strong{NSE}: Nash-Sutcliffe Efficiency
 #'   \item \strong{RMSE}: Root Mean Squared Error
 #'   \item \strong{NRMSE}: Normalized Root Mean Squared Error (normalized by range of observed values)
-#'   \item \strong{PBIAS}: Percent Bias
+#'   \item \strong{PBIAS}: Percent Bias, \code{100 * sum(observed - predicted) / sum(observed)}.
+#'     Positive values indicate underestimation. Returns \code{NA} when
+#'     \code{sum(observed)} is zero. Because it is a ratio to the observed
+#'     total, it is unreliable when observations are mostly near zero.
 #'   \item \strong{lnlikelihood}: Log-likelihood assuming normal distribution
 #'   \item \strong{KGE}: Kling-Gupta Efficiency (from \code{hydroGOF::KGE})
 #'   \item \strong{residual}: Vector of observed - predicted residuals
 #' }
-#'
-#' For very small observed or predicted values (< 1e-3), a minimum threshold is applied to avoid division by near-zero values in the PBIAS calculation.
 #'
 #' @return A list containing:
 #' \item{residual}{Residuals (observed - predicted)}
@@ -97,10 +98,13 @@ cal_stats <- function(observed, predicted) {
   
   calculate_pbias <- function(observed, predicted) {
     
-    adjusted_observed <- ifelse(abs(observed) < 1e-3, 1e-3, observed)
-    adjusted_predicted <- ifelse(abs(predicted) < 1e-3, 1e-3, predicted)
-    pbias <- mean((adjusted_observed - adjusted_predicted) / abs(adjusted_observed)) * 100
-    
+
+    denom <- sum(observed)
+    if (!is.finite(denom) || denom == 0) {
+      return(NA_real_)
+    }
+    pbias <- 100 * sum(observed - predicted) / denom
+
     return(pbias)
     
   }

@@ -30,11 +30,12 @@ The function first removes any NA values and then calculates the following metri
   \item \strong{NSE}: Nash-Sutcliffe Efficiency
   \item \strong{RMSE}: Root Mean Squared Error
   \item \strong{NRMSE}: Normalized Root Mean Squared Error (normalized by range of observed values)
-  \item \strong{PBIAS}: Percent Bias
+  \item \strong{PBIAS}: Percent Bias, \code{100 * sum(observed - predicted) / sum(observed)}.
+    Positive values indicate underestimation. Returns \code{NA} when
+    \code{sum(observed)} is zero. Because it is a ratio to the observed
+    total, it is unreliable when observations are mostly near zero.
   \item \strong{lnlikelihood}: Log-likelihood assuming normal distribution
   \item \strong{KGE}: Kling-Gupta Efficiency (from \code{hydroGOF::KGE})
   \item \strong{residual}: Vector of observed - predicted residuals
 }
-
-For very small observed or predicted values (< 1e-3), a minimum threshold is applied to avoid division by near-zero values in the PBIAS calculation.
 }
