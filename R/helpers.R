@@ -340,7 +340,7 @@ get_mylake_group <- function(config_file, module, folder = "."){
                               "mylake_group")
   use_mylake <- sapply(use_mylake, function(x) ifelse(is.null(x), FALSE, x))
   
-  if(class(use_mylake) != "logical"){
+  if(!is.logical(use_mylake)){
     stop("An entry of mylake_group in the config_file is not 'true' or 'false'")
   }
   

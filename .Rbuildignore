@@ -3,6 +3,12 @@
 ^\.positai$
 ^\.claude$
 ^README\.Rmd$
+^README\.html$
+^vignettes/full-workflow\.html$
+^\.RData$
+^\.Rhistory$
+^Rplots\.pdf$
+^_pkgdown\.yml$
 ^\.github$
 ^docs$
 ^data-raw$

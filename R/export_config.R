@@ -34,6 +34,17 @@ export_config_wq <- function(config_file, folder = ".", verbose = FALSE,
                           ler_config_file = "LakeEnsemblR.yaml",
                           overwrite = FALSE){
 
+  # configr::read.config() doesn't error on a missing file -- it warns and
+  # returns FALSE, which then fails several calls later with a cryptic
+  # "subscript out of bounds" once code tries to index into it as a list.
+  # Check explicitly so a missing config file is obvious immediately.
+  if(!file.exists(file.path(folder, config_file))){
+    stop("config_file not found: ", file.path(folder, config_file))
+  }
+  if(convert_from_lakeensemblr && !file.exists(file.path(folder, ler_config_file))){
+    stop("ler_config_file not found: ", file.path(folder, ler_config_file))
+  }
+
   if(convert_from_lakeensemblr){
     # LakeEnsemblR::export_config has been run beforehand
     # Convert folders and activate wq settings
@@ -42,10 +53,10 @@ export_config_wq <- function(config_file, folder = ".", verbose = FALSE,
                          folder = folder,
                          verbose = verbose)
   }
-  
+
   # Read config file as a list
   lst_config <- read.config(file.path(folder, config_file))
-  
+
   modules <- names(lst_config)
   modules <- modules[!(modules %in% c("models", "config_files", "run_settings",
                                       "input", "output"))]

@@ -10,7 +10,21 @@ Authors@R: c(
     person("Robert", "Ladwig", role = "aut", email = "rladwig2@wisc.edu"),
     person("Johannes", "Feldbauer", role = "aut", email = "johannes.feldbauer@tu-dresden.de"),
     person("Jorrit", "Mesman", role = "aut", email = "jorrit.mesman@unige.ch"))
-Description: Run ensembles of Water Quality 1D Lake Models.
+Description: Extends the 'LakeEnsemblR' physical-model ensemble framework
+    with water quality and biogeochemical simulation. Configures, runs, and
+    calibrates coupled physical-biogeochemical 1D lake models -- GLM-AED2,
+    GOTM-Selmaprotbas, GOTM-WET, and Simstrat-AED2 -- built on the same
+    bathymetry, meteorology, and inflow setup that 'LakeEnsemblR' produces.
+    Provides tools to build calibration parameter tables from a shared
+    metrics dictionary, run Latin hypercube and differential evolution
+    calibration with optional parallel backends, perform sensitivity
+    analysis, extract and harmonize output across the coupled models, and
+    compare simulated water quality variables (e.g. dissolved oxygen,
+    nutrients, chlorophyll, and phytoplankton/zooplankton groups) against
+    observations using standard goodness-of-fit metrics such as KGE, NSE,
+    RMSE, and PBIAS. Includes visualization functions for depth-time
+    heatmaps, stratification and ice metrics, and model-versus-observation
+    diagnostic plots.
 License: GPL (>= 2)
 Depends:
     R (>= 3.5)
@@ -39,8 +53,7 @@ Imports:
      ggtext,
      lhs,
      DEoptim,
-     scales,
-     R.utils
+     scales
 Suggests:
     knitr,
     rmarkdown,
@@ -57,7 +70,6 @@ VignetteBuilder: knitr
 Encoding: UTF-8
 LazyData: true
 LazyLoad: true
-Config/roxygen2/version: 8.0.0
 Config/testthat/edition: 3
 Remotes:
     aemon-j/GLM3r@v3.3,
@@ -67,4 +79,4 @@ Remotes:
     aemon-j/gotmtools,
     aemon-j/LakeEnsemblR,
     USGS-R/glmtools@ggplot_overhaul
-RoxygenNote: 7.3.1
+Config/roxygen2/version: 8.0.0
