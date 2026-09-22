@@ -155,6 +155,14 @@ add_aed2_section_simstrat <- function(folder = ".",
       input_json(file.path(folder, simstrat_par), label = "AED2Config",
                  key = "OutputDiagnosticVars", value = "true")
     }
+    # Self-heal an AED2Config section written before this fix (blank
+    # PathAED2inflow -- see the comment below for why "." is required).
+    # input_json() substitutes 'value' verbatim (no JSON quoting of its
+    # own -- see its source), so the literal quotes have to be supplied here.
+    if(any(grepl("\"PathAED2inflow\"\\s*:\\s*\"\"", sim_par))){
+      input_json(file.path(folder, simstrat_par), label = "AED2Config",
+                 key = "PathAED2inflow", value = "\".\"")
+    }
 
     return()
   }
@@ -168,10 +176,13 @@ add_aed2_section_simstrat <- function(folder = ".",
   
   
   ### Create the AED2Config section
+  # PathAED2initial is left blank: nothing in this package currently
+  # generates a separate AED2 initial-conditions file for Simstrat (initial
+  # values come from aed2.nml itself).
   aed2config <- c(paste0(s1, "\"AED2Config\" : {"),
                   paste0(s2, "\"AED2ConfigFile\" :  \"", aed_nml, "\","),
                   paste0(s2, "\"PathAED2initial\" :  \"","\","),
-                  paste0(s2, "\"PathAED2inflow\" :  \"","\","),
+                  paste0(s2, "\"PathAED2inflow\" :  \".\","),
                   paste0(s2, "\"ParticleMobility\" : 0,"),
                   paste0(s2, "\"BioshadeFeedback\" : ", shading, ","),
                   paste0(s2, "\"BackgroundExtinction\" : 0.2,"),
