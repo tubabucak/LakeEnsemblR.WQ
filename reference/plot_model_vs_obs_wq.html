@@ -81,7 +81,8 @@ instead.</p>
 <span>  y_title <span class="op">=</span> <span class="va">variable_global_name</span>,</span>
 <span>  conversion_factor <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  dict_file <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  wq_config_file <span class="op">=</span> <span class="cn">NULL</span></span>
+<span>  wq_config_file <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  depth_tol <span class="op">=</span> <span class="fl">0.5</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -157,19 +158,35 @@ expanded into each group's own output variable (e.g. <code>"daphnia_c"</code>,
 <code>"cyclops_c"</code>), fetched, and summed into one total zooplankton
 series before plotting.</p></dd>
 
+
+<dt id="arg-depth-tol">depth_tol<a class="anchor" aria-label="anchor" href="#arg-depth-tol"></a></dt>
+<dd><p>numeric; tolerance (in the same units as <code>depth</code> in
+<code>obs_data</code>) used to bin observed depths before faceting. Depths are
+rounded to the nearest multiple of <code>depth_tol</code> (default <code>0.5</code>),
+so observations from different casts that land within <code>depth_tol</code>
+of each other (e.g. <code>21.9</code>, <code>22.0</code>, <code>22.3</code>) are treated as
+one sampling depth/facet instead of three, and averaged where they share
+a binned depth and datetime. Set to a smaller value (or <code>0</code>) to
+disable binning and facet on raw observed depths.</p></dd>
+
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>A list with:</p><dl><dt>plot</dt>
-<dd><p>A ggplot2 object: one facet per observed depth, modeled line
-    vs. observed points, with per-depth KGE/RMSE in the facet strip.</p></dd>
+<dd><p>A ggplot2 object: one facet per (binned) observed depth that
+    has at least one matched observation, modeled line vs. observed
+    points, with per-depth KGE/RMSE in the facet strip. Depths with no
+    matched observation (e.g. an observed date that never lines up with a
+    simulated one) are dropped rather than shown as an empty panel.</p></dd>
 
   <dt>data</dt>
 <dd><p>The joined long-format data frame (<code>datetime</code>, <code>depth</code>,
     <code>Predicted</code>, <code>Observed</code>) used to build the plot – covers the
-    full simulated series at each observed depth, with <code>Observed</code>
-    <code>NA</code> wherever there's no matching observation at that
-    datetime/depth.</p></dd>
+    full simulated series at each depth kept in <code>plot</code>, with
+    <code>Observed</code> <code>NA</code> wherever there's no observation on that
+    particular date (matching is by calendar date, not exact timestamp,
+    since model output is daily-or-coarser while observed records can
+    carry an arbitrary time-of-day).</p></dd>
 
   <dt>stats</dt>
 <dd><p>A data frame with one row per depth: <code>depth</code>, <code>NSE</code>,

@@ -26,7 +26,8 @@ plot_model_vs_obs_wq(
   y_title = variable_global_name,
   conversion_factor = NULL,
   dict_file = NULL,
-  wq_config_file = NULL
+  wq_config_file = NULL,
+  depth_tol = 0.5
 )
 ```
 
@@ -99,21 +100,37 @@ plot_model_vs_obs_wq(
   `"cyclops_c"`), fetched, and summed into one total zooplankton series
   before plotting.
 
+- depth_tol:
+
+  numeric; tolerance (in the same units as `depth` in `obs_data`) used
+  to bin observed depths before faceting. Depths are rounded to the
+  nearest multiple of `depth_tol` (default `0.5`), so observations from
+  different casts that land within `depth_tol` of each other (e.g.
+  `21.9`, `22.0`, `22.3`) are treated as one sampling depth/facet
+  instead of three, and averaged where they share a binned depth and
+  datetime. Set to a smaller value (or `0`) to disable binning and facet
+  on raw observed depths.
+
 ## Value
 
 A list with:
 
 - plot:
 
-  A ggplot2 object: one facet per observed depth, modeled line vs.
-  observed points, with per-depth KGE/RMSE in the facet strip.
+  A ggplot2 object: one facet per (binned) observed depth that has at
+  least one matched observation, modeled line vs. observed points, with
+  per-depth KGE/RMSE in the facet strip. Depths with no matched
+  observation (e.g. an observed date that never lines up with a
+  simulated one) are dropped rather than shown as an empty panel.
 
 - data:
 
   The joined long-format data frame (`datetime`, `depth`, `Predicted`,
   `Observed`) used to build the plot – covers the full simulated series
-  at each observed depth, with `Observed` `NA` wherever there's no
-  matching observation at that datetime/depth.
+  at each depth kept in `plot`, with `Observed` `NA` wherever there's no
+  observation on that particular date (matching is by calendar date, not
+  exact timestamp, since model output is daily-or-coarser while observed
+  records can carry an arbitrary time-of-day).
 
 - stats:
 
