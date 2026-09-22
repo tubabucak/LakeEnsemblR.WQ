@@ -277,13 +277,11 @@ if (!isTRUE(res$ok)) {
    # msg("NetCDF outputs detected for: ", paste(names(nc_paths), collapse = ", "))
   }
 
-  # ---- 5) Optional post-processing phase (placeholder) ----
-  # post_processed <- NULL
-  # if (isTRUE(post_process) && length(nc_paths) > 0) {
-  #   msg("Post-processing is enabled (placeholder).")
-  #   # TODO: call your harmonization function, e.g.:
-  #   # post_processed <- post_process_wq(nc_paths = nc_paths, dictionary = dictionary, out_file = ...)
-  # }
+  # ---- 5) Optional post-processing phase (not implemented) ----
+  if (isTRUE(post_process)) {
+    msg("post_process = TRUE has no effect yet -- harmonization/post-",
+        "processing of nc_paths is not implemented in this version.")
+  }
 
   invisible(list(
     cfg = cfg,
@@ -292,6 +290,5 @@ if (!isTRUE(res$ok)) {
     run_results = run_results,
     successful_models = names(run_values),
     nc_paths = nc_paths
-   # post_processed = post_processed
   ))
 }

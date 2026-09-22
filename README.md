@@ -59,13 +59,19 @@ remotes::install_github("tubabucak/LakeEnsemblR.WQ")
 ```
 
 Some dependencies are GitHub-only wrappers around external lake model
-binaries: `GLM3r`, `WETr`, `SelmaprotbasR`, `SimstratR`, `MyLakeR`.
+binaries: `GLM3r`, `WETr`, `SelmaprotbasR`, `SimstratR`.
 These are optional – you only need the one(s) matching the model(s) you
 actually run. If a required one is missing,
 `run_ensemble_wq()`/`calib_wq()` will tell you at call time rather
 than fail silently. All of them are listed in `Remotes:` in
 `DESCRIPTION`, so `remotes::install_github()` installs them
 automatically along with everything else.
+
+`MyLakeR` is a separate case: `MyLake`/`PCLake` config files are
+recognized by `set_up_configs()`, but neither model can actually be run
+or calibrated through this package yet (`run_ensemble_wq()`/`calib_wq()`
+don't support them) – `MyLakeR` is only needed if you use its bundled
+config template directly.
 
 `glmtools` is always required, no matter which model you run. It in turn
 needs `GLM3r`, but doesn’t say where to find it – so tools that resolve
@@ -329,6 +335,11 @@ documentation site to the `gh-pages` branch.
 
 ## Contributing
 
+Found a bug or have a feature request? Please open an issue at
+<https://github.com/tubabucak/LakeEnsemblR.WQ/issues>.
+
+To contribute code:
+
 1.  Fork this repository.
 2.  Clone your fork.
 3.  Add the original repository as `upstream`.
@@ -349,3 +360,7 @@ git checkout -b my-feature
 git merge upstream/main
 git push -u origin my-feature
 ```
+
+## License
+
+GPL (\>= 2). See the [LICENSE](LICENSE) file for the full text.
