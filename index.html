@@ -86,7 +86,8 @@
 <span><span class="co"># Currently in development on tubabucak's fork; will move to the aemon-j</span></span>
 <span><span class="co"># organization (https://github.com/aemon-j/LakeEnsemblR.WQ) after release.</span></span>
 <span><span class="fu">remotes</span><span class="fu">::</span><span class="fu"><a href="https://remotes.r-lib.org/reference/install_github.html" class="external-link">install_github</a></span><span class="op">(</span><span class="st">"tubabucak/LakeEnsemblR.WQ"</span><span class="op">)</span></span></code></pre></div>
-<p>Some dependencies are GitHub-only wrappers around external lake model binaries: <code>GLM3r</code>, <code>WETr</code>, <code>SelmaprotbasR</code>, <code>SimstratR</code>, <code>MyLakeR</code>. These are optional – you only need the one(s) matching the model(s) you actually run. If a required one is missing, <code><a href="reference/run_ensemble_wq.html">run_ensemble_wq()</a></code>/<code><a href="reference/calib_wq.html">calib_wq()</a></code> will tell you at call time rather than fail silently. All of them are listed in <code>Remotes:</code> in <code>DESCRIPTION</code>, so <code><a href="https://remotes.r-lib.org/reference/install_github.html" class="external-link">remotes::install_github()</a></code> installs them automatically along with everything else.</p>
+<p>Some dependencies are GitHub-only wrappers around external lake model binaries: <code>GLM3r</code>, <code>WETr</code>, <code>SelmaprotbasR</code>, <code>SimstratR</code>. These are optional – you only need the one(s) matching the model(s) you actually run. If a required one is missing, <code><a href="reference/run_ensemble_wq.html">run_ensemble_wq()</a></code>/<code><a href="reference/calib_wq.html">calib_wq()</a></code> will tell you at call time rather than fail silently. All of them are listed in <code>Remotes:</code> in <code>DESCRIPTION</code>, so <code><a href="https://remotes.r-lib.org/reference/install_github.html" class="external-link">remotes::install_github()</a></code> installs them automatically along with everything else.</p>
+<p><code>MyLakeR</code> is a separate case: <code>MyLake</code>/<code>PCLake</code> config files are recognized by <code><a href="reference/set_up_configs.html">set_up_configs()</a></code>, but neither model can actually be run or calibrated through this package yet (<code><a href="reference/run_ensemble_wq.html">run_ensemble_wq()</a></code>/<code><a href="reference/calib_wq.html">calib_wq()</a></code> don’t support them) – <code>MyLakeR</code> is only needed if you use its bundled config template directly.</p>
 <p><code>glmtools</code> is always required, no matter which model you run. It in turn needs <code>GLM3r</code>, but doesn’t say where to find it – so tools that resolve dependencies automatically (<code>pak</code>, and anything built on it, like <code>devtools::install_deps()</code>/<code>build_vignettes()</code>) can fail with <code>Can't find package called GLM3r</code>, even though <code>GLM3r</code> is listed in this package’s own <code>Remotes:</code>. If that happens, install <code>GLM3r</code> yourself first, then install this package as normal:</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu">remotes</span><span class="fu">::</span><span class="fu"><a href="https://remotes.r-lib.org/reference/install_github.html" class="external-link">install_github</a></span><span class="op">(</span><span class="st">"aemon-j/GLM3r@v3.3-lerwq"</span><span class="op">)</span></span>
@@ -110,7 +111,7 @@
 <span><span class="co"># to the next step. You can edit the configuration file to change model settings if needed.</span></span>
 <span><span class="co"># For example the default configuration setup of GLM does not include the sediment module, so if you want to include the sediment module in GLM, you need to change the configuration file before proceeding to the next step.</span></span>
 <span><span class="co"># Or if you need more diagnostics and output variables, you can change the configuration file before proceeding to the next step.</span></span>
-<span><span class="fu"><a href="https://rdrr.io/pkg/LakeEnsemblR/man/export_config.html" class="external-link">export_config</a></span><span class="op">(</span></span>
+<span><span class="fu"><a href="https://aemon-j.github.io/LakeEnsemblR/reference/export_config.html" class="external-link">export_config</a></span><span class="op">(</span></span>
 <span>  config_file <span class="op">=</span> <span class="st">"LakeEnsemblR.yaml"</span>,</span>
 <span>  folder <span class="op">=</span> <span class="st">"."</span>,</span>
 <span>  verbose <span class="op">=</span> <span class="cn">TRUE</span></span>
@@ -319,6 +320,8 @@
 <div class="section level2">
 <h2 id="contributing">Contributing<a class="anchor" aria-label="anchor" href="#contributing"></a>
 </h2>
+<p>Found a bug or have a feature request? Please open an issue at <a href="https://github.com/tubabucak/LakeEnsemblR.WQ/issues" class="external-link uri">https://github.com/tubabucak/LakeEnsemblR.WQ/issues</a>.</p>
+<p>To contribute code:</p>
 <ol style="list-style-type: decimal">
 <li>Fork this repository.</li>
 <li>Clone your fork.</li>
@@ -337,11 +340,17 @@
 <span id="cb7-6"><a href="#cb7-6" tabindex="-1"></a><span class="fu">git</span> merge upstream/main</span>
 <span id="cb7-7"><a href="#cb7-7" tabindex="-1"></a><span class="fu">git</span> push <span class="at">-u</span> origin my-feature</span></code></pre></div>
 </div>
+<div class="section level2">
+<h2 id="license">License<a class="anchor" aria-label="anchor" href="#license"></a>
+</h2>
+<p>GPL (&gt;= 2). See the <a href="LICENSE">LICENSE</a> file for the full text.</p>
+</div>
 </div>
   </main><aside class="col-md-3"><div class="links">
 <h2 data-toc-skip>Links</h2>
 <ul class="list-unstyled">
 <li><a href="https://github.com/tubabucak/LakeEnsemblR.WQ/" class="external-link">Browse source code</a></li>
+<li><a href="https://github.com/tubabucak/LakeEnsemblR.WQ/issues" class="external-link">Report a bug</a></li>
 </ul>
 </div>
 

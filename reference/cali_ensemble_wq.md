@@ -1,7 +1,7 @@
 # Calibrate an ensemble of LakeEnsemblR.WQ models
 
 High-level calibration wrapper inspired by LakeEnsemblR
-[`cali_ensemble()`](https://rdrr.io/pkg/LakeEnsemblR/man/cali_ensemble.html),
+[`cali_ensemble()`](https://aemon-j.github.io/LakeEnsemblR/reference/cali_ensemble.html),
 implemented for the LakeEnsemblR.WQ calibration workflow. The function
 runs
 [`calib_wq()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/calib_wq.md)
