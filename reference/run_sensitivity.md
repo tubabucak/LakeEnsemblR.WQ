@@ -197,7 +197,7 @@ The function supports \`.nml\` and \`.csv\` parameter files (used by
 parameter files (used by `"GOTM-WET"` and `"GOTM-Selmaprotbas"`, where
 \`calib_setup\$file\` holds the FABM instance/key path, e.g.
 \`"abiotic_water/parameters/hO2Nitr"\`, written into \`fabm.yaml\` via
-[`LakeEnsemblR::input_yaml_multiple()`](https://aemon-j.github.io/LakeEnsemblR/reference/input_yaml_multiple.html)).
+[`LakeEnsemblR::input_yaml_multiple()`](https://rdrr.io/pkg/LakeEnsemblR/man/input_yaml_multiple.html)).
 For \`.csv\` files, it automatically handles quoted column names and
 parameter names (e.g., \`'p_name'\`, \`'R_growth'\`) by stripping
 quotes. When \`group_name\` is provided, it only updates that specific
