@@ -13,7 +13,8 @@ plot_model_vs_obs_wq(
   y_title = variable_global_name,
   conversion_factor = NULL,
   dict_file = NULL,
-  wq_config_file = NULL
+  wq_config_file = NULL,
+  depth_tol = 0.5
 )
 }
 \arguments{
@@ -67,17 +68,31 @@ a literal instance called \code{"zooplankton"}), that placeholder is
 expanded into each group's own output variable (e.g. \code{"daphnia_c"},
 \code{"cyclops_c"}), fetched, and summed into one total zooplankton
 series before plotting.}
+
+\item{depth_tol}{numeric; tolerance (in the same units as \code{depth} in
+\code{obs_data}) used to bin observed depths before faceting. Depths are
+rounded to the nearest multiple of \code{depth_tol} (default \code{0.5}),
+so observations from different casts that land within \code{depth_tol}
+of each other (e.g. \code{21.9}, \code{22.0}, \code{22.3}) are treated as
+one sampling depth/facet instead of three, and averaged where they share
+a binned depth and datetime. Set to a smaller value (or \code{0}) to
+disable binning and facet on raw observed depths.}
 }
 \value{
 A list with:
 \describe{
-  \item{plot}{A ggplot2 object: one facet per observed depth, modeled line
-    vs. observed points, with per-depth KGE/RMSE in the facet strip.}
+  \item{plot}{A ggplot2 object: one facet per (binned) observed depth that
+    has at least one matched observation, modeled line vs. observed
+    points, with per-depth KGE/RMSE in the facet strip. Depths with no
+    matched observation (e.g. an observed date that never lines up with a
+    simulated one) are dropped rather than shown as an empty panel.}
   \item{data}{The joined long-format data frame (\code{datetime}, \code{depth},
     \code{Predicted}, \code{Observed}) used to build the plot -- covers the
-    full simulated series at each observed depth, with \code{Observed}
-    \code{NA} wherever there's no matching observation at that
-    datetime/depth.}
+    full simulated series at each depth kept in \code{plot}, with
+    \code{Observed} \code{NA} wherever there's no observation on that
+    particular date (matching is by calendar date, not exact timestamp,
+    since model output is daily-or-coarser while observed records can
+    carry an arbitrary time-of-day).}
   \item{stats}{A data frame with one row per depth: \code{depth}, \code{NSE},
     \code{RMSE}, \code{NRMSE}, \code{PBIAS}, \code{KGE}, \code{n}.}
 }

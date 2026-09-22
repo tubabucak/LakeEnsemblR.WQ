@@ -54,29 +54,42 @@
 #'   expanded into each group's own output variable (e.g. \code{"daphnia_c"},
 #'   \code{"cyclops_c"}), fetched, and summed into one total zooplankton
 #'   series before plotting.
+#' @param depth_tol numeric; tolerance (in the same units as \code{depth} in
+#'   \code{obs_data}) used to bin observed depths before faceting. Depths are
+#'   rounded to the nearest multiple of \code{depth_tol} (default \code{0.5}),
+#'   so observations from different casts that land within \code{depth_tol}
+#'   of each other (e.g. \code{21.9}, \code{22.0}, \code{22.3}) are treated as
+#'   one sampling depth/facet instead of three, and averaged where they share
+#'   a binned depth and datetime. Set to a smaller value (or \code{0}) to
+#'   disable binning and facet on raw observed depths.
 #'
 #' @return A list with:
 #' \describe{
-#'   \item{plot}{A ggplot2 object: one facet per observed depth, modeled line
-#'     vs. observed points, with per-depth KGE/RMSE in the facet strip.}
+#'   \item{plot}{A ggplot2 object: one facet per (binned) observed depth that
+#'     has at least one matched observation, modeled line vs. observed
+#'     points, with per-depth KGE/RMSE in the facet strip. Depths with no
+#'     matched observation (e.g. an observed date that never lines up with a
+#'     simulated one) are dropped rather than shown as an empty panel.}
 #'   \item{data}{The joined long-format data frame (\code{datetime}, \code{depth},
 #'     \code{Predicted}, \code{Observed}) used to build the plot -- covers the
-#'     full simulated series at each observed depth, with \code{Observed}
-#'     \code{NA} wherever there's no matching observation at that
-#'     datetime/depth.}
+#'     full simulated series at each depth kept in \code{plot}, with
+#'     \code{Observed} \code{NA} wherever there's no observation on that
+#'     particular date (matching is by calendar date, not exact timestamp,
+#'     since model output is daily-or-coarser while observed records can
+#'     carry an arbitrary time-of-day).}
 #'   \item{stats}{A data frame with one row per depth: \code{depth}, \code{NSE},
 #'     \code{RMSE}, \code{NRMSE}, \code{PBIAS}, \code{KGE}, \code{n}.}
 #' }
 #'
 #' @importFrom ggplot2 ggplot aes geom_line geom_point labs theme_bw facet_wrap
-#' @importFrom dplyr filter mutate arrange inner_join
+#' @importFrom dplyr filter mutate arrange inner_join group_by summarise
 #' @importFrom tidyr pivot_longer
 #' @importFrom utils read.csv
 #' @export
 plot_model_vs_obs_wq <- function(config_file, model, vars = NULL, obs_data,
                                  variable_global_name, y_title = variable_global_name,
                                  conversion_factor = NULL, dict_file = NULL,
-                                 wq_config_file = NULL) {
+                                 wq_config_file = NULL, depth_tol = 0.5) {
 
   if (is.character(obs_data)) {
     obs_data <- utils::read.csv(obs_data, stringsAsFactors = FALSE)
@@ -95,6 +108,27 @@ plot_model_vs_obs_wq <- function(config_file, model, vars = NULL, obs_data,
   obs_sub$depth <- as.numeric(obs_sub$depth)
   obs_sub$value <- as.numeric(obs_sub$value)
   obs_sub <- obs_sub[is.finite(obs_sub$value) & !is.na(obs_sub$datetime) & !is.na(obs_sub$depth), , drop = FALSE]
+
+  # Match to the model on calendar date, not exact timestamp. Model output is
+  # written on a daily (or coarser) timestep, but observed records can carry
+  # an arbitrary time-of-day (e.g. a sonde/buoy reading logged at 14:23),
+  # sometimes inconsistently within the same obs_data across instruments/
+  # years -- an exact POSIXct join would silently drop those rows (they'd
+  # show up as "no matching obs" facets) even though the day is covered.
+  obs_sub$datetime <- as.Date(obs_sub$datetime)
+
+  # Bin observed depths to the nearest depth_tol (default 0.5 m) before
+  # faceting. Real profile data has near-duplicate depths across casts (e.g.
+  # 21.9, 22.0, 22.3 m) that are effectively the same sampling depth --
+  # without binning, each becomes its own facet, and the %.2g-rounded strip
+  # label used to make them look like literal duplicates of one another.
+  # Rows that land on the same (date, binned depth) after binning -- either
+  # from the depth binning above, or from multiple same-day readings at one
+  # depth -- are averaged so the join below doesn't fan out.
+  obs_sub$depth <- if (isTRUE(depth_tol > 0)) round(obs_sub$depth / depth_tol) * depth_tol else obs_sub$depth
+  obs_sub <- obs_sub %>%
+    dplyr::group_by(datetime, depth) %>%
+    dplyr::summarise(value = mean(value), .groups = "drop")
 
   obs_depths <- sort(unique(obs_sub$depth))
   if (length(obs_depths) == 0) {
@@ -219,8 +253,13 @@ plot_model_vs_obs_wq <- function(config_file, model, vars = NULL, obs_data,
 
   # Left join keeps the full simulated series (so the modeled line stays
   # continuous even where observations are sparse); Observed is NA wherever
-  # there's no matching observation at that datetime/depth.
-  joined <- dplyr::left_join(sim_long, obs_long, by = c("datetime", "depth"))
+  # there's no matching observation at that date/depth. Join key is the
+  # calendar date (obs_long$datetime is a Date, from the truncation above) --
+  # sim_long keeps its original POSIXct datetime for the x-axis/line.
+  sim_long$.join_date <- as.Date(sim_long$datetime)
+  joined <- dplyr::left_join(sim_long, obs_long,
+                             by = c(".join_date" = "datetime", "depth" = "depth"))
+  joined$.join_date <- NULL
   if (all(is.na(joined$Observed))) {
     stop("No overlapping datetime/depth rows between simulated and observed data. ",
          "Check that 'obs_data' datetimes fall within the model's simulation period.")
@@ -235,18 +274,16 @@ plot_model_vs_obs_wq <- function(config_file, model, vars = NULL, obs_data,
   })
   stats_df <- do.call(rbind, stats_by_depth)
 
-  # Label every facet, not just depths with matched observations: a facet
-  # whose depth has no obs/sim datetime overlap would otherwise get an "NA"
-  # strip (as_labeller() finds no name for it).
+  # Drop facets for depths that ended up with zero matched observations (a
+  # depth bin an observation snapped to, but whose date never lined up with
+  # a simulated one) -- nothing to plot there, so don't show an empty panel.
+  joined <- joined[joined$depth %in% stats_df$depth, , drop = FALSE]
+
   facet_depths <- sort(unique(joined$depth))
   strip_labels <- stats::setNames(
     vapply(facet_depths, function(d) {
       i <- match(d, stats_df$depth)
-      if (is.na(i)) {
-        sprintf("Depth %.2g m  (no matching obs)", d)
-      } else {
-        sprintf("Depth %.2g m  (KGE=%.2f, RMSE=%.2f)", d, stats_df$KGE[i], stats_df$RMSE[i])
-      }
+      sprintf("Depth %.4g m  (KGE=%.2f, RMSE=%.2f)", d, stats_df$KGE[i], stats_df$RMSE[i])
     }, character(1)),
     as.character(facet_depths)
   )
