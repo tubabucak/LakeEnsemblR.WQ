@@ -2,7 +2,7 @@
 % Please edit documentation in R/plot_model_vs_obs_wq.R
 \name{plot_model_vs_obs_wq}
 \alias{plot_model_vs_obs_wq}
-\title{Plot a single model's output against observed data at matching depths}
+\title{Plot one or more models' output against observed data at matching depths}
 \usage{
 plot_model_vs_obs_wq(
   config_file,
@@ -21,17 +21,23 @@ plot_model_vs_obs_wq(
 \item{config_file}{character; path to the Output config YAML (as used by
 \code{load_config()}/\code{get_output_wq()}).}
 
-\item{model}{character; model to extract, e.g. \code{"GLM-AED2"},
-\code{"GOTM-WET"}, \code{"GOTM-Selmaprotbas"}, or \code{"Simstrat-AED2"}
-(also accepts the short forms \code{"GLM"}, \code{"WET"},
-\code{"SELMAPROTBAS"}, \code{"SIMSTRAT"}).}
+\item{model}{character vector; one or more models to extract, e.g.
+\code{"GLM-AED2"}, \code{"GOTM-WET"}, \code{"GOTM-Selmaprotbas"}, or
+\code{"Simstrat-AED2"} (also accepts the short forms \code{"GLM"},
+\code{"WET"}, \code{"SELMAPROTBAS"}, \code{"SIMSTRAT"}). Passing more
+than one plots them together against the same observations, one line
+per model per depth facet; passing one reproduces the original
+single-model behavior (including the per-depth KGE/RMSE facet labels).}
 
 \item{vars}{character or \code{NULL}. Model-native variable name to
 extract (passed to \code{get_output_wq()}'s \code{vars} argument). If
-\code{NULL} (default), auto-derived from the metrics dictionary's
-\code{variable_model_name} for \code{model}/\code{variable_global_name}
--- the same lookup calibration itself uses. Only single-variable
-extraction is supported here.}
+\code{NULL} (default), auto-derived independently for each \code{model}
+from the metrics dictionary's \code{variable_model_name} for that
+\code{model}/\code{variable_global_name} -- the same lookup calibration
+itself uses. Only single-variable extraction is supported here. A
+non-\code{NULL} value is used as-is for every requested model, so leave
+it \code{NULL} when \code{model} has more than one entry unless you're
+sure the same native variable name applies to all of them.}
 
 \item{obs_data}{character or data.frame; either a path to a CSV, or an
 already-loaded data frame, with columns \code{datetime}, \code{depth},
@@ -47,10 +53,11 @@ in \code{obs_data} to compare against.}
 output so it matches \code{obs_data}'s (harmonized) units, since model
 output from \code{get_output_wq()} is in model-native units (e.g. GLM's
 DO is mmol O2/m3, not grams/m3 as in a typical observed CSV). If
-\code{NULL} (default), auto-derived from the metrics dictionary the same
-way \code{calib_wq()}'s calibration scoring does: looked up by
-\code{model}/\code{variable_global_name}. Pass a number explicitly to
-override the dictionary lookup.}
+\code{NULL} (default), auto-derived independently for each \code{model}
+from the metrics dictionary the same way \code{calib_wq()}'s calibration
+scoring does: looked up by that \code{model}/\code{variable_global_name}.
+Pass a number explicitly to override the dictionary lookup for every
+requested model.}
 
 \item{dict_file}{character, data.frame, or \code{NULL}. Metrics dictionary
 source passed to the internal dictionary loader when auto-deriving
@@ -82,30 +89,35 @@ disable binning and facet on raw observed depths.}
 A list with:
 \describe{
   \item{plot}{A ggplot2 object: one facet per (binned) observed depth that
-    has at least one matched observation, modeled line vs. observed
-    points, with per-depth KGE/RMSE in the facet strip. Depths with no
-    matched observation (e.g. an observed date that never lines up with a
-    simulated one) are dropped rather than shown as an empty panel.}
-  \item{data}{The joined long-format data frame (\code{datetime}, \code{depth},
-    \code{Predicted}, \code{Observed}) used to build the plot -- covers the
-    full simulated series at each depth kept in \code{plot}, with
-    \code{Observed} \code{NA} wherever there's no observation on that
-    particular date (matching is by calendar date, not exact timestamp,
-    since model output is daily-or-coarser while observed records can
-    carry an arbitrary time-of-day).}
-  \item{stats}{A data frame with one row per depth: \code{depth}, \code{NSE},
-    \code{RMSE}, \code{NRMSE}, \code{PBIAS}, \code{KGE}, \code{n}.}
+    has at least one matched observation for at least one model, one
+    colored line per model plus observed points, with a legend
+    distinguishing models (and "Observed"). Depths with no matched
+    observation at all (e.g. an observed date that never lines up with
+    any simulated one) are dropped rather than shown as an empty panel.
+    When only one \code{model} is requested, the facet strip additionally
+    shows that model's per-depth KGE/RMSE, matching the single-model
+    behavior from before this function supported multiple models.}
+  \item{data}{The joined long-format data frame (\code{Model},
+    \code{datetime}, \code{depth}, \code{Predicted}, \code{Observed}) used
+    to build the plot -- covers the full simulated series at each depth
+    kept in \code{plot} for each model, with \code{Observed} \code{NA}
+    wherever there's no observation on that particular date (matching is
+    by calendar date, not exact timestamp, since model output is
+    daily-or-coarser while observed records can carry an arbitrary
+    time-of-day).}
+  \item{stats}{A data frame with one row per \code{Model}/\code{depth}
+    combination: \code{Model}, \code{depth}, \code{NSE}, \code{RMSE},
+    \code{NRMSE}, \code{PBIAS}, \code{KGE}, \code{n}.}
 }
 }
 \description{
-Extracts a model's simulated output at the depths present in an observed
-dataset (via \code{get_output_wq(obs_depths = ...)}) and plots it against
-the observations, one facet per depth, with KGE/RMSE annotated. Reads
-whatever \code{output.nc} currently exists for \code{model} -- it does not
-run the model itself, and has no notion of "best"/calibrated parameters.
-To compare against a calibrated run, first write the winning parameters
-back (\code{write_best_calib_to_par_files()}) and re-run the model
-(\code{run_ensemble_wq()}) before calling this. For comparing multiple
-coupled models at once, see \code{compare_plot()}/\code{scat_plot()}
-instead.
+Extracts each requested model's simulated output at the depths present in
+an observed dataset (via \code{get_output_wq(obs_depths = ...)}) and plots
+it against the observations, one facet per depth, one line per model
+(colored), with observed points overlaid once per facet. Reads whatever
+\code{output.nc} currently exists for each \code{model} -- it does not run
+the model itself, and has no notion of "best"/calibrated parameters. To
+compare against a calibrated run, first write the winning parameters back
+(\code{write_best_calib_to_par_files()}) and re-run the model
+(\code{run_ensemble_wq()}) before calling this.
 }
