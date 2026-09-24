@@ -474,7 +474,7 @@ Extract model output and compute harmonized metrics/statistics.
 Plot model outputs and derived metrics.
 
 - [`plot_model_vs_obs_wq()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/plot_model_vs_obs_wq.md)
-  : Plot a single model's output against observed data at matching
+  : Plot one or more models' output against observed data at matching
   depths
 - [`plot_sensitivity()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/plot_sensitivity.md)
   : Plot a sensitivity envelope from run_sensitivity() output
