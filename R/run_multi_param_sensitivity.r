@@ -42,8 +42,10 @@
 #' @param par_file Character or \code{NULL}. Simstrat par filename, only used/required when
 #'   \code{model} is \code{"Simstrat-AED2"}. \code{NULL} (default) falls back to \code{"simstrat.par"}.
 #' @param wq_config_file Character or \code{NULL}. Path to the LakeEnsemblR_WQ config file, passed
-#'   through to \code{cal_metrics()}. Required when \code{output_mode = "metrics"}; ignored when
-#'   \code{output_mode = "raw"}.
+#'   through to \code{cal_metrics()}. Required when \code{output_mode = "metrics"}. For
+#'   GLM-AED2/Simstrat-AED2 it is also used (in either mode) to locate the AED2 namelist a
+#'   parameter is written to; if \code{NULL}, the standard AED2 namelists in \code{model_dir}
+#'   are used.
 #' @param output_mode Character. \code{"metrics"} (default) runs each step through
 #'   \code{cal_metrics()} (requires \code{wq_config_file}). \code{"raw"} instead pulls one or more
 #'   model output variables directly via \code{get_output_wq()} (requires \code{vars}), bypassing
@@ -260,6 +262,16 @@ run_multi_param_sensitivity <- function(param_names = NULL, calib_setup, rel_cha
           df[idx, 2:ncol(df)] <- value
         }
         readr::write_csv(df, param_path)
+
+      } else if (model_upper %in% c("GLM-AED2", "SIMSTRAT-AED2")) {
+        # Dictionary path (e.g. "aed2_oxygen/Fsed_oxy") -- see helpers.R
+        found <- .write_aed2_dict_param(
+          file_or_path, p, value, current_dir = model_dir,
+          model = model, wq_config_file = wq_config_file,
+          module = if ("module" %in% names(row)) as.character(row$module[1]) else NA_character_,
+          group_name = if ("group_name" %in% names(row)) row$group_name[1] else NA_character_
+        )
+        if (!found) warning("Parameter '", p, "' not found at '", file_or_path, "'; value not written.")
 
       } else {
         stop("Unsupported file type for model '", model, "': ", file_or_path)

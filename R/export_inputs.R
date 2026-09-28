@@ -18,6 +18,14 @@ export_inputs <- function(config_file, folder = ".",
                           ler_config_file = "LakeEnsemblR.yaml",
                           verbose = FALSE){
 
+  # LakeEnsemblR::format_inflow() reads the hypsograph path from the config
+  # relative to the working directory (its own `folder` argument is unused),
+  # so run from `folder`. Normalizing first keeps file.path(folder, ...) below
+  # valid after the setwd().
+  folder <- normalizePath(folder, winslash = "/", mustWork = TRUE)
+  old_wd <- setwd(folder)
+  on.exit(setwd(old_wd), add = TRUE)
+
   resolve_inflow_series <- function(df, base_name, inflow_index, num_inflows, context) {
     candidates <- paste0(base_name, "_", inflow_index)
     if (num_inflows == 1L) {
@@ -42,7 +50,7 @@ export_inputs <- function(config_file, folder = ".",
   original_tz <- Sys.getenv("TZ")
   on.exit({
     Sys.setenv(TZ = original_tz)
-  })
+  }, add = TRUE)
   Sys.setenv(TZ = "UTC")
   
   # Read config files as a list

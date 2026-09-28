@@ -15,6 +15,24 @@
 #' @param post_process Logical. If TRUE, call your harmonization/post-processing on successful runs. (not integrated yet)
 #'
 #' @return A list containing validation results, run results, and NetCDF paths for successful runs.
+#'
+#' @examplesIf requireNamespace("GLM3r", quietly = TRUE) && requireNamespace("WETr", quietly = TRUE) && requireNamespace("SelmaprotbasR", quietly = TRUE) && requireNamespace("SimstratR", quietly = TRUE)
+#' \donttest{
+#' ex <- lerwq_example()
+#' library(LakeEnsemblR)  # export_config() needs LakeEnsemblR attached
+#' export_config("LakeEnsemblR.yaml", folder = ex,
+#'               model = c("GLM", "GOTM", "Simstrat"))
+#' export_config_wq("LakeEnsemblR_WQ.yaml", folder = ex)
+#'
+#' # Run all four coupled models for the example year
+#' res <- run_ensemble_wq(
+#'   config_file = "LakeEnsemblR_WQ.yaml",
+#'   models      = c("GLM-AED2", "GOTM-WET", "GOTM-Selmaprotbas", "Simstrat-AED2"),
+#'   folder      = ex,
+#'   verbose     = FALSE
+#' )
+#' res$successful_models
+#' }
 #' @export
 run_ensemble_wq <- function(config_file,
                             models = c("GLM-AED2","GOTM-WET","GOTM-Selmaprotbas", "SIMSTRAT-AED2"),
@@ -42,6 +60,17 @@ run_ensemble_wq <- function(config_file,
   #msg("Reading master config: ", config_file)
 
   # ---- 1) Extract model folders  ----
+  # Match model names case-insensitively to the registry keys below, so
+  # e.g. "Simstrat-AED2" (as used in LakeEnsemblR_WQ.yaml and calib_wq())
+  # works as well as "SIMSTRAT-AED2".
+  known_models <- c("GLM-AED2", "GOTM-WET", "GOTM-Selmaprotbas", "SIMSTRAT-AED2")
+  model_idx <- match(toupper(models), toupper(known_models))
+  if (anyNA(model_idx)) {
+    stop("Unknown model(s): ", paste(models[is.na(model_idx)], collapse = ", "),
+         ". Supported: ", paste(known_models, collapse = ", "), call. = FALSE)
+  }
+  models <- known_models[model_idx]
+
   fix_models = models
   fix_models[which(fix_models == 'SIMSTRAT-AED2')] = 'Simstrat-AED2'
   model_folders <- stats::setNames(file.path(folder, fix_models), models)
@@ -148,10 +177,12 @@ get_runner <- function(model) {
 
       res <- SimstratR::run_simstrat(sim_folder = sim_folder, par_file = par_file, verbose = verbose, ...)
 
+      # Simstrat writes one <variable>_out.dat file per variable, not NetCDF
       nc_path <- .find_latest_netcdf(sim_folder)
+      dat_files <- list.files(file.path(sim_folder, "output"), pattern = "_out\\.dat$")
       list(model = "SIMSTRAT-AED2", sim_folder = sim_folder, nc_path = nc_path,
-           ok = !is.na(nc_path) && file.exists(nc_path), runner_return = res,
-           par_file = par_file)
+           ok = length(dat_files) > 0 || (!is.na(nc_path) && file.exists(nc_path)),
+           runner_return = res, par_file = par_file)
     }
   )
 

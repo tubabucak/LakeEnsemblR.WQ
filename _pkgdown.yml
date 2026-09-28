@@ -15,6 +15,7 @@ reference:
   - title: Setup and Configuration
     desc: Build model-specific configuration and inputs.
     contents:
+      - lerwq_example
       - export_config_wq
       - export_inputs
       - create_input_tables

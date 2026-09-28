@@ -35,23 +35,20 @@
 #' rows from different model couplings remain distinguishable.
 #'
 #' @examples
-#' \dontrun{
-#' # After editing calibration CSVs to set include = TRUE:
-#' calib_setup <- calib_setup_from_tables(
-#'   folder_in     = "calibration",
-#'   model_coupled = "GOTM-Selmaprotbas"
-#' )
+#' ex <- lerwq_example()
+#' cal_dir <- file.path(ex, "calibration")
+#' create_calibration_tables(folder = ex, config_file = "LakeEnsemblR_WQ.yaml",
+#'                           folder_out = cal_dir, models_coupled = "GLM-AED2")
 #'
-#' results <- calib_wq(
-#'   model          = "GOTM-Selmaprotbas",
-#'   param_names    = calib_setup$pars,
-#'   calib_setup    = calib_setup,
-#'   yaml_file      = "metrics.yaml",
-#'   model_dir      = "GOTM-Selmaprotbas",
-#'   n_samples      = 50,
-#'   wq_config_file = "LakeEnsemblR_WQ.yaml"
-#' )
-#' }
+#' # Normally done by hand in a spreadsheet editor: mark two sediment oxygen
+#' # parameters for calibration
+#' tab <- read.csv(file.path(cal_dir, "calibration_oxygen.csv"))
+#' tab$include[tab$parameter %in% c("Fsed_oxy", "Ksed_oxy")] <- TRUE
+#' write.csv(tab, file.path(cal_dir, "calibration_oxygen.csv"), row.names = FALSE)
+#'
+#' calib_setup <- calib_setup_from_tables(folder_in = cal_dir,
+#'                                        model_coupled = "GLM-AED2")
+#' calib_setup[, c("pars", "lb", "ub", "x0", "file")]
 #'
 #' @export
 

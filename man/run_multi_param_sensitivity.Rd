@@ -65,8 +65,10 @@ back to \code{"gotm.yaml"}.}
 \code{model} is \code{"Simstrat-AED2"}. \code{NULL} (default) falls back to \code{"simstrat.par"}.}
 
 \item{wq_config_file}{Character or \code{NULL}. Path to the LakeEnsemblR_WQ config file, passed
-through to \code{cal_metrics()}. Required when \code{output_mode = "metrics"}; ignored when
-\code{output_mode = "raw"}.}
+through to \code{cal_metrics()}. Required when \code{output_mode = "metrics"}. For
+GLM-AED2/Simstrat-AED2 it is also used (in either mode) to locate the AED2 namelist a
+parameter is written to; if \code{NULL}, the standard AED2 namelists in \code{model_dir}
+are used.}
 
 \item{output_mode}{Character. \code{"metrics"} (default) runs each step through
 \code{cal_metrics()} (requires \code{wq_config_file}). \code{"raw"} instead pulls one or more

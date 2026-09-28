@@ -40,10 +40,17 @@ create template boundary condition files for all active AED2 modules,
 including expanded phytoplankton groups.
 }
 \examples{
-\dontrun{
-export_config_wq(config_file = "LakeEnsemblR_WQ.yaml", 
-                 folder = "/Model_setup", 
-                 verbose = TRUE)
-}
+\dontshow{if (requireNamespace("GLM3r", quietly = TRUE) && requireNamespace("WETr", quietly = TRUE) && requireNamespace("SelmaprotbasR", quietly = TRUE) && requireNamespace("SimstratR", quietly = TRUE)) withAutoprint(\{ # examplesIf}
+\donttest{
+ex <- lerwq_example()
 
+# Physical model setup (LakeEnsemblR), then the water quality setup
+library(LakeEnsemblR)  # export_config() needs LakeEnsemblR attached
+export_config("LakeEnsemblR.yaml", folder = ex,
+              model = c("GLM", "GOTM", "Simstrat"))
+export_config_wq("LakeEnsemblR_WQ.yaml", folder = ex)
+
+list.files(file.path(ex, "GLM-AED2"))
+}
+\dontshow{\}) # examplesIf}
 }

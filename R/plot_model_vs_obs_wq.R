@@ -97,6 +97,24 @@
 #' @importFrom dplyr filter mutate arrange inner_join group_by summarise bind_rows
 #' @importFrom tidyr pivot_longer
 #' @importFrom utils read.csv
+#' @examplesIf requireNamespace("GLM3r", quietly = TRUE) && requireNamespace("WETr", quietly = TRUE) && requireNamespace("SelmaprotbasR", quietly = TRUE) && requireNamespace("SimstratR", quietly = TRUE)
+#' \donttest{
+#' ex <- lerwq_example()
+#' library(LakeEnsemblR)  # export_config() needs LakeEnsemblR attached
+#' export_config("LakeEnsemblR.yaml", folder = ex,
+#'               model = c("GLM", "GOTM", "Simstrat"))
+#' export_config_wq("LakeEnsemblR_WQ.yaml", folder = ex)
+#' run_ensemble_wq("LakeEnsemblR_WQ.yaml", models = "GLM-AED2", folder = ex,
+#'                 verbose = FALSE)
+#'
+#' # Simulated vs observed dissolved oxygen for GLM-AED2
+#' old <- setwd(ex)
+#' p <- plot_model_vs_obs_wq(config_file = "Output.yaml", model = "GLM",
+#'                           obs_data = "standart_observed_data.csv",
+#'                           variable_global_name = "DO_gramsPerCubicMeter",
+#'                           wq_config_file = "LakeEnsemblR_WQ.yaml")
+#' setwd(old)
+#' }
 #' @export
 plot_model_vs_obs_wq <- function(config_file, model, vars = NULL, obs_data,
                                  variable_global_name, y_title = variable_global_name,

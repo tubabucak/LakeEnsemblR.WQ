@@ -39,3 +39,10 @@ The function first removes any NA values and then calculates the following metri
   \item \strong{residual}: Vector of observed - predicted residuals
 }
 }
+\examples{
+obs  <- c(8.1, 9.4, 10.2, 7.5, 3.1, 1.2)
+pred <- c(7.8, 9.9, 9.6, 6.9, 4.0, 0.8)
+st <- cal_stats(obs, pred)
+st[c("NSE", "KGE", "RMSE", "PBIAS")]
+
+}

@@ -3,7 +3,8 @@
 #' Generates a master calibration CSV and per-module CSVs from the LakeEnsemblR.WQ
 #' dictionary. Every parameter gets \code{include = FALSE} by default so users can
 #' review and selectively opt-in. Lower and upper bounds are set to
-#' \code{default * (1 - bounds_factor)} and \code{default * (1 + bounds_factor)}.
+#' \code{default * (1 - bounds_factor)} and \code{default * (1 + bounds_factor)}
+#' (the other way round for negative defaults, so that \code{lower <= upper}).
 #' When the dictionary provides \code{min}/\code{max} values for a parameter,
 #' they are carried through as \code{dict_min}/\code{dict_max} reference
 #' columns (not used to compute \code{lower}/\code{upper} automatically) so
@@ -38,19 +39,19 @@
 #' @importFrom stringr str_extract
 #'
 #' @examples
-#' \dontrun{
+#' ex <- lerwq_example()
 #' create_calibration_tables(
-#'   folder         = ".",
+#'   folder         = ex,
 #'   config_file    = "LakeEnsemblR_WQ.yaml",
-#'   folder_out     = "calibration",
+#'   folder_out     = file.path(ex, "calibration"),
 #'   models_coupled = c("GOTM-Selmaprotbas", "GLM-AED2"),
 #'   bounds_factor  = 0.2
 #' )
-#' # Then edit calibration/calibration_<module>.csv files,
-#' # set include = TRUE for chosen parameters, and run:
-#' calib_setup <- calib_setup_from_tables(folder_in = "calibration",
-#'                                        model_coupled = "GOTM-Selmaprotbas")
-#' }
+#' list.files(file.path(ex, "calibration"))
+#'
+#' # Next: edit calibration/calibration_<module>.csv, set include = TRUE for
+#' # the parameters to calibrate, and build the setup table with
+#' # calib_setup_from_tables() (see its examples).
 #'
 #' @export
 
@@ -143,8 +144,12 @@ create_calibration_tables <- function(folder = ".",
 
   # Build calibration columns
   calib_table$include <- FALSE
-  calib_table$lower   <- calib_table$default * (1 - bounds_factor)
-  calib_table$upper   <- calib_table$default * (1 + bounds_factor)
+  # pmin/pmax keep lower <= upper for negative defaults (e.g. Fsed_oxy = -10
+  # would otherwise give lower = -8, upper = -12).
+  bound_a <- calib_table$default * (1 - bounds_factor)
+  bound_b <- calib_table$default * (1 + bounds_factor)
+  calib_table$lower   <- pmin(bound_a, bound_b)
+  calib_table$upper   <- pmax(bound_a, bound_b)
   calib_table$initial <- calib_table$default
   calib_table$log     <- FALSE
 

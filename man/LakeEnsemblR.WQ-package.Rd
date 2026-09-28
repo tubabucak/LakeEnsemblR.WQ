@@ -13,6 +13,7 @@ Useful links:
 \itemize{
   \item \url{https://github.com/tubabucak/LakeEnsemblR.WQ}
   \item \url{https://tubabucak.github.io/LakeEnsemblR.WQ}
+  \item Report bugs at \url{https://github.com/tubabucak/LakeEnsemblR.WQ/issues}
 }
 
 }
@@ -22,9 +23,9 @@ Useful links:
 Authors:
 \itemize{
   \item Tuba Bucak \email{tbo@ecos.au.dk}
-  \item Robert Ladwig \email{rladwig2@wisc.edu}
   \item Johannes Feldbauer \email{johannes.feldbauer@tu-dresden.de}
   \item Jorrit Mesman \email{jorrit.mesman@unige.ch}
+  \item Robert Ladwig \email{rladwig@ecos.au.dk}
 }
 
 }

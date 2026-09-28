@@ -1,16 +1,16 @@
 Package: LakeEnsemblR.WQ
 Type: Package
 Title: Run Ensembles of Water Quality 1D Lake Models
-Version: 0.0.1
+Version: 0.1.0
 Date: 2026-08-28
 URL: https://github.com/tubabucak/LakeEnsemblR.WQ,
     https://tubabucak.github.io/LakeEnsemblR.WQ
 BugReports: https://github.com/tubabucak/LakeEnsemblR.WQ/issues
 Authors@R: c(
     person("Tuba", "Bucak", role = c("aut", "cre"), email = "tbo@ecos.au.dk"),
-    person("Robert", "Ladwig", role = "aut", email = "rladwig2@wisc.edu"),
     person("Johannes", "Feldbauer", role = "aut", email = "johannes.feldbauer@tu-dresden.de"),
-    person("Jorrit", "Mesman", role = "aut", email = "jorrit.mesman@unige.ch"))
+    person("Jorrit", "Mesman", role = "aut", email = "jorrit.mesman@unige.ch"),
+    person("Robert", "Ladwig", role = "aut", email = "rladwig@ecos.au.dk"))
 Description: Extends the 'LakeEnsemblR' physical-model ensemble framework
     with water quality and biogeochemical simulation. Configures, runs, and
     calibrates coupled physical-biogeochemical 1D lake models -- GLM-AED2,
@@ -73,11 +73,11 @@ LazyData: true
 LazyLoad: true
 Config/testthat/edition: 3
 Remotes:
-    aemon-j/GLM3r@v3.3,
+    aemon-j/GLM3r@v3.3-lerwq,
     aemon-j/WETr@v2.3-lerwq,
     aemon-j/SelmaprotbasR@v1.2.2-lerwq,
     aemon-j/SimstratR@v3.05-lerwq,
     aemon-j/gotmtools,
-    aemon-j/LakeEnsemblR,
-    USGS-R/glmtools@ggplot_overhaul
+    tubabucak/LakeEnsemblR,
+    GLEON/glmtools
 Config/roxygen2/version: 8.0.0

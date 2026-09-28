@@ -745,6 +745,43 @@ model_key <- names(cfg$model_folders)[toupper(names(cfg$model_folders)) == toupp
 #'   under attribute \code{lhc_best_parameter_set} for comparison. The DEoptim
 #'   object itself and its raw best member are always available via attributes
 #'   \code{de_phase} and \code{de_best_params}.
+#'
+#' @examplesIf requireNamespace("GLM3r", quietly = TRUE) && requireNamespace("WETr", quietly = TRUE) && requireNamespace("SelmaprotbasR", quietly = TRUE) && requireNamespace("SimstratR", quietly = TRUE)
+#' \donttest{
+#' ex <- lerwq_example()
+#' library(LakeEnsemblR)  # export_config() needs LakeEnsemblR attached
+#' export_config("LakeEnsemblR.yaml", folder = ex,
+#'               model = c("GLM", "GOTM", "Simstrat"))
+#' export_config_wq("LakeEnsemblR_WQ.yaml", folder = ex)
+#'
+#' # Select two GLM-AED2 sediment oxygen parameters to calibrate
+#' cal_dir <- file.path(ex, "calibration")
+#' create_calibration_tables(folder = ex, config_file = "LakeEnsemblR_WQ.yaml",
+#'                           folder_out = cal_dir, models_coupled = "GLM-AED2")
+#' tab <- read.csv(file.path(cal_dir, "calibration_oxygen.csv"))
+#' tab$include[tab$parameter %in% c("Fsed_oxy", "Ksed_oxy")] <- TRUE
+#' write.csv(tab, file.path(cal_dir, "calibration_oxygen.csv"), row.names = FALSE)
+#' cs <- calib_setup_from_tables(folder_in = cal_dir, model_coupled = "GLM-AED2")
+#'
+#' # Latin hypercube calibration against observed oxygen (use far more
+#' # samples in practice)
+#' old <- setwd(ex)
+#' res <- calib_wq(
+#'   model            = "GLM-AED2",
+#'   param_names      = cs$pars,
+#'   calib_setup      = cs,
+#'   yaml_file        = "Output.yaml",
+#'   model_dir        = "GLM-AED2",
+#'   n_samples        = 3,
+#'   wq_config_file   = "LakeEnsemblR_WQ.yaml",
+#'   obs_file         = "standart_observed_data.csv",
+#'   target_variables = "DO_gramsPerCubicMeter",
+#'   best_metric      = "KGE",
+#'   verbose          = FALSE
+#' )
+#' attr(res, "best_parameter_set")
+#' setwd(old)
+#' }
 #' @export
 
 calib_wq <- function(model,
@@ -1554,78 +1591,13 @@ calib_wq <- function(model,
                                         key1 = p, verbose = FALSE)
 
     } else if (model_upper %in% c("GLM-AED2", "SIMSTRAT-AED2")) {
-      # Custom path logic fallback for dictionary pointers
-      if (!requireNamespace("configr", quietly = TRUE)) stop("configr package required.")
-      if (is.null(wq_config_file.) || !nzchar(wq_config_file.)) stop("wq_config_file missing.")
-
-      # wq_config_file. may live directly in current_dir (DE-worker sandbox,
-      # where root *.yaml files are copied alongside the model folder) or one
-      # level up in the real project folder (plain calib_wq() calls, where
-      # current_dir is model_dir itself). Try both, plus the path as given.
-      wq_yaml_candidates <- c(
-        file.path(current_dir, basename(wq_config_file.)),
-        wq_config_file.,
-        file.path(dirname(current_dir), basename(wq_config_file.))
+      # Dictionary path (e.g. "aed2_oxygen/Fsed_oxy") -- see helpers.R
+      .write_aed2_dict_param(
+        file_or_path, p, value, current_dir = current_dir, model = model.,
+        wq_config_file = wq_config_file.,
+        module = if ("module" %in% names(rows)) as.character(rows$module[k]) else NA_character_,
+        group_name = if ("group_name" %in% names(rows)) rows$group_name[k] else NA_character_
       )
-      wq_yaml_candidates <- unique(normalizePath(wq_yaml_candidates, winslash = "/", mustWork = FALSE))
-      isolated_wq_yaml <- wq_yaml_candidates[file.exists(wq_yaml_candidates)][1]
-      if (is.na(isolated_wq_yaml) || !nzchar(isolated_wq_yaml)) {
-        stop("Could not find wq_config_file '", wq_config_file., "' (looked in ",
-             current_dir, " and ", dirname(current_dir), ")")
-      }
-      lst_cfg <- configr::read.config(isolated_wq_yaml)
-      cfg_files <- lst_cfg[["config_files"]]
-      model_cfg <- cfg_files[[model.]]
-      
-      if (is.null(model_cfg) || !nzchar(model_cfg)) {
-        cfg_names <- names(cfg_files)
-        cfg_idx <- which(toupper(cfg_names) == toupper(model.))[1]
-        if (!is.na(cfg_idx)) model_cfg <- cfg_files[[cfg_idx]]
-      }
-      
-      if (model_upper == "SIMSTRAT-AED2" && grepl("\\.par$", model_cfg, ignore.case = TRUE)) {
-        model_cfg <- file.path(dirname(model_cfg), "aed2.nml")
-      }
-
-      module_k <- if ("module" %in% names(rows)) as.character(rows$module[k]) else NA_character_
-      if (module_k %in% c("phytoplankton", "zooplankton")) {
-        base_dir <- dirname(model_cfg)
-        model_cfg <- if (module_k == "phytoplankton") {
-          file.path(base_dir, "aed2_phyto_pars.nml")
-        } else {
-          file.path(base_dir, "aed2_zoop_pars.nml")
-        }
-      }
-
-      nml_candidates <- c(file.path(current_dir, model_cfg), file.path(current_dir, basename(model_cfg)))
-      nml_candidates <- unique(normalizePath(nml_candidates, winslash = "/", mustWork = FALSE))
-      nml_path <- nml_candidates[file.exists(nml_candidates)][1]
-
-      
-      
-      if (is.na(nml_path) || !nzchar(nml_path)) stop("NML file not found.")
-
-      # Apply text-based search and edit directly to the resolved deep configurations
-      path_parts <- strsplit(file_or_path, "/", fixed = TRUE)[[1]]
-      nml_lines <- readLines(nml_path, warn = FALSE)
-      target_sec <- paste0("&", trimws(path_parts[1]))
-      target_var <- if(length(path_parts) == 2L) trimws(path_parts[2]) else p
-      
-      sec_idx <- which(grepl(paste0("^\\s*", target_sec, "\\b"), nml_lines, ignore.case = TRUE))
-      if (length(sec_idx) > 0) {
-        sec_start <- sec_idx[1]
-        slashes <- jack <- which(grepl("^\\s*/\\s*$", nml_lines))
-        sec_end <- slashes[slashes > sec_start][1]
-        if (is.na(sec_end)) sec_end <- length(nml_lines)
-
-        group_col_k <- if ("group_name" %in% names(rows)) rows$group_name[k] else NA_character_
-        upd <- .update_nml_group_value(nml_lines, sec_start, sec_end, target_var,
-                                       value, group_name = group_col_k)
-        if (isTRUE(upd$found)) {
-          nml_lines <- upd$lines
-          writeLines(nml_lines, nml_path)
-        }
-      }
 
     } else if (model_upper %in% c("GOTM-WET", "GOTM-SELMAPROTBAS")) {
       yaml_target <- file.path(current_dir, "fabm.yaml")

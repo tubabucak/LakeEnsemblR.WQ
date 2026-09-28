@@ -1,0 +1,21 @@
+citHeader("To cite LakeEnsemblR.WQ, please use the software citation below.",
+         "A companion paper is in preparation; once published, cite that",
+         "as well -- see https://github.com/tubabucak/LakeEnsemblR.WQ for",
+         "an updated citation.")
+
+bibentry(
+  bibtype  = "Manual",
+  title    = "{LakeEnsemblR.WQ}: Run Ensembles of Water Quality 1D Lake Models",
+  author   = c(
+    person("Tuba", "Bucak"),
+    person("Robert", "Ladwig"),
+    person("Johannes", "Feldbauer"),
+    person("Jorrit", "Mesman")
+  ),
+  year     = "2026",
+  note     = paste("R package version", meta$Version),
+  url      = "https://github.com/tubabucak/LakeEnsemblR.WQ"
+)
+
+# TODO: once the companion paper is published, add its bibentry() here
+# (journal article/preprint DOI) alongside the software citation above.

@@ -41,9 +41,12 @@ test_that("create_calibration_tables() sets include = FALSE and computes bounds 
 
   expect_true(nrow(calib_table) > 0)
   expect_true(all(!calib_table$include))
-  expect_equal(calib_table$lower, calib_table$default * 0.8)
-  expect_equal(calib_table$upper, calib_table$default * 1.2)
+  expect_equal(calib_table$lower, pmin(calib_table$default * 0.8, calib_table$default * 1.2))
+  expect_equal(calib_table$upper, pmax(calib_table$default * 0.8, calib_table$default * 1.2))
   expect_equal(calib_table$initial, calib_table$default)
+  # Negative defaults (e.g. sediment fluxes) must not get lower > upper
+  expect_true(any(calib_table$default < 0, na.rm = TRUE))
+  expect_true(all(calib_table$lower <= calib_table$upper, na.rm = TRUE))
 })
 
 test_that("create_calibration_tables() skips integer-typed parameters", {
@@ -163,8 +166,8 @@ test_that("create_calibration_tables() honors bounds_factor as a fraction of def
     models_coupled = c("GLM-AED2", "GOTM-WET"), bounds_factor = 0.05
   )
 
-  expect_equal(calib_table$lower, calib_table$default * 0.95)
-  expect_equal(calib_table$upper, calib_table$default * 1.05)
+  expect_equal(calib_table$lower, pmin(calib_table$default * 0.95, calib_table$default * 1.05))
+  expect_equal(calib_table$upper, pmax(calib_table$default * 0.95, calib_table$default * 1.05))
 })
 
 test_that("create_calibration_tables() writes the master file and only per-module files for modules with use: true", {

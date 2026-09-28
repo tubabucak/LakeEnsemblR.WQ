@@ -19,3 +19,24 @@ A list of extractedf variables for each model and for each metric defined in out
 \description{
 The aim is to calculate the metrics in output.yaml and export as list file
 }
+\examples{
+\dontshow{if (requireNamespace("GLM3r", quietly = TRUE) && requireNamespace("WETr", quietly = TRUE) && requireNamespace("SelmaprotbasR", quietly = TRUE) && requireNamespace("SimstratR", quietly = TRUE)) withAutoprint(\{ # examplesIf}
+\donttest{
+ex <- lerwq_example()
+library(LakeEnsemblR)  # export_config() needs LakeEnsemblR attached
+export_config("LakeEnsemblR.yaml", folder = ex,
+              model = c("GLM", "GOTM", "Simstrat"))
+export_config_wq("LakeEnsemblR_WQ.yaml", folder = ex)
+run_ensemble_wq("LakeEnsemblR_WQ.yaml", models = "GLM-AED2", folder = ex,
+                verbose = FALSE)
+
+# Harmonized metrics listed in Output.yaml, for GLM-AED2
+old <- setwd(ex)
+metrics <- cal_metrics(metric_yaml_file = "Output.yaml", model_filter = "GLM",
+                       wq_config_file = "LakeEnsemblR_WQ.yaml")
+names(metrics)
+head(metrics$DO_gramsPerCubicMeter$GLM[[1]][, 1:5])
+setwd(old)
+}
+\dontshow{\}) # examplesIf}
+}

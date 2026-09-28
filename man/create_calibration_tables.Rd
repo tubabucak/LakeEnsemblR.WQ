@@ -31,7 +31,8 @@ Invisibly returns the master calibration table as a data frame.
 Generates a master calibration CSV and per-module CSVs from the LakeEnsemblR.WQ
 dictionary. Every parameter gets \code{include = FALSE} by default so users can
 review and selectively opt-in. Lower and upper bounds are set to
-\code{default * (1 - bounds_factor)} and \code{default * (1 + bounds_factor)}.
+\code{default * (1 - bounds_factor)} and \code{default * (1 + bounds_factor)}
+(the other way round for negative defaults, so that \code{lower <= upper}).
 When the dictionary provides \code{min}/\code{max} values for a parameter,
 they are carried through as \code{dict_min}/\code{dict_max} reference
 columns (not used to compute \code{lower}/\code{upper} automatically) so
@@ -54,18 +55,18 @@ hand, when editing the CSV.
 }
 }
 \examples{
-\dontrun{
+ex <- lerwq_example()
 create_calibration_tables(
-  folder         = ".",
+  folder         = ex,
   config_file    = "LakeEnsemblR_WQ.yaml",
-  folder_out     = "calibration",
+  folder_out     = file.path(ex, "calibration"),
   models_coupled = c("GOTM-Selmaprotbas", "GLM-AED2"),
   bounds_factor  = 0.2
 )
-# Then edit calibration/calibration_<module>.csv files,
-# set include = TRUE for chosen parameters, and run:
-calib_setup <- calib_setup_from_tables(folder_in = "calibration",
-                                       model_coupled = "GOTM-Selmaprotbas")
-}
+list.files(file.path(ex, "calibration"))
+
+# Next: edit calibration/calibration_<module>.csv, set include = TRUE for
+# the parameters to calibrate, and build the setup table with
+# calib_setup_from_tables() (see its examples).
 
 }

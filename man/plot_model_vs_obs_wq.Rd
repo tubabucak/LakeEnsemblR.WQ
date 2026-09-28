@@ -121,3 +121,24 @@ compare against a calibrated run, first write the winning parameters back
 (\code{write_best_calib_to_par_files()}) and re-run the model
 (\code{run_ensemble_wq()}) before calling this.
 }
+\examples{
+\dontshow{if (requireNamespace("GLM3r", quietly = TRUE) && requireNamespace("WETr", quietly = TRUE) && requireNamespace("SelmaprotbasR", quietly = TRUE) && requireNamespace("SimstratR", quietly = TRUE)) withAutoprint(\{ # examplesIf}
+\donttest{
+ex <- lerwq_example()
+library(LakeEnsemblR)  # export_config() needs LakeEnsemblR attached
+export_config("LakeEnsemblR.yaml", folder = ex,
+              model = c("GLM", "GOTM", "Simstrat"))
+export_config_wq("LakeEnsemblR_WQ.yaml", folder = ex)
+run_ensemble_wq("LakeEnsemblR_WQ.yaml", models = "GLM-AED2", folder = ex,
+                verbose = FALSE)
+
+# Simulated vs observed dissolved oxygen for GLM-AED2
+old <- setwd(ex)
+p <- plot_model_vs_obs_wq(config_file = "Output.yaml", model = "GLM",
+                          obs_data = "standart_observed_data.csv",
+                          variable_global_name = "DO_gramsPerCubicMeter",
+                          wq_config_file = "LakeEnsemblR_WQ.yaml")
+setwd(old)
+}
+\dontshow{\}) # examplesIf}
+}

@@ -72,6 +72,95 @@
   list(lines = nml_lines, found = TRUE)
 }
 
+#' @title Write an AED2 parameter given as a dictionary path
+#'
+#' @description Writes \code{value} for a GLM-AED2/Simstrat-AED2 parameter whose
+#'   \code{calib_setup$file} entry is a dictionary path such as
+#'   \code{"aed2_oxygen/Fsed_oxy"} (namelist section / variable) rather than a
+#'   file name. Resolves the target namelist from \code{wq_config_file}'s
+#'   \code{config_files} entry for \code{model} (\code{aed2_phyto_pars.nml} /
+#'   \code{aed2_zoop_pars.nml} for the phytoplankton/zooplankton modules), or
+#'   falls back to the standard file names in \code{current_dir} when
+#'   \code{wq_config_file} is not supplied. Shared by \code{calib_wq()},
+#'   \code{run_sensitivity()} and \code{run_multi_param_sensitivity()}.
+#'
+#' @param file_or_path character; the dictionary path from \code{calib_setup$file}.
+#' @param p character; parameter name (used when the path has no variable part).
+#' @param value the value to write.
+#' @param current_dir character; the model directory being modified.
+#' @param model character; coupled model name (\code{"GLM-AED2"} or
+#'   \code{"Simstrat-AED2"}).
+#' @param wq_config_file character or \code{NULL}; LakeEnsemblR_WQ config file.
+#' @param module character or \code{NA}; the parameter's module.
+#' @param group_name character or \code{NA}; group to target within the namelist.
+#'
+#' @return Invisibly, \code{TRUE} if the parameter was found and written,
+#'   \code{FALSE} otherwise.
+#'
+#' @noRd
+.write_aed2_dict_param <- function(file_or_path, p, value, current_dir, model,
+                                   wq_config_file = NULL, module = NA_character_,
+                                   group_name = NA_character_) {
+  model_upper <- toupper(model)
+  model_cfg <- NULL
+
+  if (!is.null(wq_config_file) && nzchar(wq_config_file)) {
+    # wq_config_file may live directly in current_dir (DE-worker sandbox,
+    # where root *.yaml files are copied alongside the model folder) or one
+    # level up in the real project folder (plain calls, where current_dir is
+    # model_dir itself). Try both, plus the path as given.
+    wq_yaml_candidates <- c(
+      file.path(current_dir, basename(wq_config_file)),
+      wq_config_file,
+      file.path(dirname(current_dir), basename(wq_config_file))
+    )
+    wq_yaml_candidates <- unique(normalizePath(wq_yaml_candidates, winslash = "/", mustWork = FALSE))
+    wq_yaml <- wq_yaml_candidates[file.exists(wq_yaml_candidates)][1]
+    if (is.na(wq_yaml) || !nzchar(wq_yaml)) {
+      stop("Could not find wq_config_file '", wq_config_file, "' (looked in ",
+           current_dir, " and ", dirname(current_dir), ")")
+    }
+    cfg_files <- configr::read.config(wq_yaml)[["config_files"]]
+    model_cfg <- cfg_files[[model]]
+    if (is.null(model_cfg) || !nzchar(model_cfg)) {
+      cfg_idx <- which(toupper(names(cfg_files)) == model_upper)[1]
+      if (!is.na(cfg_idx)) model_cfg <- cfg_files[[cfg_idx]]
+    }
+  }
+  if (is.null(model_cfg) || !nzchar(model_cfg)) model_cfg <- "aed2.nml"
+
+  if (model_upper == "SIMSTRAT-AED2" && grepl("\\.par$", model_cfg, ignore.case = TRUE)) {
+    model_cfg <- file.path(dirname(model_cfg), "aed2.nml")
+  }
+
+  if (isTRUE(module %in% c("phytoplankton", "zooplankton"))) {
+    model_cfg <- file.path(dirname(model_cfg),
+                           if (module == "phytoplankton") "aed2_phyto_pars.nml" else "aed2_zoop_pars.nml")
+  }
+
+  nml_candidates <- c(file.path(current_dir, model_cfg), file.path(current_dir, basename(model_cfg)))
+  nml_candidates <- unique(normalizePath(nml_candidates, winslash = "/", mustWork = FALSE))
+  nml_path <- nml_candidates[file.exists(nml_candidates)][1]
+  if (is.na(nml_path) || !nzchar(nml_path)) stop("NML file not found for '", file_or_path, "'.")
+
+  path_parts <- strsplit(file_or_path, "/", fixed = TRUE)[[1]]
+  nml_lines <- readLines(nml_path, warn = FALSE)
+  target_sec <- paste0("&", trimws(path_parts[1]))
+  target_var <- if (length(path_parts) == 2L) trimws(path_parts[2]) else p
+
+  sec_idx <- which(grepl(paste0("^\\s*", target_sec, "\\b"), nml_lines, ignore.case = TRUE))
+  if (length(sec_idx) == 0) return(invisible(FALSE))
+  sec_start <- sec_idx[1]
+  slashes <- which(grepl("^\\s*/\\s*$", nml_lines))
+  sec_end <- slashes[slashes > sec_start][1]
+  if (is.na(sec_end)) sec_end <- length(nml_lines)
+
+  upd <- .update_nml_group_value(nml_lines, sec_start, sec_end, target_var,
+                                 value, group_name = group_name)
+  if (isTRUE(upd$found)) writeLines(upd$lines, nml_path)
+  invisible(isTRUE(upd$found))
+}
+
 #' @title Derive a model config filename from a LakeEnsemblR config
 #'
 #' @description Looks up \code{phys_model} (e.g. \code{"GOTM"},

@@ -3,8 +3,6 @@
 .RData
 .Ruserdata
 
-# Ignore inst folder
-inst/
 model_setups/
 inflows/
 .positai

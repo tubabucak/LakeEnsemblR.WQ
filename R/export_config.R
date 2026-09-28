@@ -19,11 +19,17 @@
 #' including expanded phytoplankton groups.
 
 #'
-#' @examples
-#' \dontrun{
-#' export_config_wq(config_file = "LakeEnsemblR_WQ.yaml", 
-#'                  folder = "/Model_setup", 
-#'                  verbose = TRUE)
+#' @examplesIf requireNamespace("GLM3r", quietly = TRUE) && requireNamespace("WETr", quietly = TRUE) && requireNamespace("SelmaprotbasR", quietly = TRUE) && requireNamespace("SimstratR", quietly = TRUE)
+#' \donttest{
+#' ex <- lerwq_example()
+#'
+#' # Physical model setup (LakeEnsemblR), then the water quality setup
+#' library(LakeEnsemblR)  # export_config() needs LakeEnsemblR attached
+#' export_config("LakeEnsemblR.yaml", folder = ex,
+#'               model = c("GLM", "GOTM", "Simstrat"))
+#' export_config_wq("LakeEnsemblR_WQ.yaml", folder = ex)
+#'
+#' list.files(file.path(ex, "GLM-AED2"))
 #' }
 #'
 #' @importFrom configr read.config
@@ -44,6 +50,13 @@ export_config_wq <- function(config_file, folder = ".", verbose = FALSE,
   if(convert_from_lakeensemblr && !file.exists(file.path(folder, ler_config_file))){
     stop("ler_config_file not found: ", file.path(folder, ler_config_file))
   }
+
+  # Run from `folder` and pass "." down: several helpers (and LakeEnsemblR
+  # functions they call) resolve paths relative to the working directory, so
+  # an absolute or non-"." folder otherwise gives missing or doubled paths.
+  old_wd <- setwd(folder)
+  on.exit(setwd(old_wd), add = TRUE)
+  folder <- "."
 
   if(convert_from_lakeensemblr){
     # LakeEnsemblR::export_config has been run beforehand
