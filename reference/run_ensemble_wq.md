@@ -66,3 +66,26 @@ run_ensemble_wq(
 
 A list containing validation results, run results, and NetCDF paths for
 successful runs.
+
+## Examples
+
+``` r
+if (FALSE) { # requireNamespace("GLM3r", quietly = TRUE) && requireNamespace("WETr", quietly = TRUE) && requireNamespace("SelmaprotbasR", quietly = TRUE) && requireNamespace("SimstratR", quietly = TRUE)
+# \donttest{
+ex <- lerwq_example()
+library(LakeEnsemblR)  # export_config() needs LakeEnsemblR attached
+export_config("LakeEnsemblR.yaml", folder = ex,
+              model = c("GLM", "GOTM", "Simstrat"))
+export_config_wq("LakeEnsemblR_WQ.yaml", folder = ex)
+
+# Run all four coupled models for the example year
+res <- run_ensemble_wq(
+  config_file = "LakeEnsemblR_WQ.yaml",
+  models      = c("GLM-AED2", "GOTM-WET", "GOTM-Selmaprotbas", "Simstrat-AED2"),
+  folder      = ex,
+  verbose     = FALSE
+)
+res$successful_models
+# }
+}
+```

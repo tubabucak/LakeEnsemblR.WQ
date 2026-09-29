@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">LakeEnsemblR.WQ</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -39,7 +39,7 @@
     </div>
 
     <div class="section level2">
-<h2 class="pkg-version" data-toc-text="0.0.1" id="lakeensemblrwq-001">LakeEnsemblR.WQ 0.0.1<a class="anchor" aria-label="anchor" href="#lakeensemblrwq-001"></a></h2>
+<h2 class="pkg-version" data-toc-text="0.1.0" id="lakeensemblrwq-010">LakeEnsemblR.WQ 0.1.0<a class="anchor" aria-label="anchor" href="#lakeensemblrwq-010"></a></h2>
 <p>Initial development version. Substantially extends the upstream <code>aemon-j/LakeEnsemblR.WQ</code> codebase – at the point this fork diverged, upstream had only the physical/WQ configuration export functions in place (<code><a href="../reference/export_config_wq.html">export_config_wq()</a></code> and related setup functions). This version adds:</p>
 <ul><li>
 <strong>Validation and run</strong>: <code><a href="../reference/validate_glm_aed.html">validate_glm_aed()</a></code>, <code><a href="../reference/validate_gotm_wet.html">validate_gotm_wet()</a></code>, <code><a href="../reference/validate_simstrat.html">validate_simstrat()</a></code>, <code><a href="../reference/run_ensemble_wq.html">run_ensemble_wq()</a></code>.</li>
@@ -56,18 +56,18 @@
 <li>
 <strong>NetCDF output</strong>: <code><a href="../reference/create_netcdf_output.html">create_netcdf_output()</a></code>, <code><a href="../reference/create_netcdf_wq.html">create_netcdf_wq()</a></code>.</li>
 </ul><div class="section level3">
-<h3 id="documentation-0-0-1">Documentation<a class="anchor" aria-label="anchor" href="#documentation-0-0-1"></a></h3>
+<h3 id="documentation-0-1-0">Documentation<a class="anchor" aria-label="anchor" href="#documentation-0-1-0"></a></h3>
 <ul><li>Added the “Full Workflow” vignette (<code><a href="../articles/full-workflow.html">vignette("full-workflow")</a></code>), an end-to-end walkthrough covering configuration export, validation, ensemble runs, metric computation, the calibration workflow (LHC sampling, sensitivity analysis, optional Differential Evolution refinement, multi-model calibration via <code><a href="../reference/cali_ensemble_wq.html">cali_ensemble_wq()</a></code>), and comparison/visualization of model outputs.</li>
 <li>Added a new vignette, “Configuration File Reference” (<code><a href="../articles/config-reference.html">vignette("config-reference")</a></code>), documenting <code>LakeEnsemblR_WQ.yaml</code> and <code>Output.yaml</code> field by field, plus the WQ-specific input file formats (nutrient inflow CSV, parameter override CSV, observed-data CSV)</li>
 <li>
 <code>README.Rmd</code>: added links to the built documentation site and to the example test-case projects (<code>LERWQ_testcases</code>); the calibration workflow section now points to the full-workflow vignette with a clickable link instead of only an R command reference.</li>
 </ul></div>
 <div class="section level3">
-<h3 id="testing-0-0-1">Testing<a class="anchor" aria-label="anchor" href="#testing-0-0-1"></a></h3>
+<h3 id="testing-0-1-0">Testing<a class="anchor" aria-label="anchor" href="#testing-0-1-0"></a></h3>
 <ul><li>Added an initial test suite (<code>testthat</code>), including coverage for the config-loading and calibration-table logic: <code><a href="../reference/load_config-colon.html">load_config()</a></code>, <code><a href="../reference/calib_setup_from_tables.html">calib_setup_from_tables()</a></code>, <code><a href="../reference/create_calibration_tables.html">create_calibration_tables()</a></code>, <code><a href="../reference/run_sensitivity.html">run_sensitivity()</a></code>’s validation chain, <code><a href="../reference/generate_simstrat_aed2_inflows.html">generate_simstrat_aed2_inflows()</a></code> and its parsing helpers, the <code><a href="../reference/validate_glm_aed.html">validate_glm_aed()</a></code>/<code><a href="../reference/validate_gotm_wet.html">validate_gotm_wet()</a></code>/<code><a href="../reference/validate_simstrat.html">validate_simstrat()</a></code> family, and all 8 <code>cal_*</code> metric functions (<code>cal_DO_exceedance</code>, <code>cal_anoxic_date</code>, <code>cal_nitrif_selma</code>, <code>cal_bot_surf_temp_dif</code>, <code>cal_ice_duration</code>, <code>cal_epi_depth</code>, <code>cal_meta_depth</code>, <code>cal_strat_date</code>).</li>
 </ul></div>
 <div class="section level3">
-<h3 id="infrastructure-0-0-1">Infrastructure<a class="anchor" aria-label="anchor" href="#infrastructure-0-0-1"></a></h3>
+<h3 id="infrastructure-0-1-0">Infrastructure<a class="anchor" aria-label="anchor" href="#infrastructure-0-1-0"></a></h3>
 <ul><li>Added <code>pkgdown</code> and <code>R-CMD-check</code> GitHub Actions workflows.</li>
 </ul></div>
 </div>
@@ -76,7 +76,7 @@
 
 
     <footer><div class="pkgdown-footer-left">
-  <p>Developed by Tuba Bucak, Robert Ladwig, Johannes Feldbauer, Jorrit Mesman.</p>
+  <p>Developed by Tuba Bucak, Johannes Feldbauer, Jorrit Mesman, Robert Ladwig.</p>
 </div>
 
 <div class="pkgdown-footer-right">

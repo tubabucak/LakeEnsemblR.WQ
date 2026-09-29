@@ -17,7 +17,7 @@ model output for each iteration."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">LakeEnsemblR.WQ</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -146,8 +146,10 @@ back to <code>"gotm.yaml"</code>.</p></dd>
 
 <dt id="arg-wq-config-file">wq_config_file<a class="anchor" aria-label="anchor" href="#arg-wq-config-file"></a></dt>
 <dd><p>Character or <code>NULL</code>. Path to the LakeEnsemblR_WQ config file, passed
-through to <code><a href="cal_metrics.html">cal_metrics()</a></code>. Required when <code>output_mode = "metrics"</code>; ignored when
-<code>output_mode = "raw"</code>.</p></dd>
+through to <code><a href="cal_metrics.html">cal_metrics()</a></code>. Required when <code>output_mode = "metrics"</code>. For
+GLM-AED2/Simstrat-AED2 it is also used (in either mode) to locate the AED2 namelist a
+parameter is written to; if <code>NULL</code>, the standard AED2 namelists in <code>model_dir</code>
+are used.</p></dd>
 
 
 <dt id="arg-output-mode">output_mode<a class="anchor" aria-label="anchor" href="#arg-output-mode"></a></dt>
@@ -227,7 +229,7 @@ is supplied) or <code>calib_setup</code>'s own <code>lb</code>/<code>ub</code> c
 
 
     <footer><div class="pkgdown-footer-left">
-  <p>Developed by Tuba Bucak, Robert Ladwig, Johannes Feldbauer, Jorrit Mesman.</p>
+  <p>Developed by Tuba Bucak, Johannes Feldbauer, Jorrit Mesman, Robert Ladwig.</p>
 </div>
 
 <div class="pkgdown-footer-right">

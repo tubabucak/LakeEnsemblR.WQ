@@ -1,6 +1,6 @@
 # Changelog
 
-## LakeEnsemblR.WQ 0.0.1
+## LakeEnsemblR.WQ 0.1.0
 
 Initial development version. Substantially extends the upstream
 `aemon-j/LakeEnsemblR.WQ` codebase – at the point this fork diverged,

@@ -77,3 +77,24 @@ following metrics:
   [`hydroGOF::KGE`](https://hzambran.github.io/hydroGOF/reference/KGE.html))
 
 - **residual**: Vector of observed - predicted residuals
+
+## Examples
+
+``` r
+obs  <- c(8.1, 9.4, 10.2, 7.5, 3.1, 1.2)
+pred <- c(7.8, 9.9, 9.6, 6.9, 4.0, 0.8)
+st <- cal_stats(obs, pred)
+st[c("NSE", "KGE", "RMSE", "PBIAS")]
+#> $NSE
+#> [1] 0.9688976
+#> 
+#> $KGE
+#> [1] 0.9656147
+#> 
+#> $RMSE
+#> [1] 0.5816643
+#> 
+#> $PBIAS
+#> [1] 1.265823
+#> 
+```

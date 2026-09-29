@@ -4,6 +4,8 @@
 
 Build model-specific configuration and inputs.
 
+- [`lerwq_example()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/lerwq_example.md)
+  : Copy the bundled example setup
 - [`export_config_wq()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/export_config_wq.md)
   : Export settings to model-specific configuration files for LER.WQ
 - [`export_inputs()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/export_inputs.md)

@@ -111,8 +111,10 @@ run_multi_param_sensitivity(
   Character or `NULL`. Path to the LakeEnsemblR_WQ config file, passed
   through to
   [`cal_metrics()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/cal_metrics.md).
-  Required when `output_mode = "metrics"`; ignored when
-  `output_mode = "raw"`.
+  Required when `output_mode = "metrics"`. For GLM-AED2/Simstrat-AED2 it
+  is also used (in either mode) to locate the AED2 namelist a parameter
+  is written to; if `NULL`, the standard AED2 namelists in `model_dir`
+  are used.
 
 - output_mode:
 

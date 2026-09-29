@@ -24,6 +24,8 @@ Useful links:
 
 - <https://tubabucak.github.io/LakeEnsemblR.WQ>
 
+- Report bugs at <https://github.com/tubabucak/LakeEnsemblR.WQ/issues>
+
 ## Author
 
 **Maintainer**: Tuba Bucak <tbo@ecos.au.dk>
@@ -32,8 +34,8 @@ Authors:
 
 - Tuba Bucak <tbo@ecos.au.dk>
 
-- Robert Ladwig <rladwig2@wisc.edu>
-
 - Johannes Feldbauer <johannes.feldbauer@tu-dresden.de>
 
 - Jorrit Mesman <jorrit.mesman@unige.ch>
+
+- Robert Ladwig <rladwig@ecos.au.dk>

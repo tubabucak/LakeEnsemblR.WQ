@@ -4,7 +4,8 @@ Generates a master calibration CSV and per-module CSVs from the
 LakeEnsemblR.WQ dictionary. Every parameter gets `include = FALSE` by
 default so users can review and selectively opt-in. Lower and upper
 bounds are set to `default * (1 - bounds_factor)` and
-`default * (1 + bounds_factor)`. When the dictionary provides
+`default * (1 + bounds_factor)` (the other way round for negative
+defaults, so that `lower <= upper`). When the dictionary provides
 `min`/`max` values for a parameter, they are carried through as
 `dict_min`/`dict_max` reference columns (not used to compute
 `lower`/`upper` automatically) so they can be checked against, and
@@ -73,17 +74,36 @@ Invisibly returns the master calibration table as a data frame.
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
+ex <- lerwq_example()
 create_calibration_tables(
-  folder         = ".",
+  folder         = ex,
   config_file    = "LakeEnsemblR_WQ.yaml",
-  folder_out     = "calibration",
+  folder_out     = file.path(ex, "calibration"),
   models_coupled = c("GOTM-Selmaprotbas", "GLM-AED2"),
   bounds_factor  = 0.2
 )
-# Then edit calibration/calibration_<module>.csv files,
-# set include = TRUE for chosen parameters, and run:
-calib_setup <- calib_setup_from_tables(folder_in = "calibration",
-                                       model_coupled = "GOTM-Selmaprotbas")
-} # }
+#> Skipping 28 integer/boolean-typed parameter(s) (not calibratable via percentage-based bounds): alk_mode, co2_model, co2_piston_model, ch4_piston_model, fT_method, lightModel, buoy_nutrient, simN2O, n2o_piston_model, buoy_temperature, buoyancy_regulation, couple_dom, diagnostics, llim, salTol, simDINUptake, simDIPUptake, nitrogen_fixation, simDONUptake, simINDynamics, simIPDynamics, simNFixation, simSiUptake, tlim, use_24h_light, nprey
+#> Skipping 23 zero-default parameter(s) with no dictionary min/max to fall back on (default * bounds_factor gives a zero-width range): alpha_si, K_Si, N_o, P_0, buoy_nutrient_limit, Fsed_n2o, buoy_temp_limit, dd_p, R_nfix, Si_0, rfs, sedrate, X_sicon, vert_vel_nutrient, c0, vert_vel_temp, Smin_zoo, vert_vel3, wz, oxy_min, o2corr_method, elevation
+#> Created master reference: /tmp/RtmpedecNp/lerwq_example/calibration/calibration_master.csv
+#> Created: /tmp/RtmpedecNp/lerwq_example/calibration/calibration_oxygen.csv
+#> Created: /tmp/RtmpedecNp/lerwq_example/calibration/calibration_carbon.csv
+#> Created: /tmp/RtmpedecNp/lerwq_example/calibration/calibration_nitrogen.csv
+#> Created: /tmp/RtmpedecNp/lerwq_example/calibration/calibration_phosphorus.csv
+#> Created: /tmp/RtmpedecNp/lerwq_example/calibration/calibration_silicon.csv
+#> Created: /tmp/RtmpedecNp/lerwq_example/calibration/calibration_diatoms.csv
+#> Created: /tmp/RtmpedecNp/lerwq_example/calibration/calibration_cyanobacteria.csv
+#> Created: /tmp/RtmpedecNp/lerwq_example/calibration/calibration_daphnia.csv
+#> 
+#> Edit the per-module CSVs: set include = TRUE for parameters to calibrate.
+#> Then call calib_setup_from_tables() to build the calib_setup for calib_wq().
+list.files(file.path(ex, "calibration"))
+#> [1] "calibration_carbon.csv"        "calibration_cyanobacteria.csv"
+#> [3] "calibration_daphnia.csv"       "calibration_diatoms.csv"      
+#> [5] "calibration_master.csv"        "calibration_nitrogen.csv"     
+#> [7] "calibration_oxygen.csv"        "calibration_phosphorus.csv"   
+#> [9] "calibration_silicon.csv"      
+
+# Next: edit calibration/calibration_<module>.csv, set include = TRUE for
+# the parameters to calibrate, and build the setup table with
+# calib_setup_from_tables() (see its examples).
 ```

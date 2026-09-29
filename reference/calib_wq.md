@@ -281,3 +281,45 @@ use the DE result when DE was run. The original LHC-phase best is
 preserved under attribute `lhc_best_parameter_set` for comparison. The
 DEoptim object itself and its raw best member are always available via
 attributes `de_phase` and `de_best_params`.
+
+## Examples
+
+``` r
+if (FALSE) { # requireNamespace("GLM3r", quietly = TRUE) && requireNamespace("WETr", quietly = TRUE) && requireNamespace("SelmaprotbasR", quietly = TRUE) && requireNamespace("SimstratR", quietly = TRUE)
+# \donttest{
+ex <- lerwq_example()
+library(LakeEnsemblR)  # export_config() needs LakeEnsemblR attached
+export_config("LakeEnsemblR.yaml", folder = ex,
+              model = c("GLM", "GOTM", "Simstrat"))
+export_config_wq("LakeEnsemblR_WQ.yaml", folder = ex)
+
+# Select two GLM-AED2 sediment oxygen parameters to calibrate
+cal_dir <- file.path(ex, "calibration")
+create_calibration_tables(folder = ex, config_file = "LakeEnsemblR_WQ.yaml",
+                          folder_out = cal_dir, models_coupled = "GLM-AED2")
+tab <- read.csv(file.path(cal_dir, "calibration_oxygen.csv"))
+tab$include[tab$parameter %in% c("Fsed_oxy", "Ksed_oxy")] <- TRUE
+write.csv(tab, file.path(cal_dir, "calibration_oxygen.csv"), row.names = FALSE)
+cs <- calib_setup_from_tables(folder_in = cal_dir, model_coupled = "GLM-AED2")
+
+# Latin hypercube calibration against observed oxygen (use far more
+# samples in practice)
+old <- setwd(ex)
+res <- calib_wq(
+  model            = "GLM-AED2",
+  param_names      = cs$pars,
+  calib_setup      = cs,
+  yaml_file        = "Output.yaml",
+  model_dir        = "GLM-AED2",
+  n_samples        = 3,
+  wq_config_file   = "LakeEnsemblR_WQ.yaml",
+  obs_file         = "standart_observed_data.csv",
+  target_variables = "DO_gramsPerCubicMeter",
+  best_metric      = "KGE",
+  verbose          = FALSE
+)
+attr(res, "best_parameter_set")
+setwd(old)
+# }
+}
+```
