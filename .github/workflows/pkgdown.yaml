@@ -37,7 +37,7 @@ jobs:
       - name: Pre-install GLM3r
         run: |
           install.packages("remotes")
-          remotes::install_github("aemon-j/GLM3r@v3.3", upgrade = "never")
+          remotes::install_github("aemon-j/GLM3r@v3.3-lerwq", upgrade = "never")
         shell: Rscript {0}
 
       # dependencies: "hard" skips Suggests (WETr/SelmaprotbasR/SimstratR/
