@@ -78,8 +78,7 @@ LakeEnsemblR.WQ:</p>
 <li>Run model ensembles.</li>
 <li>Compute harmonized metrics.</li>
 <li>Prepare a calibration setup, run sensitivity analysis on it to
-identify which parameters actually matter before spending compute
-calibrating them, then calibrate – single-model LHC, optional DE
+identify which parameters are important – single-model LHC, optional DE
 refinement, writing best parameters back, and calibrating all coupled
 models at once (sequentially or concurrently) with
 <code><a href="../reference/cali_ensemble_wq.html">cali_ensemble_wq()</a></code>.</li>
@@ -106,9 +105,16 @@ observations.</li>
 CSV with columns <code>datetime</code>, <code>depth</code>,
 <code>variable_global_name</code>, <code>value</code>.</li>
 </ul>
+<p>To follow along without your own data, copy the bundled example – one
+year (1995) of Lake Mendota with configuration files for all four models
+and observed temperature, oxygen, nutrients and chlorophyll – and work
+inside it. All code below then runs as written.</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/aemon-j/LakeEnsemblR" class="external-link">LakeEnsemblR</a></span><span class="op">)</span></span>
-<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/tubabucak/LakeEnsemblR.WQ" class="external-link">LakeEnsemblR.WQ</a></span><span class="op">)</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/aemon-j/LakeEnsemblR" class="external-link">LakeEnsemblR</a></span><span class="op">)</span>   <span class="co"># export_config() needs LakeEnsemblR attached</span></span>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/tubabucak/LakeEnsemblR.WQ" class="external-link">LakeEnsemblR.WQ</a></span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">ex</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/lerwq_example.html">lerwq_example</a></span><span class="op">(</span><span class="op">)</span>   <span class="co"># copies the example to a temporary folder</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/getwd.html" class="external-link">setwd</a></span><span class="op">(</span><span class="va">ex</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="export-wq-configuration-and-inputs">1) Export WQ configuration and inputs<a class="anchor" aria-label="anchor" href="#export-wq-configuration-and-inputs"></a>
@@ -130,8 +136,8 @@ model folder and config files for errors.</p>
 <code class="sourceCode R"><span></span>
 <span><span class="fu"><a href="../reference/validate_glm_aed.html">validate_glm_aed</a></span><span class="op">(</span>sim_folder <span class="op">=</span> <span class="st">"GLM-AED2"</span>, file <span class="op">=</span> <span class="st">"glm3.nml"</span>, verbose <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
 <span><span class="fu"><a href="../reference/validate_gotm_wet.html">validate_gotm_wet</a></span><span class="op">(</span>sim_folder <span class="op">=</span> <span class="st">"GOTM-WET"</span>, file <span class="op">=</span> <span class="st">"gotm.yaml"</span>, verbose <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
-<span><span class="fu"><a href="../reference/validate_gotm_wet.html">validate_gotm_wet</a></span><span class="op">(</span>sim_folder <span class="op">=</span> <span class="st">"GOTM-SELMAPROTBAS"</span>, file <span class="op">=</span> <span class="st">"gotm.yaml"</span>, verbose <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
-<span><span class="fu"><a href="../reference/validate_simstrat.html">validate_simstrat</a></span><span class="op">(</span>sim_folder <span class="op">=</span> <span class="st">"SIMSTRAT-AED2"</span>, file <span class="op">=</span> <span class="st">"simstrat.par"</span>, verbose <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
+<span><span class="fu"><a href="../reference/validate_gotm_wet.html">validate_gotm_wet</a></span><span class="op">(</span>sim_folder <span class="op">=</span> <span class="st">"GOTM-Selmaprotbas"</span>, file <span class="op">=</span> <span class="st">"gotm.yaml"</span>, verbose <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/validate_simstrat.html">validate_simstrat</a></span><span class="op">(</span>sim_folder <span class="op">=</span> <span class="st">"Simstrat-AED2"</span>, file <span class="op">=</span> <span class="st">"simstrat.par"</span>, verbose <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
 <p><code><a href="../reference/run_ensemble_wq.html">run_ensemble_wq()</a></code> (next section) can also run these
 automatically via its own <code>validate = TRUE</code> argument –
 calling them directly here is useful when you want validation errors
@@ -140,20 +146,18 @@ surfaced before committing to a full ensemble run.</p>
 <div class="section level2">
 <h2 id="run-ensemble-simulations">3) Run ensemble simulations<a class="anchor" aria-label="anchor" href="#run-ensemble-simulations"></a>
 </h2>
-<div class="section level3">
-<h3 id="this-function-runs-the-ensemble-of-models-with-current-configurations-and-returns-a-list-of-run-results--it-also-validates-the-model-setups-before-running-the-models-">This function runs the ensemble of models with current
-configurations, and returns a list of run results. It also validates the
-model setups before running the models.<a class="anchor" aria-label="anchor" href="#this-function-runs-the-ensemble-of-models-with-current-configurations-and-returns-a-list-of-run-results--it-also-validates-the-model-setups-before-running-the-models-"></a>
-</h3>
+<p><code><a href="../reference/run_ensemble_wq.html">run_ensemble_wq()</a></code> runs the selected models with their
+current configuration and returns a list of run results. With
+<code>validate = TRUE</code> it validates each model setup first and
+skips models that fail.</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">run_res</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/run_ensemble_wq.html">run_ensemble_wq</a></span><span class="op">(</span></span>
 <span>  config_file <span class="op">=</span> <span class="st">"LakeEnsemblR_WQ.yaml"</span>,</span>
-<span>  models <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"GLM-AED2"</span>, <span class="st">"GOTM-WET"</span>, <span class="st">"GOTM-Selmaprotbas"</span>, <span class="st">"SIMSTRAT-AED2"</span><span class="op">)</span>,</span>
+<span>  models <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"GLM-AED2"</span>, <span class="st">"GOTM-WET"</span>, <span class="st">"GOTM-Selmaprotbas"</span>, <span class="st">"Simstrat-AED2"</span><span class="op">)</span>,</span>
 <span>  folder <span class="op">=</span> <span class="st">"."</span>,</span>
 <span>  validate <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  verbose <span class="op">=</span> <span class="cn">TRUE</span></span>
 <span><span class="op">)</span></span></code></pre></div>
-</div>
 </div>
 <div class="section level2">
 <h2 id="compute-metrics-and-statistics">4) Compute metrics and statistics<a class="anchor" aria-label="anchor" href="#compute-metrics-and-statistics"></a>
@@ -197,19 +201,35 @@ calibration.</p>
 <span>  folder <span class="op">=</span> <span class="st">"."</span>,</span>
 <span>  config_file <span class="op">=</span> <span class="st">"LakeEnsemblR_WQ.yaml"</span>,</span>
 <span>  folder_out <span class="op">=</span> <span class="st">"calibration"</span>,</span>
-<span>  models_coupled <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"GLM-AED2"</span>, <span class="st">"GOTM-WET"</span>, <span class="st">"GOTM-Selmaprotbas"</span>, <span class="st">"SIMSTRAT-AED2"</span><span class="op">)</span>,</span>
+<span>  models_coupled <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"GLM-AED2"</span>, <span class="st">"GOTM-WET"</span>, <span class="st">"GOTM-Selmaprotbas"</span>, <span class="st">"Simstrat-AED2"</span><span class="op">)</span>,</span>
 <span>  bounds_factor <span class="op">=</span> <span class="fl">0.2</span></span>
 <span><span class="op">)</span></span></code></pre></div>
-<p>Edit module files in the calibration folder: - set include = TRUE for
-selected parameters - adjust lower, upper, and initial as needed</p>
+<p>Edit module files in the calibration folder:</p>
+<ul>
+<li>set include = TRUE for selected parameters</li>
+<li>adjust lower, upper, and initial as needed</li>
+</ul>
+<p>With the example data, the parameters used in the rest of this
+vignette can be selected in code instead of by hand:</p>
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="kw">for</span> <span class="op">(</span><span class="va">f</span> <span class="kw">in</span> <span class="fu"><a href="https://rdrr.io/r/base/list.files.html" class="external-link">list.files</a></span><span class="op">(</span><span class="st">"calibration"</span>, pattern <span class="op">=</span> <span class="st">"^calibration_.*\\.csv$"</span>, full.names <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span></span>
+<span>  <span class="kw">if</span> <span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/grep.html" class="external-link">grepl</a></span><span class="op">(</span><span class="st">"master"</span>, <span class="va">f</span><span class="op">)</span><span class="op">)</span> <span class="kw">next</span></span>
+<span>  <span class="va">tab</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/utils/read.table.html" class="external-link">read.csv</a></span><span class="op">(</span><span class="va">f</span><span class="op">)</span></span>
+<span>  <span class="va">sel</span> <span class="op">&lt;-</span> <span class="op">(</span><span class="va">tab</span><span class="op">$</span><span class="va">model_coupled</span> <span class="op">==</span> <span class="st">"GOTM-Selmaprotbas"</span> <span class="op">&amp;</span> <span class="va">tab</span><span class="op">$</span><span class="va">parameter</span> <span class="op"><a href="https://rdrr.io/r/base/match.html" class="external-link">%in%</a></span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"nitrif_rate"</span>, <span class="st">"r0"</span><span class="op">)</span><span class="op">)</span> <span class="op">|</span></span>
+<span>         <span class="op">(</span><span class="va">tab</span><span class="op">$</span><span class="va">model_coupled</span> <span class="op">==</span> <span class="st">"GLM-AED2"</span> <span class="op">&amp;</span> <span class="va">tab</span><span class="op">$</span><span class="va">parameter</span> <span class="op"><a href="https://rdrr.io/r/base/match.html" class="external-link">%in%</a></span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Fsed_oxy"</span>, <span class="st">"Ksed_oxy"</span><span class="op">)</span><span class="op">)</span></span>
+<span>  <span class="kw">if</span> <span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/any.html" class="external-link">any</a></span><span class="op">(</span><span class="va">sel</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span></span>
+<span>    <span class="va">tab</span><span class="op">$</span><span class="va">include</span><span class="op">[</span><span class="va">sel</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="cn">TRUE</span></span>
+<span>    <span class="fu"><a href="https://rdrr.io/r/utils/write.table.html" class="external-link">write.csv</a></span><span class="op">(</span><span class="va">tab</span>, <span class="va">f</span>, row.names <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
+<span>  <span class="op">}</span></span>
+<span><span class="op">}</span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="build-calib_setup-from-edited-tables">5.2 Build calib_setup from edited tables<a class="anchor" aria-label="anchor" href="#build-calib_setup-from-edited-tables"></a>
 </h3>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">cs_all</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/calib_setup_from_tables.html">calib_setup_from_tables</a></span><span class="op">(</span></span>
 <span>  folder_in <span class="op">=</span> <span class="st">"calibration"</span>,</span>
-<span>  model_coupled <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"GLM-AED2"</span>, <span class="st">"GOTM-WET"</span>, <span class="st">"GOTM-Selmaprotbas"</span>, <span class="st">"SIMSTRAT-AED2"</span><span class="op">)</span></span>
+<span>  model_coupled <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"GLM-AED2"</span>, <span class="st">"GOTM-WET"</span>, <span class="st">"GOTM-Selmaprotbas"</span>, <span class="st">"Simstrat-AED2"</span><span class="op">)</span></span>
 <span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level3">
@@ -255,19 +275,19 @@ without needing a dictionary entry for it.</li>
 <code><a href="../reference/cal_metrics.html">cal_metrics()</a></code> at each step, same as calibration/Section 4.
 Requires <code>wq_config_file</code> and a <code>target_variable</code>
 (optional) naming which metric(s) in <code>Output.yaml</code> you care
-about, e.g. <code>"DO_gramsPerCubicMeter"</code>. But it takes longer to
-run because it computes every metric in <code>Output.yaml</code> for
-each</li>
+about, e.g. <code>"DO_gramsPerCubicMeter"</code>. It takes longer to
+run, because it computes every metric in <code>Output.yaml</code> at
+each step.</li>
 </ul>
 <div class="section level4">
 <h4 id="one-at-a-time-run_sensitivity">5.3.1 One-at-a-time: <code>run_sensitivity()</code><a class="anchor" aria-label="anchor" href="#one-at-a-time-run_sensitivity"></a>
 </h4>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">cs_selma</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/subset.html" class="external-link">subset</a></span><span class="op">(</span><span class="va">cs_all</span>, <span class="va">model_coupled</span> <span class="op">==</span> <span class="st">"GOTM-Selmaprotbas"</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># raw mode -- no wq_config_file needed, just the model-native variable name</span></span>
 <span><span class="va">res_sens</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/run_sensitivity.html">run_sensitivity</a></span><span class="op">(</span></span>
-<span>  param_name  <span class="op">=</span> <span class="st">"kc"</span>,                       <span class="co"># light extinction coefficient</span></span>
+<span>  param_name  <span class="op">=</span> <span class="st">"nitrif_rate"</span>,              <span class="co"># nitrification rate</span></span>
 <span>  calib_setup <span class="op">=</span> <span class="va">cs_selma</span>,</span>
 <span>  yaml_file   <span class="op">=</span> <span class="st">"Output.yaml"</span>,</span>
 <span>  model_dir   <span class="op">=</span> <span class="st">"GOTM-Selmaprotbas"</span>,</span>
@@ -276,11 +296,14 @@ each</li>
 <span>  output_mode <span class="op">=</span> <span class="st">"raw"</span>,</span>
 <span>  vars        <span class="op">=</span> <span class="st">"selmaprotbas_DO_mg"</span></span>
 <span><span class="op">)</span></span></code></pre></div>
-<p><code>results[[i]]$param_value</code> gives the parameter value;
-<code>results[[i]]$output</code> (raw mode) or
-<code>results[[i]]$metrics</code> (metrics mode) gives that step’s
+<p><code>res_sens[[i]]$param_value</code> gives the parameter value of
+step <code>i</code>; <code>res_sens[[i]]$output</code> (raw mode) or
+<code>res_sens[[i]]$metrics</code> (metrics mode) gives that step’s
 result – see <code><a href="../reference/run_sensitivity.html">?run_sensitivity</a></code> for the exact nested shape of
-each.</p>
+each. Note that <code><a href="../reference/run_sensitivity.html">run_sensitivity()</a></code> leaves the model’s config
+files at the last tested value; re-run <code><a href="../reference/export_config_wq.html">export_config_wq()</a></code>
+(or reset the value) before continuing if that matters for your next
+step.</p>
 <div class="section level5">
 <h5 id="phytoplanktonzooplankton-group-parameters">Phytoplankton/zooplankton group parameters<a class="anchor" aria-label="anchor" href="#phytoplanktonzooplankton-group-parameters"></a>
 </h5>
@@ -290,8 +313,14 @@ multiple <code>calib_setup</code> rows with the same <code>pars</code>
 but different <code>group_name</code>. Pass <code>group_name</code> to
 target just one group; omitting it sweeps <strong>all</strong> matching
 groups’ rows with the same value, simultaneously, every iteration –
-which is rarely what you want unless that’s deliberate:</p>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+which is rarely what you want unless that’s deliberate. It also uses the
+bounds of the <em>first</em> matching row for all of them, so check
+<code>cs_selma[cs_selma$pars == "&lt;name&gt;", ]</code> first. For
+example, GOTM-Selmaprotbas has a background light extinction
+<code>kc</code> (no group) and a specific <code>kc</code> per
+phytoplankton group with bounds about ten times smaller; always pass
+<code>group_name</code> for such parameters:</p>
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">res_sens_diatoms</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/run_sensitivity.html">run_sensitivity</a></span><span class="op">(</span></span>
 <span>  param_name  <span class="op">=</span> <span class="st">"r0"</span>,</span>
 <span>  calib_setup <span class="op">=</span> <span class="va">cs_selma</span>,</span>
@@ -309,7 +338,7 @@ which is rarely what you want unless that’s deliberate:</p>
 <h4 id="joint-multi-parameter-sensitivity-run_multi_param_sensitivity">5.3.2 Joint multi-parameter sensitivity:
 <code>run_multi_param_sensitivity()</code><a class="anchor" aria-label="anchor" href="#joint-multi-parameter-sensitivity-run_multi_param_sensitivity"></a>
 </h4>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">res_multi</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/run_multi_param_sensitivity.html">run_multi_param_sensitivity</a></span><span class="op">(</span></span>
 <span>  <span class="co"># param_names left NULL -&gt; uses every row of cs_selma$pars in the table</span></span>
 <span>  calib_setup <span class="op">=</span> <span class="va">cs_selma</span>,</span>
@@ -338,9 +367,9 @@ shaded band for the 5-95% range across them, and the median. A thin band
 means the parameter has little effect on this variable and is a poor
 calibration candidate. <code><a href="../reference/sensitivity_to_long.html">sensitivity_to_long()</a></code> returns the
 same data as a tidy data frame if you want to make your own plot.</p>
-<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/plot_sensitivity.html">plot_sensitivity</a></span><span class="op">(</span><span class="va">res_sens_diatoms</span>, depth <span class="op">=</span> <span class="fl">5</span>, ylab <span class="op">=</span> <span class="st">"DO (mg/m3)"</span>,</span>
-<span>                 title <span class="op">=</span> <span class="st">"Sensitivity envelope: kc -&gt; DO at 5 m"</span><span class="op">)</span></span>
+<span>                 title <span class="op">=</span> <span class="st">"Sensitivity envelope: diatom r0 -&gt; DO at 5 m"</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">long</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/sensitivity_to_long.html">sensitivity_to_long</a></span><span class="op">(</span><span class="va">res_sens_diatoms</span>, depth <span class="op">=</span> <span class="fl">5</span><span class="op">)</span></span></code></pre></div>
 </div>
@@ -355,7 +384,7 @@ runs the model, and scores it. If <code>obs_file</code> is supplied it
 returns a long-format data frame (one row per iteration x observed
 variable) with NSE/RMSE/NRMSE/PBIAS/KGE; otherwise it is
 <code><a href="../reference/cal_metrics.html">cal_metrics()</a></code>-derived metrics only.</p>
-<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">cs_glm</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/subset.html" class="external-link">subset</a></span><span class="op">(</span><span class="va">cs_all</span>, <span class="va">model_coupled</span> <span class="op">==</span> <span class="st">"GLM-AED2"</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">param_glm</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/unique.html" class="external-link">unique</a></span><span class="op">(</span><span class="va">cs_glm</span><span class="op">$</span><span class="va">pars</span><span class="op">)</span></span>
@@ -368,6 +397,7 @@ variable) with NSE/RMSE/NRMSE/PBIAS/KGE; otherwise it is
 <span>  n_samples      <span class="op">=</span> <span class="fl">10</span>,</span>
 <span>  wq_config_file <span class="op">=</span> <span class="st">"LakeEnsemblR_WQ.yaml"</span>,</span>
 <span>  obs_file       <span class="op">=</span> <span class="st">"standart_observed_data.csv"</span>,   <span class="co"># datetime, depth, variable_global_name, value</span></span>
+<span>  target_variables <span class="op">=</span> <span class="st">"DO_gramsPerCubicMeter"</span>,        <span class="co"># score only these observed variables</span></span>
 <span>  best_metric    <span class="op">=</span> <span class="st">"KGE"</span>,</span>
 <span>  verbose        <span class="op">=</span> <span class="cn">TRUE</span></span>
 <span><span class="op">)</span></span>
@@ -389,7 +419,7 @@ seeded from the best LHC results. When DE is used,
 DE’s refined optimum (DE improves on the LHC seed) – the original
 LHC-phase best is still available under
 <code>attr(res_glm, "lhc_best_parameter_set")</code> for comparison.</p>
-<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span>    <span class="va">res</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/calib_wq.html">calib_wq</a></span><span class="op">(</span></span>
 <span>        model          <span class="op">=</span> <span class="st">"GLM-AED2"</span>,</span>
 <span>        param_names    <span class="op">=</span> <span class="va">param_glm</span>,</span>
@@ -429,7 +459,7 @@ with <code>write_target = "config"</code>). Re-run
 <code><a href="../reference/export_config_wq.html">export_config_wq()</a></code> afterward if you need those values
 pushed all the way into the model folders for a final verification
 run.</p>
-<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/write_best_calib_to_par_files.html">write_best_calib_to_par_files</a></span><span class="op">(</span></span>
 <span>  lhc_results  <span class="op">=</span> <span class="va">res</span>,</span>
 <span>  calib_setup  <span class="op">=</span> <span class="va">cs_glm</span>,</span>
@@ -439,7 +469,7 @@ run.</p>
 <span>  write_target <span class="op">=</span> <span class="st">"config"</span></span>
 <span><span class="op">)</span></span></code></pre></div>
 <p>Re-run the model so output.nc reflects those parameters</p>
-<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/run_ensemble_wq.html">run_ensemble_wq</a></span><span class="op">(</span></span>
 <span>  config_file <span class="op">=</span> <span class="st">"LakeEnsemblR_WQ.yaml"</span>,</span>
 <span>  models <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"GLM-AED2"</span><span class="op">)</span>,</span>
@@ -456,24 +486,28 @@ run.</p>
 the combined <code>cs_all</code> table (split automatically by
 <code>model_coupled</code>) and it runs, scores, and optionally writes
 back the best parameters for every model in one call.</p>
-<p>By default the four models run sequentially. Since each model has its
-own <code>model_dir</code>, they can safely run
-<strong>concurrently</strong> instead, one worker process per model:
-Start with small number of iterations to see if the models run
-successfully, then increase the number of iterations and workers for a
-full calibration run.</p>
-<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span></span>
-<span><span class="va">result_all</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/cali_ensemble_wq.html">cali_ensemble_wq</a></span><span class="op">(</span></span>
-<span>  models          <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"GOTM-Selmaprotbas"</span><span class="op">)</span>,</span>
+<p>By default the models run sequentially. Since each model has its own
+<code>model_dir</code>, they can also run <strong>concurrently</strong>,
+one worker process per model (<code>parallel_models = TRUE</code>, see
+below).</p>
+<p>Start with a small number of samples to check that the models run
+successfully, then increase the number of samples and workers for a full
+calibration run (e.g. <code>n_samples = 300</code>). The example below
+calibrates the two models with parameters selected in Section 5.1; add
+the others to <code>models</code> once parameters are selected for
+them.</p>
+<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">result_all</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/cali_ensemble_wq.html">cali_ensemble_wq</a></span><span class="op">(</span></span>
+<span>  models          <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"GLM-AED2"</span>, <span class="st">"GOTM-Selmaprotbas"</span><span class="op">)</span>,</span>
 <span>  calib_setup     <span class="op">=</span> <span class="va">cs_all</span>,</span>
 <span>  yaml_file       <span class="op">=</span> <span class="st">"Output.yaml"</span>,</span>
 <span>  folder          <span class="op">=</span> <span class="st">"."</span>,</span>
-<span>  n_samples       <span class="op">=</span> <span class="fl">300</span>,</span>
+<span>  n_samples       <span class="op">=</span> <span class="fl">8</span>,</span>
 <span>  obs_file        <span class="op">=</span> <span class="st">"standart_observed_data.csv"</span>,</span>
 <span>  wq_config_file  <span class="op">=</span> <span class="st">"LakeEnsemblR_WQ.yaml"</span>,</span>
 <span>  ler_config_file <span class="op">=</span> <span class="st">"LakeEnsemblR.yaml"</span>,</span>
 <span>  best_metric     <span class="op">=</span> <span class="st">"KGE"</span>,</span>
+<span>  target_variables <span class="op">=</span> <span class="st">"DO_gramsPerCubicMeter"</span>,</span>
 <span>  parallel        <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  force_parallel_glm_simstrat <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  parallel_models <span class="op">=</span> <span class="cn">FALSE</span>,</span>
@@ -515,7 +549,7 @@ list (Section 4) and the NetCDF file from
 <code><a href="../reference/cal_metrics.html">cal_metrics()</a></code> directly and line-plots one metric across all
 coupled models (auto-detecting the depth/value columns from that
 structure).</p>
-<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">metric_out</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/cal_metrics.html">cal_metrics</a></span><span class="op">(</span></span>
 <span>  metric_yaml_file <span class="op">=</span> <span class="st">"Output.yaml"</span>,</span>
 <span>  model_filter <span class="op">=</span> <span class="st">"all"</span>,</span>
@@ -536,7 +570,7 @@ structure).</p>
 <code><a href="../reference/cal_metrics.html">cal_metrics()</a></code> list (or a NetCDF path) and produces three
 plots per model: stratification duration, onset day of year, and mixing
 onset day of year.</p>
-<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">strat</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/plot_strat_metrics.html">plot_strat_metrics</a></span><span class="op">(</span><span class="va">metric_out</span>, metric_name <span class="op">=</span> <span class="st">"Duration_of_Stratification"</span><span class="op">)</span></span>
 <span><span class="va">strat</span><span class="op">$</span><span class="va">duration_plot</span></span>
 <span><span class="va">strat</span><span class="op">$</span><span class="va">onset_plot</span></span>
@@ -553,7 +587,7 @@ for any metric name present in <code>Output.yaml</code>
 (e.g. <code>DO_gramsPerCubicMeter</code>,
 <code>NH4_gramsPerCubicMeter</code>, <code>TP_gramsPerCubicMeter</code>,
 <code>Total_Chla_miligramsPerCubicMeter</code>).</p>
-<div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/create_netcdf_output.html">create_netcdf_output</a></span><span class="op">(</span></span>
 <span>  output_lists    <span class="op">=</span> <span class="va">metric_out</span>,</span>
 <span>  folder          <span class="op">=</span> <span class="st">"."</span>,</span>
@@ -570,75 +604,72 @@ for any metric name present in <code>Output.yaml</code>
 </h3>
 <p><code><a href="../reference/plot_anoxic_metrics.html">plot_anoxic_metrics()</a></code> and
 <code><a href="../reference/plot_ice_metrics.html">plot_ice_metrics()</a></code> follow the same flexible input as
-<code><a href="../reference/plot_strat_metrics.html">plot_strat_metrics()</a></code> (7.2) – a <code><a href="../reference/cal_metrics.html">cal_metrics()</a></code>
+<code><a href="../reference/plot_strat_metrics.html">plot_strat_metrics()</a></code> (6.2) – a <code><a href="../reference/cal_metrics.html">cal_metrics()</a></code>
 list or a NetCDF path – and plot their respective derived metrics per
 model per year.</p>
-<div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb21"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/plot_anoxic_metrics.html">plot_anoxic_metrics</a></span><span class="op">(</span><span class="st">"output/ensemble_output.nc"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="../reference/plot_ice_metrics.html">plot_ice_metrics</a></span><span class="op">(</span><span class="st">"output/ensemble_output.nc"</span>, metric_name <span class="op">=</span> <span class="st">"Ice_Thickness_meter"</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level3">
-<h3 id="plot-the-best-parameters-main-config-folder">6.5 Plot the best parameters (main config folder)<a class="anchor" aria-label="anchor" href="#plot-the-best-parameters-main-config-folder"></a>
+<h3 id="simulated-vs-observed-all-models-together">6.5 Simulated vs observed, all models together<a class="anchor" aria-label="anchor" href="#simulated-vs-observed-all-models-together"></a>
 </h3>
-<p>You can check the dictionary for the global variable name of the
-observed data, and use it to plot the model vs observed data. The
-variable_global_name should match the variable_global_name column in the
-observed data file.</p>
-<div class="sourceCode" id="cb21"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">result</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/plot_model_vs_obs_wq.html">plot_model_vs_obs_wq</a></span><span class="op">(</span></span>
-<span>    config_file           <span class="op">=</span> <span class="st">"Output.yaml"</span>,</span>
-<span>    model                 <span class="op">=</span> <span class="st">"GLM-AED2"</span>,</span>
-<span>    vars                  <span class="op">=</span> <span class="st">"temp"</span>,              <span class="co"># GLM-native variable name</span></span>
-<span>    obs_data              <span class="op">=</span> <span class="st">"standart_observed_data.csv"</span>,</span>
-<span>    variable_global_name  <span class="op">=</span> <span class="st">"Temp_degreeCelcius"</span>, <span class="co"># matches obs_data's variable_global_name column</span></span>
-<span>    y_title               <span class="op">=</span> <span class="st">"DO (mmol/m3)"</span></span>
+<p><code><a href="../reference/plot_model_vs_obs_wq.html">plot_model_vs_obs_wq()</a></code> plots one or more models against
+the observations, one facet per observed depth, and returns the plot
+(<code>$plot</code>), the matched data (<code>$data</code>) and
+goodness-of-fit statistics per model and depth (<code>$stats</code>:
+NSE, RMSE, NRMSE, PBIAS, KGE). <code>variable_global_name</code> must
+match the <code>variable_global_name</code> column of the observed data.
+The model-native variable is looked up in the metrics dictionary for
+each model, so <code>vars</code> can be left out when plotting several
+models.</p>
+<p>Each observed depth gets its own facet, so select a few depths first
+when the observations are dense (as for temperature and oxygen in the
+example data). The returned plot is a regular ggplot object and can be
+modified, e.g. to shorten the date labels.</p>
+<div class="sourceCode" id="cb22"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">models</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"GLM-AED2"</span>, <span class="st">"GOTM-WET"</span>, <span class="st">"GOTM-Selmaprotbas"</span>, <span class="st">"Simstrat-AED2"</span><span class="op">)</span></span>
+<span><span class="va">obs</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/utils/read.table.html" class="external-link">read.csv</a></span><span class="op">(</span><span class="st">"standart_observed_data.csv"</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Water temperature at three depths</span></span>
+<span><span class="va">temp</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/plot_model_vs_obs_wq.html">plot_model_vs_obs_wq</a></span><span class="op">(</span></span>
+<span>  config_file          <span class="op">=</span> <span class="st">"Output.yaml"</span>,</span>
+<span>  model                <span class="op">=</span> <span class="va">models</span>,</span>
+<span>  obs_data             <span class="op">=</span> <span class="va">obs</span><span class="op">[</span><span class="va">obs</span><span class="op">$</span><span class="va">depth</span> <span class="op"><a href="https://rdrr.io/r/base/match.html" class="external-link">%in%</a></span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">10</span>, <span class="fl">20</span><span class="op">)</span>, <span class="op">]</span>,</span>
+<span>  variable_global_name <span class="op">=</span> <span class="st">"Temp_degreeCelcius"</span>,</span>
+<span>  y_title              <span class="op">=</span> <span class="st">"Temperature (degC)"</span>,</span>
+<span>  wq_config_file       <span class="op">=</span> <span class="st">"LakeEnsemblR_WQ.yaml"</span></span>
 <span><span class="op">)</span></span>
+<span><span class="va">temp</span><span class="op">$</span><span class="va">plot</span> <span class="op">+</span> <span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/scale_date.html" class="external-link">scale_x_datetime</a></span><span class="op">(</span>date_labels <span class="op">=</span> <span class="st">"%b"</span><span class="op">)</span></span>
+<span><span class="va">temp</span><span class="op">$</span><span class="va">stats</span></span>
 <span></span>
-<span><span class="va">result</span><span class="op">$</span><span class="va">plot</span></span>
-<span><span class="va">result</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/plot_model_vs_obs_wq.html">plot_model_vs_obs_wq</a></span><span class="op">(</span></span>
-<span>    config_file           <span class="op">=</span> <span class="st">"Output.yaml"</span>,</span>
-<span>    model                 <span class="op">=</span> <span class="st">"GLM-AED2"</span>,</span>
-<span>    vars                  <span class="op">=</span> <span class="st">"OXY_oxy"</span>,              <span class="co"># GLM-native variable name</span></span>
-<span>    obs_data              <span class="op">=</span> <span class="st">"standart_observed_data.csv"</span>,</span>
-<span>    variable_global_name  <span class="op">=</span> <span class="st">"DO_gramsPerCubicMeter"</span>, <span class="co"># matches obs_data's variable_global_name column</span></span>
-<span>    y_title               <span class="op">=</span> <span class="st">"DO (g/m3)"</span></span>
+<span><span class="co"># Dissolved oxygen at the same depths</span></span>
+<span><span class="va">do</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/plot_model_vs_obs_wq.html">plot_model_vs_obs_wq</a></span><span class="op">(</span></span>
+<span>  config_file          <span class="op">=</span> <span class="st">"Output.yaml"</span>,</span>
+<span>  model                <span class="op">=</span> <span class="va">models</span>,</span>
+<span>  obs_data             <span class="op">=</span> <span class="va">obs</span><span class="op">[</span><span class="va">obs</span><span class="op">$</span><span class="va">depth</span> <span class="op"><a href="https://rdrr.io/r/base/match.html" class="external-link">%in%</a></span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">10</span>, <span class="fl">20</span><span class="op">)</span>, <span class="op">]</span>,</span>
+<span>  variable_global_name <span class="op">=</span> <span class="st">"DO_gramsPerCubicMeter"</span>,</span>
+<span>  y_title              <span class="op">=</span> <span class="st">"DO (g/m3)"</span>,</span>
+<span>  wq_config_file       <span class="op">=</span> <span class="st">"LakeEnsemblR_WQ.yaml"</span></span>
 <span><span class="op">)</span></span>
-<span><span class="va">result</span><span class="op">$</span><span class="va">plot</span></span>
-<span><span class="co"># vars can be omitted -- it's then auto-derived from the metrics dictionary</span></span>
-<span><span class="co"># using model + variable_global_name, which also works for the other coupled</span></span>
-<span><span class="co"># models (not just GLM-AED2).</span></span>
-<span><span class="va">result</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/plot_model_vs_obs_wq.html">plot_model_vs_obs_wq</a></span><span class="op">(</span></span>
-<span>    config_file           <span class="op">=</span> <span class="st">"Output.yaml"</span>,</span>
-<span>    model                 <span class="op">=</span> <span class="st">"GOTM-Selmaprotbas"</span>,</span>
-<span>    obs_data              <span class="op">=</span> <span class="st">"standart_observed_data.csv"</span>,</span>
-<span>    variable_global_name  <span class="op">=</span> <span class="st">"Total_Chla_miligramsPerCubicMeter"</span>, <span class="co"># matches obs_data's variable_global_name column</span></span>
-<span>    y_title               <span class="op">=</span> <span class="st">"Chl-a (mg/m3)"</span></span>
+<span><span class="va">do</span><span class="op">$</span><span class="va">plot</span> <span class="op">+</span> <span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/scale_date.html" class="external-link">scale_x_datetime</a></span><span class="op">(</span>date_labels <span class="op">=</span> <span class="st">"%b"</span><span class="op">)</span></span>
+<span><span class="va">do</span><span class="op">$</span><span class="va">stats</span></span>
+<span></span>
+<span><span class="co"># Total chlorophyll a (observed at 5 and 13 m in the example)</span></span>
+<span><span class="va">chla</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/plot_model_vs_obs_wq.html">plot_model_vs_obs_wq</a></span><span class="op">(</span></span>
+<span>  config_file          <span class="op">=</span> <span class="st">"Output.yaml"</span>,</span>
+<span>  model                <span class="op">=</span> <span class="va">models</span>,</span>
+<span>  obs_data             <span class="op">=</span> <span class="va">obs</span>,</span>
+<span>  variable_global_name <span class="op">=</span> <span class="st">"Total_Chla_miligramsPerCubicMeter"</span>,</span>
+<span>  y_title              <span class="op">=</span> <span class="st">"Chl-a (mg/m3)"</span>,</span>
+<span>  wq_config_file       <span class="op">=</span> <span class="st">"LakeEnsemblR_WQ.yaml"</span></span>
 <span><span class="op">)</span></span>
-<span></span>
-<span><span class="va">result</span><span class="op">$</span><span class="va">plot</span></span>
-<span></span>
-<span></span>
-<span></span>
-<span><span class="va">result</span><span class="op">$</span><span class="va">plot</span></span>
-<span><span class="va">result</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/plot_model_vs_obs_wq.html">plot_model_vs_obs_wq</a></span><span class="op">(</span></span>
-<span>    config_file           <span class="op">=</span> <span class="st">"Output.yaml"</span>,</span>
-<span>    model                 <span class="op">=</span> <span class="st">"GOTM-SELMAPROTBAS"</span>,</span>
-<span>   <span class="co"># vars                  = "OXY_oxy",              # GLM-native variable name</span></span>
-<span>    obs_data              <span class="op">=</span> <span class="st">"standart_observed_data.csv"</span>,</span>
-<span>    variable_global_name  <span class="op">=</span> <span class="st">"DO_gramsPerCubicMeter"</span>, <span class="co"># matches obs_data's variable_global_name column</span></span>
-<span>    y_title               <span class="op">=</span> <span class="st">"DO (g/m3)"</span></span>
-<span><span class="op">)</span></span>
-<span><span class="va">result</span><span class="op">$</span><span class="va">plot</span></span>
-<span></span>
-<span><span class="va">result</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/plot_model_vs_obs_wq.html">plot_model_vs_obs_wq</a></span><span class="op">(</span></span>
-<span>    config_file           <span class="op">=</span> <span class="st">"Output.yaml"</span>,</span>
-<span>    model                 <span class="op">=</span> <span class="st">"GOTM-WET"</span>,</span>
-<span>    obs_data              <span class="op">=</span> <span class="st">"standart_observed_data.csv"</span>,</span>
-<span>    variable_global_name  <span class="op">=</span> <span class="st">"Total_Chla_miligramsPerCubicMeter"</span>, <span class="co"># matches obs_data's variable_global_name column</span></span>
-<span>    y_title               <span class="op">=</span> <span class="st">"Chl-a (mg/m3)"</span></span>
-<span><span class="op">)</span></span>
-<span></span>
-<span><span class="va">result</span><span class="op">$</span><span class="va">plot</span></span></code></pre></div>
+<span><span class="va">chla</span><span class="op">$</span><span class="va">plot</span> <span class="op">+</span> <span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/scale_date.html" class="external-link">scale_x_datetime</a></span><span class="op">(</span>date_labels <span class="op">=</span> <span class="st">"%b"</span><span class="op">)</span></span>
+<span><span class="va">chla</span><span class="op">$</span><span class="va">stats</span></span></code></pre></div>
+<p>With a single model, the facet labels also show that model’s KGE and
+RMSE per depth. <code>vars</code> can then be given explicitly to plot
+any model-native variable,
+e.g. <code>model = "GLM-AED2", vars = "OXY_oxy"</code>.</p>
 </div>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

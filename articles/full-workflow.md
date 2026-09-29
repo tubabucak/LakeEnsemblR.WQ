@@ -9,9 +9,8 @@ This vignette provides an end-to-end workflow for LakeEnsemblR.WQ:
 3.  Run model ensembles.
 4.  Compute harmonized metrics.
 5.  Prepare a calibration setup, run sensitivity analysis on it to
-    identify which parameters actually matter before spending compute
-    calibrating them, then calibrate – single-model LHC, optional DE
-    refinement, writing best parameters back, and calibrating all
+    identify which parameters are important – single-model LHC, optional
+    DE refinement, writing best parameters back, and calibrating all
     coupled models at once (sequentially or concurrently) with
     [`cali_ensemble_wq()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/cali_ensemble_wq.md).
 6.  Compare and visualize model outputs against each other and
@@ -30,10 +29,18 @@ This vignette provides an end-to-end workflow for LakeEnsemblR.WQ:
 - For calibration against observations (Section 5): an observed-data CSV
   with columns `datetime`, `depth`, `variable_global_name`, `value`.
 
+To follow along without your own data, copy the bundled example – one
+year (1995) of Lake Mendota with configuration files for all four models
+and observed temperature, oxygen, nutrients and chlorophyll – and work
+inside it. All code below then runs as written.
+
 ``` r
 
-library(LakeEnsemblR)
+library(LakeEnsemblR)   # export_config() needs LakeEnsemblR attached
 library(LakeEnsemblR.WQ)
+
+ex <- lerwq_example()   # copies the example to a temporary folder
+setwd(ex)
 ```
 
 ## 1) Export WQ configuration and inputs
@@ -58,8 +65,8 @@ config files for errors.
 
 validate_glm_aed(sim_folder = "GLM-AED2", file = "glm3.nml", verbose = TRUE)
 validate_gotm_wet(sim_folder = "GOTM-WET", file = "gotm.yaml", verbose = TRUE)
-validate_gotm_wet(sim_folder = "GOTM-SELMAPROTBAS", file = "gotm.yaml", verbose = TRUE)
-validate_simstrat(sim_folder = "SIMSTRAT-AED2", file = "simstrat.par", verbose = TRUE)
+validate_gotm_wet(sim_folder = "GOTM-Selmaprotbas", file = "gotm.yaml", verbose = TRUE)
+validate_simstrat(sim_folder = "Simstrat-AED2", file = "simstrat.par", verbose = TRUE)
 ```
 
 [`run_ensemble_wq()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/run_ensemble_wq.md)
@@ -70,13 +77,16 @@ run.
 
 ## 3) Run ensemble simulations
 
-### This function runs the ensemble of models with current configurations, and returns a list of run results. It also validates the model setups before running the models.
+[`run_ensemble_wq()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/run_ensemble_wq.md)
+runs the selected models with their current configuration and returns a
+list of run results. With `validate = TRUE` it validates each model
+setup first and skips models that fail.
 
 ``` r
 
 run_res <- run_ensemble_wq(
   config_file = "LakeEnsemblR_WQ.yaml",
-  models = c("GLM-AED2", "GOTM-WET", "GOTM-Selmaprotbas", "SIMSTRAT-AED2"),
+  models = c("GLM-AED2", "GOTM-WET", "GOTM-Selmaprotbas", "Simstrat-AED2"),
   folder = ".",
   validate = TRUE,
   verbose = TRUE
@@ -128,13 +138,32 @@ create_calibration_tables(
   folder = ".",
   config_file = "LakeEnsemblR_WQ.yaml",
   folder_out = "calibration",
-  models_coupled = c("GLM-AED2", "GOTM-WET", "GOTM-Selmaprotbas", "SIMSTRAT-AED2"),
+  models_coupled = c("GLM-AED2", "GOTM-WET", "GOTM-Selmaprotbas", "Simstrat-AED2"),
   bounds_factor = 0.2
 )
 ```
 
-Edit module files in the calibration folder: - set include = TRUE for
-selected parameters - adjust lower, upper, and initial as needed
+Edit module files in the calibration folder:
+
+- set include = TRUE for selected parameters
+- adjust lower, upper, and initial as needed
+
+With the example data, the parameters used in the rest of this vignette
+can be selected in code instead of by hand:
+
+``` r
+
+for (f in list.files("calibration", pattern = "^calibration_.*\\.csv$", full.names = TRUE)) {
+  if (grepl("master", f)) next
+  tab <- read.csv(f)
+  sel <- (tab$model_coupled == "GOTM-Selmaprotbas" & tab$parameter %in% c("nitrif_rate", "r0")) |
+         (tab$model_coupled == "GLM-AED2" & tab$parameter %in% c("Fsed_oxy", "Ksed_oxy"))
+  if (any(sel)) {
+    tab$include[sel] <- TRUE
+    write.csv(tab, f, row.names = FALSE)
+  }
+}
+```
 
 ### 5.2 Build calib_setup from edited tables
 
@@ -142,7 +171,7 @@ selected parameters - adjust lower, upper, and initial as needed
 
 cs_all <- calib_setup_from_tables(
   folder_in = "calibration",
-  model_coupled = c("GLM-AED2", "GOTM-WET", "GOTM-Selmaprotbas", "SIMSTRAT-AED2")
+  model_coupled = c("GLM-AED2", "GOTM-WET", "GOTM-Selmaprotbas", "Simstrat-AED2")
 )
 ```
 
@@ -183,9 +212,9 @@ Both support two output modes:
   [`cal_metrics()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/cal_metrics.md)
   at each step, same as calibration/Section 4. Requires `wq_config_file`
   and a `target_variable` (optional) naming which metric(s) in
-  `Output.yaml` you care about, e.g. `"DO_gramsPerCubicMeter"`. But it
-  takes longer to run because it computes every metric in `Output.yaml`
-  for each
+  `Output.yaml` you care about, e.g. `"DO_gramsPerCubicMeter"`. It takes
+  longer to run, because it computes every metric in `Output.yaml` at
+  each step.
 
 #### 5.3.1 One-at-a-time: `run_sensitivity()`
 
@@ -195,7 +224,7 @@ cs_selma <- subset(cs_all, model_coupled == "GOTM-Selmaprotbas")
 
 # raw mode -- no wq_config_file needed, just the model-native variable name
 res_sens <- run_sensitivity(
-  param_name  = "kc",                       # light extinction coefficient
+  param_name  = "nitrif_rate",              # nitrification rate
   calib_setup = cs_selma,
   yaml_file   = "Output.yaml",
   model_dir   = "GOTM-Selmaprotbas",
@@ -206,11 +235,16 @@ res_sens <- run_sensitivity(
 )
 ```
 
-`results[[i]]$param_value` gives the parameter value;
-`results[[i]]$output` (raw mode) or `results[[i]]$metrics` (metrics
+`res_sens[[i]]$param_value` gives the parameter value of step `i`;
+`res_sens[[i]]$output` (raw mode) or `res_sens[[i]]$metrics` (metrics
 mode) gives that step’s result – see
 [`?run_sensitivity`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/run_sensitivity.md)
-for the exact nested shape of each.
+for the exact nested shape of each. Note that
+[`run_sensitivity()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/run_sensitivity.md)
+leaves the model’s config files at the last tested value; re-run
+[`export_config_wq()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/export_config_wq.md)
+(or reset the value) before continuing if that matters for your next
+step.
 
 ##### Phytoplankton/zooplankton group parameters
 
@@ -219,7 +253,12 @@ Parameters shared by multiple groups (e.g. `r0`, present in both
 the same `pars` but different `group_name`. Pass `group_name` to target
 just one group; omitting it sweeps **all** matching groups’ rows with
 the same value, simultaneously, every iteration – which is rarely what
-you want unless that’s deliberate:
+you want unless that’s deliberate. It also uses the bounds of the
+*first* matching row for all of them, so check
+`cs_selma[cs_selma$pars == "<name>", ]` first. For example,
+GOTM-Selmaprotbas has a background light extinction `kc` (no group) and
+a specific `kc` per phytoplankton group with bounds about ten times
+smaller; always pass `group_name` for such parameters:
 
 ``` r
 
@@ -274,7 +313,7 @@ plot.
 ``` r
 
 plot_sensitivity(res_sens_diatoms, depth = 5, ylab = "DO (mg/m3)",
-                 title = "Sensitivity envelope: kc -> DO at 5 m")
+                 title = "Sensitivity envelope: diatom r0 -> DO at 5 m")
 
 long <- sensitivity_to_long(res_sens_diatoms, depth = 5)
 ```
@@ -305,6 +344,7 @@ res_glm <- calib_wq(
   n_samples      = 10,
   wq_config_file = "LakeEnsemblR_WQ.yaml",
   obs_file       = "standart_observed_data.csv",   # datetime, depth, variable_global_name, value
+  target_variables = "DO_gramsPerCubicMeter",        # score only these observed variables
   best_metric    = "KGE",
   verbose        = TRUE
 )
@@ -401,25 +441,29 @@ pass it the full `models` vector and the combined `cs_all` table (split
 automatically by `model_coupled`) and it runs, scores, and optionally
 writes back the best parameters for every model in one call.
 
-By default the four models run sequentially. Since each model has its
-own `model_dir`, they can safely run **concurrently** instead, one
-worker process per model: Start with small number of iterations to see
-if the models run successfully, then increase the number of iterations
-and workers for a full calibration run.
+By default the models run sequentially. Since each model has its own
+`model_dir`, they can also run **concurrently**, one worker process per
+model (`parallel_models = TRUE`, see below).
+
+Start with a small number of samples to check that the models run
+successfully, then increase the number of samples and workers for a full
+calibration run (e.g. `n_samples = 300`). The example below calibrates
+the two models with parameters selected in Section 5.1; add the others
+to `models` once parameters are selected for them.
 
 ``` r
 
-
 result_all <- cali_ensemble_wq(
-  models          = c("GOTM-Selmaprotbas"),
+  models          = c("GLM-AED2", "GOTM-Selmaprotbas"),
   calib_setup     = cs_all,
   yaml_file       = "Output.yaml",
   folder          = ".",
-  n_samples       = 300,
+  n_samples       = 8,
   obs_file        = "standart_observed_data.csv",
   wq_config_file  = "LakeEnsemblR_WQ.yaml",
   ler_config_file = "LakeEnsemblR.yaml",
   best_metric     = "KGE",
+  target_variables = "DO_gramsPerCubicMeter",
   parallel        = TRUE,
   force_parallel_glm_simstrat = TRUE,
   parallel_models = FALSE,
@@ -529,7 +573,7 @@ and
 [`plot_ice_metrics()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/plot_ice_metrics.md)
 follow the same flexible input as
 [`plot_strat_metrics()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/plot_strat_metrics.md)
-(7.2) – a
+(6.2) – a
 [`cal_metrics()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/cal_metrics.md)
 list or a NetCDF path – and plot their respective derived metrics per
 model per year.
@@ -540,67 +584,64 @@ plot_anoxic_metrics("output/ensemble_output.nc")
 plot_ice_metrics("output/ensemble_output.nc", metric_name = "Ice_Thickness_meter")
 ```
 
-### 6.5 Plot the best parameters (main config folder)
+### 6.5 Simulated vs observed, all models together
 
-You can check the dictionary for the global variable name of the
-observed data, and use it to plot the model vs observed data. The
-variable_global_name should match the variable_global_name column in the
-observed data file.
+[`plot_model_vs_obs_wq()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/plot_model_vs_obs_wq.md)
+plots one or more models against the observations, one facet per
+observed depth, and returns the plot (`$plot`), the matched data
+(`$data`) and goodness-of-fit statistics per model and depth (`$stats`:
+NSE, RMSE, NRMSE, PBIAS, KGE). `variable_global_name` must match the
+`variable_global_name` column of the observed data. The model-native
+variable is looked up in the metrics dictionary for each model, so
+`vars` can be left out when plotting several models.
+
+Each observed depth gets its own facet, so select a few depths first
+when the observations are dense (as for temperature and oxygen in the
+example data). The returned plot is a regular ggplot object and can be
+modified, e.g. to shorten the date labels.
 
 ``` r
 
-result <- plot_model_vs_obs_wq(
-    config_file           = "Output.yaml",
-    model                 = "GLM-AED2",
-    vars                  = "temp",              # GLM-native variable name
-    obs_data              = "standart_observed_data.csv",
-    variable_global_name  = "Temp_degreeCelcius", # matches obs_data's variable_global_name column
-    y_title               = "DO (mmol/m3)"
+models <- c("GLM-AED2", "GOTM-WET", "GOTM-Selmaprotbas", "Simstrat-AED2")
+obs <- read.csv("standart_observed_data.csv")
+
+# Water temperature at three depths
+temp <- plot_model_vs_obs_wq(
+  config_file          = "Output.yaml",
+  model                = models,
+  obs_data             = obs[obs$depth %in% c(1, 10, 20), ],
+  variable_global_name = "Temp_degreeCelcius",
+  y_title              = "Temperature (degC)",
+  wq_config_file       = "LakeEnsemblR_WQ.yaml"
 )
+temp$plot + ggplot2::scale_x_datetime(date_labels = "%b")
+temp$stats
 
-result$plot
-result <- plot_model_vs_obs_wq(
-    config_file           = "Output.yaml",
-    model                 = "GLM-AED2",
-    vars                  = "OXY_oxy",              # GLM-native variable name
-    obs_data              = "standart_observed_data.csv",
-    variable_global_name  = "DO_gramsPerCubicMeter", # matches obs_data's variable_global_name column
-    y_title               = "DO (g/m3)"
+# Dissolved oxygen at the same depths
+do <- plot_model_vs_obs_wq(
+  config_file          = "Output.yaml",
+  model                = models,
+  obs_data             = obs[obs$depth %in% c(1, 10, 20), ],
+  variable_global_name = "DO_gramsPerCubicMeter",
+  y_title              = "DO (g/m3)",
+  wq_config_file       = "LakeEnsemblR_WQ.yaml"
 )
-result$plot
-# vars can be omitted -- it's then auto-derived from the metrics dictionary
-# using model + variable_global_name, which also works for the other coupled
-# models (not just GLM-AED2).
-result <- plot_model_vs_obs_wq(
-    config_file           = "Output.yaml",
-    model                 = "GOTM-Selmaprotbas",
-    obs_data              = "standart_observed_data.csv",
-    variable_global_name  = "Total_Chla_miligramsPerCubicMeter", # matches obs_data's variable_global_name column
-    y_title               = "Chl-a (mg/m3)"
+do$plot + ggplot2::scale_x_datetime(date_labels = "%b")
+do$stats
+
+# Total chlorophyll a (observed at 5 and 13 m in the example)
+chla <- plot_model_vs_obs_wq(
+  config_file          = "Output.yaml",
+  model                = models,
+  obs_data             = obs,
+  variable_global_name = "Total_Chla_miligramsPerCubicMeter",
+  y_title              = "Chl-a (mg/m3)",
+  wq_config_file       = "LakeEnsemblR_WQ.yaml"
 )
-
-result$plot
-
-
-
-result$plot
-result <- plot_model_vs_obs_wq(
-    config_file           = "Output.yaml",
-    model                 = "GOTM-SELMAPROTBAS",
-   # vars                  = "OXY_oxy",              # GLM-native variable name
-    obs_data              = "standart_observed_data.csv",
-    variable_global_name  = "DO_gramsPerCubicMeter", # matches obs_data's variable_global_name column
-    y_title               = "DO (g/m3)"
-)
-result$plot
-
-result <- plot_model_vs_obs_wq(
-    config_file           = "Output.yaml",
-    model                 = "GOTM-WET",
-    obs_data              = "standart_observed_data.csv",
-    variable_global_name  = "Total_Chla_miligramsPerCubicMeter", # matches obs_data's variable_global_name column
-    y_title               = "Chl-a (mg/m3)"
-)
-
-result$plot
+chla$plot + ggplot2::scale_x_datetime(date_labels = "%b")
+chla$stats
 ```
+
+With a single model, the facet labels also show that model’s KGE and
+RMSE per depth. `vars` can then be given explicitly to plot any
+model-native variable, e.g. `model = "GLM-AED2", vars = "OXY_oxy"`.

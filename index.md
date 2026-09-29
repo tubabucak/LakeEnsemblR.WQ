@@ -1,16 +1,15 @@
 # LakeEnsemblR.WQ
 
-This package aims to facilitate the settin-up, running and calibrating
-and post-processing of the process based aquatic ecosystem models.
-harmonize, and compare water quality simulations across multiple 1D lake
-model frameworks.
+LakeEnsemblR.WQ facilitates setting up, running, calibrating and
+post-processing process-based aquatic ecosystem models, and harmonizes
+and compares water quality simulations across multiple 1D lake model
+frameworks.
 
-LakeEnsemblR.WQ is an extension of LakeEnsemblR package with a new
-framework that integrates water quality and biological modules for 1D
-process-based aquatic ecosystem models. It aims to facilitate data
-preprocessing, setup, calibration, post-processing, and also support the
-calculation of system metrics through concept, state, process, system
-framework.
+It extends the [LakeEnsemblR](https://github.com/aemon-j/LakeEnsemblR)
+package, which runs ensembles of 1D hydrodynamic lake models, with water
+quality and biological modules. It supports data preprocessing, setup,
+calibration and post-processing, and the calculation of system metrics
+through a concept, state, process, system framework.
 
 LakeEnsemblR.WQ extends LakeEnsemblR workflows with tools to:
 
@@ -32,6 +31,20 @@ Supported 1D model frameworks:
 - GOTM-Selmaprotbas
 - Simstrat-AED2
 
+**Experimental (configuration only):** PCLake and MyLake. Their
+configuration files can be generated and edited
+([`set_up_configs()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/set_up_configs.md),
+[`export_config_wq()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/export_config_wq.md),
+[`export_inputs()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/export_inputs.md),
+[`export_pclake_physics()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/export_pclake_physics.md),
+[`input_pclakeconfig()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/input_pclakeconfig.md)),
+but they cannot yet be run, calibrated or included in output comparisons
+([`run_ensemble_wq()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/run_ensemble_wq.md),
+[`calib_wq()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/calib_wq.md)
+and
+[`cal_metrics()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/cal_metrics.md)
+do not support them).
+
 ## Installation
 
 ``` r
@@ -52,14 +65,21 @@ listed in `Remotes:` in `DESCRIPTION`, so
 [`remotes::install_github()`](https://remotes.r-lib.org/reference/install_github.html)
 installs them automatically along with everything else.
 
-`MyLakeR` is a separate case: `MyLake`/`PCLake` config files are
-recognized by
-[`set_up_configs()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/set_up_configs.md),
-but neither model can actually be run or calibrated through this package
-yet
-([`run_ensemble_wq()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/run_ensemble_wq.md)/[`calib_wq()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/calib_wq.md)
-don’t support them) – `MyLakeR` is only needed if you use its bundled
-config template directly.
+`MyLakeR` is only needed for the MyLake configuration template (see the
+experimental note above): `remotes::install_github("aemon-j/MyLakeR")`.
+
+`LakeEnsemblR` is installed from
+[tubabucak/LakeEnsemblR](https://github.com/tubabucak/LakeEnsemblR),
+which supports the Simstrat version used by `SimstratR`. If you already
+have `LakeEnsemblR` from `aemon-j`, reinstall it from the fork,
+otherwise
+[`export_config()`](https://aemon-j.github.io/LakeEnsemblR/reference/export_config.html)
+fails for Simstrat:
+
+``` r
+
+remotes::install_github("tubabucak/LakeEnsemblR")
+```
 
 `glmtools` is always required, no matter which model you run. It in turn
 needs `GLM3r`, but doesn’t say where to find it – so tools that resolve
@@ -74,6 +94,40 @@ first, then install this package as normal:
 remotes::install_github("aemon-j/GLM3r@v3.3-lerwq")
 remotes::install_github("tubabucak/LakeEnsemblR.WQ")
 ```
+
+## Quick start with the example data
+
+The package ships a small example: one year (1995) of Lake Mendota
+(Wisconsin, USA) with forcing, inflow/outflow, observations and
+configuration files for all four models.
+[`lerwq_example()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/lerwq_example.md)
+copies it to a folder so you can run the whole workflow without your own
+data:
+
+``` r
+
+library(LakeEnsemblR)   # export_config() needs LakeEnsemblR attached
+library(LakeEnsemblR.WQ)
+
+ex <- lerwq_example()   # copies the example to a temporary folder
+
+export_config("LakeEnsemblR.yaml", folder = ex, model = c("GLM", "GOTM", "Simstrat"))
+export_config_wq("LakeEnsemblR_WQ.yaml", folder = ex)
+
+res <- run_ensemble_wq("LakeEnsemblR_WQ.yaml",
+                       models = c("GLM-AED2", "GOTM-WET", "GOTM-Selmaprotbas", "Simstrat-AED2"),
+                       folder = ex)
+
+old <- setwd(ex)        # Output.yaml uses paths relative to the project folder
+metrics <- cal_metrics("Output.yaml", model_filter = "all",
+                       wq_config_file = "LakeEnsemblR_WQ.yaml")
+setwd(old)
+```
+
+The help pages of the main functions
+(e.g. [`?calib_wq`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/calib_wq.md),
+[`?run_sensitivity`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/run_sensitivity.md))
+contain runnable examples based on the same data.
 
 ## Example projects
 
@@ -119,7 +173,7 @@ export_config_wq(
 # and save their outputs in the output folders of the models.
 run_res <- run_ensemble_wq(
   config_file = "LakeEnsemblR_WQ.yaml",
-  models = c("GLM-AED2", "GOTM-WET", "GOTM-Selmaprotbas", "SIMSTRAT-AED2"),
+  models = c("GLM-AED2", "GOTM-WET", "GOTM-Selmaprotbas", "Simstrat-AED2"),
   folder = ".",
   validate = TRUE,
   verbose = TRUE
@@ -139,6 +193,7 @@ metric_out <- cal_metrics(
 ## Calibration
 
 ``` r
+
 
 # Create calibration tables for all coupled models at once, with default bounds_factor = 0.2.
 create_calibration_tables(
@@ -179,7 +234,7 @@ result_all <- cali_ensemble_wq(
   wq_config_file  = "LakeEnsemblR_WQ.yaml",
   ler_config_file = "LakeEnsemblR.yaml",
   best_metric     = "KGE",
-  target_variable   = "DO_gramsPerCubicMeter",
+  target_variables = "DO_gramsPerCubicMeter",
   parallel        = TRUE,
   force_parallel_glm_simstrat = TRUE,
   verbose         = TRUE,
@@ -190,18 +245,18 @@ result_all <- cali_ensemble_wq(
   write_target    = "config"
 )
 
-`parallel_models` stacks with `parallel`/`de_parallel` (which parallelize LHC
-samples or DE evaluations *within* one model's run) -- if you turn multiple of
-these on together, size worker counts so
-`n_model_workers * n_workers` (or `* de_n_workers`) doesn't oversubscribe your
-CPU cores. Worker processes have no attached console, so with
-`parallel_models = TRUE` progress messages are written to
-`<output_dir>/cali_ensemble_wq_workers.log` instead of printing live -- tail
-that file to watch progress while it runs.
-
 result_all$summary                            # success/failure + row counts per model
 result_all$best_parameter_sets[["GLM-AED2"]]   # winning parameters for one model
 ```
+
+`parallel_models` stacks with `parallel`/`de_parallel` (which
+parallelize LHC samples or DE evaluations *within* one model’s run) – if
+you turn multiple of these on together, size worker counts so
+`n_model_workers * n_workers` (or `* de_n_workers`) doesn’t
+oversubscribe your CPU cores. Worker processes have no attached console,
+so with `parallel_models = TRUE` progress messages are written to
+`<output_dir>/cali_ensemble_wq_workers.log` instead of printing live –
+tail that file to watch progress while it runs.
 
 See the [Full
 Workflow](https://tubabucak.github.io/LakeEnsemblR.WQ/articles/full-workflow.html)
@@ -226,12 +281,12 @@ article for a field-by-field breakdown of `LakeEnsemblR_WQ.yaml` and
   - export_inputs()
   - set_up_configs()
   - set_value_config()
-- Validation and run: These functions are used to validate the
-  configuration files and input files for the water quality models
-  before running the models. If the validation fails, the function will
-  return an error message and stop the execution of the code. They are
-  included in the export_config_wq() function and can also be called
-  separately if needed.
+- Validation and run: The validation functions check the configuration
+  and input files of each model before it is run.
+  [`run_ensemble_wq()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/run_ensemble_wq.md)
+  calls them when `validate = TRUE` (the default) and skips models that
+  fail validation (or stops, with `on_error = "stop"`); they can also be
+  called separately.
   - validate_glm_aed()
   - validate_gotm_wet()
   - validate_simstrat()
@@ -283,7 +338,7 @@ Example from a typical setup:
 ## Output structure
 
 [`cal_metrics()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/cal_metrics.md)
-returns a nested list by metric and model. For each metric/model
+returns a nested list by metric, then model. For each metric/model
 combination, values are stored as data frames with `datetime` and
 depth/value columns.
 
@@ -291,7 +346,7 @@ Example access:
 
 ``` r
 
-metric_out$GLM$TP_gramsPerCubicMeter
+metric_out$TP_gramsPerCubicMeter$GLM
 ```
 
 ## Troubleshooting
@@ -314,6 +369,9 @@ function’s source, your session is likely running a stale **installed**
 copy of the package rather than your edited source – reload with
 `devtools::load_all(".")` instead of
 [`library(LakeEnsemblR.WQ)`](https://github.com/tubabucak/LakeEnsemblR.WQ).
+The parallel options (`parallel`, `de_parallel`, `parallel_models`) load
+the *installed* package on each worker, so reinstall
+(`devtools::install()`) after changing code before using them.
 
 ## Development
 

@@ -59,8 +59,8 @@
 </h1></div>
 <!-- badges: start -->
 
-<p>This package aims to facilitate the settin-up, running and calibrating and post-processing of the process based aquatic ecosystem models. harmonize, and compare water quality simulations across multiple 1D lake model frameworks.</p>
-<p>LakeEnsemblR.WQ is an extension of LakeEnsemblR package with a new framework that integrates water quality and biological modules for 1D process-based aquatic ecosystem models. It aims to facilitate data preprocessing, setup, calibration, post-processing, and also support the calculation of system metrics through concept, state, process, system framework.</p>
+<p>LakeEnsemblR.WQ facilitates setting up, running, calibrating and post-processing process-based aquatic ecosystem models, and harmonizes and compares water quality simulations across multiple 1D lake model frameworks.</p>
+<p>It extends the <a href="https://github.com/aemon-j/LakeEnsemblR" class="external-link">LakeEnsemblR</a> package, which runs ensembles of 1D hydrodynamic lake models, with water quality and biological modules. It supports data preprocessing, setup, calibration and post-processing, and the calculation of system metrics through a concept, state, process, system framework.</p>
 <p>LakeEnsemblR.WQ extends LakeEnsemblR workflows with tools to:</p>
 <ul>
 <li>Configure model-specific water quality and ecosystem dynamics settings,</li>
@@ -78,6 +78,7 @@
 <li>GOTM-Selmaprotbas</li>
 <li>Simstrat-AED2</li>
 </ul>
+<p><strong>Experimental (configuration only):</strong> PCLake and MyLake. Their configuration files can be generated and edited (<code><a href="reference/set_up_configs.html">set_up_configs()</a></code>, <code><a href="reference/export_config_wq.html">export_config_wq()</a></code>, <code><a href="reference/export_inputs.html">export_inputs()</a></code>, <code><a href="reference/export_pclake_physics.html">export_pclake_physics()</a></code>, <code><a href="reference/input_pclakeconfig.html">input_pclakeconfig()</a></code>), but they cannot yet be run, calibrated or included in output comparisons (<code><a href="reference/run_ensemble_wq.html">run_ensemble_wq()</a></code>, <code><a href="reference/calib_wq.html">calib_wq()</a></code> and <code><a href="reference/cal_metrics.html">cal_metrics()</a></code> do not support them).</p>
 <div class="section level2">
 <h2 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
 </h2>
@@ -87,11 +88,37 @@
 <span><span class="co"># organization (https://github.com/aemon-j/LakeEnsemblR.WQ) after release.</span></span>
 <span><span class="fu">remotes</span><span class="fu">::</span><span class="fu"><a href="https://remotes.r-lib.org/reference/install_github.html" class="external-link">install_github</a></span><span class="op">(</span><span class="st">"tubabucak/LakeEnsemblR.WQ"</span><span class="op">)</span></span></code></pre></div>
 <p>Some dependencies are GitHub-only wrappers around external lake model binaries: <code>GLM3r</code>, <code>WETr</code>, <code>SelmaprotbasR</code>, <code>SimstratR</code>. These are optional – you only need the one(s) matching the model(s) you actually run. If a required one is missing, <code><a href="reference/run_ensemble_wq.html">run_ensemble_wq()</a></code>/<code><a href="reference/calib_wq.html">calib_wq()</a></code> will tell you at call time rather than fail silently. All of them are listed in <code>Remotes:</code> in <code>DESCRIPTION</code>, so <code><a href="https://remotes.r-lib.org/reference/install_github.html" class="external-link">remotes::install_github()</a></code> installs them automatically along with everything else.</p>
-<p><code>MyLakeR</code> is a separate case: <code>MyLake</code>/<code>PCLake</code> config files are recognized by <code><a href="reference/set_up_configs.html">set_up_configs()</a></code>, but neither model can actually be run or calibrated through this package yet (<code><a href="reference/run_ensemble_wq.html">run_ensemble_wq()</a></code>/<code><a href="reference/calib_wq.html">calib_wq()</a></code> don’t support them) – <code>MyLakeR</code> is only needed if you use its bundled config template directly.</p>
-<p><code>glmtools</code> is always required, no matter which model you run. It in turn needs <code>GLM3r</code>, but doesn’t say where to find it – so tools that resolve dependencies automatically (<code>pak</code>, and anything built on it, like <code>devtools::install_deps()</code>/<code>build_vignettes()</code>) can fail with <code>Can't find package called GLM3r</code>, even though <code>GLM3r</code> is listed in this package’s own <code>Remotes:</code>. If that happens, install <code>GLM3r</code> yourself first, then install this package as normal:</p>
+<p><code>MyLakeR</code> is only needed for the MyLake configuration template (see the experimental note above): <code>remotes::install_github("aemon-j/MyLakeR")</code>.</p>
+<p><code>LakeEnsemblR</code> is installed from <a href="https://github.com/tubabucak/LakeEnsemblR" class="external-link">tubabucak/LakeEnsemblR</a>, which supports the Simstrat version used by <code>SimstratR</code>. If you already have <code>LakeEnsemblR</code> from <code>aemon-j</code>, reinstall it from the fork, otherwise <code><a href="https://aemon-j.github.io/LakeEnsemblR/reference/export_config.html" class="external-link">export_config()</a></code> fails for Simstrat:</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu">remotes</span><span class="fu">::</span><span class="fu"><a href="https://remotes.r-lib.org/reference/install_github.html" class="external-link">install_github</a></span><span class="op">(</span><span class="st">"tubabucak/LakeEnsemblR"</span><span class="op">)</span></span></code></pre></div>
+<p><code>glmtools</code> is always required, no matter which model you run. It in turn needs <code>GLM3r</code>, but doesn’t say where to find it – so tools that resolve dependencies automatically (<code>pak</code>, and anything built on it, like <code>devtools::install_deps()</code>/<code>build_vignettes()</code>) can fail with <code>Can't find package called GLM3r</code>, even though <code>GLM3r</code> is listed in this package’s own <code>Remotes:</code>. If that happens, install <code>GLM3r</code> yourself first, then install this package as normal:</p>
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu">remotes</span><span class="fu">::</span><span class="fu"><a href="https://remotes.r-lib.org/reference/install_github.html" class="external-link">install_github</a></span><span class="op">(</span><span class="st">"aemon-j/GLM3r@v3.3-lerwq"</span><span class="op">)</span></span>
 <span><span class="fu">remotes</span><span class="fu">::</span><span class="fu"><a href="https://remotes.r-lib.org/reference/install_github.html" class="external-link">install_github</a></span><span class="op">(</span><span class="st">"tubabucak/LakeEnsemblR.WQ"</span><span class="op">)</span></span></code></pre></div>
+</div>
+<div class="section level2">
+<h2 id="quick-start-with-the-example-data">Quick start with the example data<a class="anchor" aria-label="anchor" href="#quick-start-with-the-example-data"></a>
+</h2>
+<p>The package ships a small example: one year (1995) of Lake Mendota (Wisconsin, USA) with forcing, inflow/outflow, observations and configuration files for all four models. <code><a href="reference/lerwq_example.html">lerwq_example()</a></code> copies it to a folder so you can run the whole workflow without your own data:</p>
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/aemon-j/LakeEnsemblR" class="external-link">LakeEnsemblR</a></span><span class="op">)</span>   <span class="co"># export_config() needs LakeEnsemblR attached</span></span>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/tubabucak/LakeEnsemblR.WQ" class="external-link">LakeEnsemblR.WQ</a></span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">ex</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/lerwq_example.html">lerwq_example</a></span><span class="op">(</span><span class="op">)</span>   <span class="co"># copies the example to a temporary folder</span></span>
+<span></span>
+<span><span class="fu"><a href="https://aemon-j.github.io/LakeEnsemblR/reference/export_config.html" class="external-link">export_config</a></span><span class="op">(</span><span class="st">"LakeEnsemblR.yaml"</span>, folder <span class="op">=</span> <span class="va">ex</span>, model <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"GLM"</span>, <span class="st">"GOTM"</span>, <span class="st">"Simstrat"</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="fu"><a href="reference/export_config_wq.html">export_config_wq</a></span><span class="op">(</span><span class="st">"LakeEnsemblR_WQ.yaml"</span>, folder <span class="op">=</span> <span class="va">ex</span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">res</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/run_ensemble_wq.html">run_ensemble_wq</a></span><span class="op">(</span><span class="st">"LakeEnsemblR_WQ.yaml"</span>,</span>
+<span>                       models <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"GLM-AED2"</span>, <span class="st">"GOTM-WET"</span>, <span class="st">"GOTM-Selmaprotbas"</span>, <span class="st">"Simstrat-AED2"</span><span class="op">)</span>,</span>
+<span>                       folder <span class="op">=</span> <span class="va">ex</span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">old</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/getwd.html" class="external-link">setwd</a></span><span class="op">(</span><span class="va">ex</span><span class="op">)</span>        <span class="co"># Output.yaml uses paths relative to the project folder</span></span>
+<span><span class="va">metrics</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/cal_metrics.html">cal_metrics</a></span><span class="op">(</span><span class="st">"Output.yaml"</span>, model_filter <span class="op">=</span> <span class="st">"all"</span>,</span>
+<span>                       wq_config_file <span class="op">=</span> <span class="st">"LakeEnsemblR_WQ.yaml"</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/getwd.html" class="external-link">setwd</a></span><span class="op">(</span><span class="va">old</span><span class="op">)</span></span></code></pre></div>
+<p>The help pages of the main functions (e.g. <code><a href="reference/calib_wq.html">?calib_wq</a></code>, <code><a href="reference/run_sensitivity.html">?run_sensitivity</a></code>) contain runnable examples based on the same data.</p>
 </div>
 <div class="section level2">
 <h2 id="example-projects">Example projects<a class="anchor" aria-label="anchor" href="#example-projects"></a>
@@ -101,7 +128,7 @@
 <div class="section level2">
 <h2 id="typical-workflow">Typical workflow<a class="anchor" aria-label="anchor" href="#typical-workflow"></a>
 </h2>
-<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/aemon-j/LakeEnsemblR" class="external-link">LakeEnsemblR</a></span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># 0) Export model-specific configuration and inputs for physical setup</span></span>
@@ -134,7 +161,7 @@
 <span><span class="co"># and save their outputs in the output folders of the models.</span></span>
 <span><span class="va">run_res</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/run_ensemble_wq.html">run_ensemble_wq</a></span><span class="op">(</span></span>
 <span>  config_file <span class="op">=</span> <span class="st">"LakeEnsemblR_WQ.yaml"</span>,</span>
-<span>  models <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"GLM-AED2"</span>, <span class="st">"GOTM-WET"</span>, <span class="st">"GOTM-Selmaprotbas"</span>, <span class="st">"SIMSTRAT-AED2"</span><span class="op">)</span>,</span>
+<span>  models <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"GLM-AED2"</span>, <span class="st">"GOTM-WET"</span>, <span class="st">"GOTM-Selmaprotbas"</span>, <span class="st">"Simstrat-AED2"</span><span class="op">)</span>,</span>
 <span>  folder <span class="op">=</span> <span class="st">"."</span>,</span>
 <span>  validate <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  verbose <span class="op">=</span> <span class="cn">TRUE</span></span>
@@ -153,68 +180,61 @@
 <div class="section level2">
 <h2 id="calibration">Calibration<a class="anchor" aria-label="anchor" href="#calibration"></a>
 </h2>
-<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a></span>
-<span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a><span class="co"># Create calibration tables for all coupled models at once, with default bounds_factor = 0.2.</span></span>
-<span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a><span class="fu">create_calibration_tables</span>(</span>
-<span id="cb4-4"><a href="#cb4-4" tabindex="-1"></a>  <span class="at">folder =</span> <span class="st">"."</span>,</span>
-<span id="cb4-5"><a href="#cb4-5" tabindex="-1"></a>  <span class="at">config_file =</span> <span class="st">"LakeEnsemblR_WQ.yaml"</span>,</span>
-<span id="cb4-6"><a href="#cb4-6" tabindex="-1"></a>  <span class="at">folder_out =</span> <span class="st">"calibration"</span>,</span>
-<span id="cb4-7"><a href="#cb4-7" tabindex="-1"></a>  <span class="at">models_coupled =</span> <span class="fu">c</span>(<span class="st">"GLM-AED2"</span>, <span class="st">"GOTM-WET"</span>, <span class="st">"GOTM-Selmaprotbas"</span>, <span class="st">"Simstrat-AED2"</span>),</span>
-<span id="cb4-8"><a href="#cb4-8" tabindex="-1"></a>  <span class="at">bounds_factor =</span> <span class="fl">0.2</span></span>
-<span id="cb4-9"><a href="#cb4-9" tabindex="-1"></a>)</span>
-<span id="cb4-10"><a href="#cb4-10" tabindex="-1"></a></span>
-<span id="cb4-11"><a href="#cb4-11" tabindex="-1"></a><span class="co"># Edit the generated calibration CSVs in the "calibration" folder before continuing:</span></span>
-<span id="cb4-12"><a href="#cb4-12" tabindex="-1"></a><span class="co">#   - set include = TRUE for the parameters you want to calibrate</span></span>
-<span id="cb4-13"><a href="#cb4-13" tabindex="-1"></a><span class="co">#   - adjust lower, upper, and initial as needed -- the generated CSVs also</span></span>
-<span id="cb4-14"><a href="#cb4-14" tabindex="-1"></a><span class="co">#     include suggested min-max ranges (dict_min/dict_max) for some</span></span>
-<span id="cb4-15"><a href="#cb4-15" tabindex="-1"></a><span class="co">#     parameters as a reference; use them to inform your own bounds if useful</span></span>
-<span id="cb4-16"><a href="#cb4-16" tabindex="-1"></a><span class="co">#</span></span>
-<span id="cb4-17"><a href="#cb4-17" tabindex="-1"></a><span class="co"># Then build a calibration setup table from the edited CSVs:</span></span>
-<span id="cb4-18"><a href="#cb4-18" tabindex="-1"></a>cs_all <span class="ot">&lt;-</span> <span class="fu">calib_setup_from_tables</span>(</span>
-<span id="cb4-19"><a href="#cb4-19" tabindex="-1"></a>  <span class="at">folder_in =</span> <span class="st">"calibration"</span>,</span>
-<span id="cb4-20"><a href="#cb4-20" tabindex="-1"></a>  <span class="at">model_coupled =</span> <span class="fu">c</span>(<span class="st">"GLM-AED2"</span>, <span class="st">"GOTM-WET"</span>, <span class="st">"GOTM-Selmaprotbas"</span>, <span class="st">"Simstrat-AED2"</span>)</span>
-<span id="cb4-21"><a href="#cb4-21" tabindex="-1"></a>)</span>
-<span id="cb4-22"><a href="#cb4-22" tabindex="-1"></a></span>
-<span id="cb4-23"><a href="#cb4-23" tabindex="-1"></a><span class="co"># Calibrate all coupled models at once, with optional DE refinement and parallelism.</span></span>
-<span id="cb4-24"><a href="#cb4-24" tabindex="-1"></a>result_all <span class="ot">&lt;-</span> <span class="fu">cali_ensemble_wq</span>(</span>
-<span id="cb4-25"><a href="#cb4-25" tabindex="-1"></a>  <span class="at">models          =</span> <span class="fu">c</span>(<span class="st">"GOTM-WET"</span>, <span class="st">"GOTM-Selmaprotbas"</span>, <span class="st">"GLM-AED2"</span>, <span class="st">"Simstrat-AED2"</span>),</span>
-<span id="cb4-26"><a href="#cb4-26" tabindex="-1"></a>  <span class="at">calib_setup     =</span> cs_all,</span>
-<span id="cb4-27"><a href="#cb4-27" tabindex="-1"></a>  <span class="at">yaml_file       =</span> <span class="st">"Output.yaml"</span>,</span>
-<span id="cb4-28"><a href="#cb4-28" tabindex="-1"></a>  <span class="at">folder          =</span> <span class="st">"."</span>,</span>
-<span id="cb4-29"><a href="#cb4-29" tabindex="-1"></a>  <span class="at">n_samples       =</span> <span class="dv">16</span>,     <span class="co"># LHC seed</span></span>
-<span id="cb4-30"><a href="#cb4-30" tabindex="-1"></a>  <span class="at">use_de          =</span> <span class="cn">TRUE</span>,</span>
-<span id="cb4-31"><a href="#cb4-31" tabindex="-1"></a>  <span class="at">de_popsize      =</span> <span class="dv">12</span>,</span>
-<span id="cb4-32"><a href="#cb4-32" tabindex="-1"></a>  <span class="at">de_iterations   =</span> <span class="dv">8</span>,</span>
-<span id="cb4-33"><a href="#cb4-33" tabindex="-1"></a>  <span class="at">de_parallel     =</span> <span class="cn">TRUE</span>,   <span class="co"># &lt;- must flip this on to use de_n_workers</span></span>
-<span id="cb4-34"><a href="#cb4-34" tabindex="-1"></a>  <span class="at">de_n_workers    =</span> <span class="dv">4</span>,</span>
-<span id="cb4-35"><a href="#cb4-35" tabindex="-1"></a>  <span class="at">n_workers       =</span> <span class="dv">4</span>,</span>
-<span id="cb4-36"><a href="#cb4-36" tabindex="-1"></a>  <span class="at">parallel_models =</span> <span class="cn">FALSE</span>,   <span class="co"># keep this -- see why below</span></span>
-<span id="cb4-37"><a href="#cb4-37" tabindex="-1"></a>  <span class="at">obs_file        =</span> <span class="st">"standart_observed_data.csv"</span>,</span>
-<span id="cb4-38"><a href="#cb4-38" tabindex="-1"></a>  <span class="at">wq_config_file  =</span> <span class="st">"LakeEnsemblR_WQ.yaml"</span>,</span>
-<span id="cb4-39"><a href="#cb4-39" tabindex="-1"></a>  <span class="at">ler_config_file =</span> <span class="st">"LakeEnsemblR.yaml"</span>,</span>
-<span id="cb4-40"><a href="#cb4-40" tabindex="-1"></a>  <span class="at">best_metric     =</span> <span class="st">"KGE"</span>,</span>
-<span id="cb4-41"><a href="#cb4-41" tabindex="-1"></a>  <span class="at">target_variable   =</span> <span class="st">"DO_gramsPerCubicMeter"</span>,</span>
-<span id="cb4-42"><a href="#cb4-42" tabindex="-1"></a>  <span class="at">parallel        =</span> <span class="cn">TRUE</span>,</span>
-<span id="cb4-43"><a href="#cb4-43" tabindex="-1"></a>  <span class="at">force_parallel_glm_simstrat =</span> <span class="cn">TRUE</span>,</span>
-<span id="cb4-44"><a href="#cb4-44" tabindex="-1"></a>  <span class="at">verbose         =</span> <span class="cn">TRUE</span>,</span>
-<span id="cb4-45"><a href="#cb4-45" tabindex="-1"></a>  <span class="at">on_error        =</span> <span class="st">"skip"</span>,</span>
-<span id="cb4-46"><a href="#cb4-46" tabindex="-1"></a>  <span class="at">save_results    =</span> <span class="cn">TRUE</span>,</span>
-<span id="cb4-47"><a href="#cb4-47" tabindex="-1"></a>  <span class="at">output_dir      =</span> <span class="st">"calibration_results"</span>,</span>
-<span id="cb4-48"><a href="#cb4-48" tabindex="-1"></a>  <span class="at">write_best      =</span> <span class="cn">TRUE</span>,</span>
-<span id="cb4-49"><a href="#cb4-49" tabindex="-1"></a>  <span class="at">write_target    =</span> <span class="st">"config"</span></span>
-<span id="cb4-50"><a href="#cb4-50" tabindex="-1"></a>)</span>
-<span id="cb4-51"><a href="#cb4-51" tabindex="-1"></a></span>
-<span id="cb4-52"><a href="#cb4-52" tabindex="-1"></a><span class="st">`</span><span class="at">parallel_models</span><span class="st">`</span> stacks with <span class="st">`</span><span class="at">parallel</span><span class="st">`</span><span class="sc">/</span><span class="st">`</span><span class="at">de_parallel</span><span class="st">`</span> (which parallelize LHC</span>
-<span id="cb4-53"><a href="#cb4-53" tabindex="-1"></a>samples or DE evaluations <span class="sc">*</span>within<span class="sc">*</span> one model<span class="st">'s run) -- if you turn multiple of</span></span>
-<span id="cb4-54"><a href="#cb4-54" tabindex="-1"></a><span class="st">these on together, size worker counts so</span></span>
-<span id="cb4-55"><a href="#cb4-55" tabindex="-1"></a><span class="st">`n_model_workers * n_workers` (or `* de_n_workers`) doesn'</span>t oversubscribe your</span>
-<span id="cb4-56"><a href="#cb4-56" tabindex="-1"></a>CPU cores. Worker processes have no attached console, so with</span>
-<span id="cb4-57"><a href="#cb4-57" tabindex="-1"></a><span class="st">`</span><span class="at">parallel_models = TRUE</span><span class="st">`</span> progress messages are written to</span>
-<span id="cb4-58"><a href="#cb4-58" tabindex="-1"></a><span class="st">`</span><span class="at">&lt;output_dir&gt;/cali_ensemble_wq_workers.log</span><span class="st">`</span> instead of printing live <span class="sc">--</span> tail</span>
-<span id="cb4-59"><a href="#cb4-59" tabindex="-1"></a>that file to watch progress <span class="cf">while</span> it runs.</span>
-<span id="cb4-60"><a href="#cb4-60" tabindex="-1"></a></span>
-<span id="cb4-61"><a href="#cb4-61" tabindex="-1"></a>result_all<span class="sc">$</span>summary                            <span class="co"># success/failure + row counts per model</span></span>
-<span id="cb4-62"><a href="#cb4-62" tabindex="-1"></a>result_all<span class="sc">$</span>best_parameter_sets[[<span class="st">"GLM-AED2"</span>]]   <span class="co"># winning parameters for one model</span></span></code></pre></div>
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span></span>
+<span><span class="co"># Create calibration tables for all coupled models at once, with default bounds_factor = 0.2.</span></span>
+<span><span class="fu"><a href="reference/create_calibration_tables.html">create_calibration_tables</a></span><span class="op">(</span></span>
+<span>  folder <span class="op">=</span> <span class="st">"."</span>,</span>
+<span>  config_file <span class="op">=</span> <span class="st">"LakeEnsemblR_WQ.yaml"</span>,</span>
+<span>  folder_out <span class="op">=</span> <span class="st">"calibration"</span>,</span>
+<span>  models_coupled <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"GLM-AED2"</span>, <span class="st">"GOTM-WET"</span>, <span class="st">"GOTM-Selmaprotbas"</span>, <span class="st">"Simstrat-AED2"</span><span class="op">)</span>,</span>
+<span>  bounds_factor <span class="op">=</span> <span class="fl">0.2</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Edit the generated calibration CSVs in the "calibration" folder before continuing:</span></span>
+<span><span class="co">#   - set include = TRUE for the parameters you want to calibrate</span></span>
+<span><span class="co">#   - adjust lower, upper, and initial as needed -- the generated CSVs also</span></span>
+<span><span class="co">#     include suggested min-max ranges (dict_min/dict_max) for some</span></span>
+<span><span class="co">#     parameters as a reference; use them to inform your own bounds if useful</span></span>
+<span><span class="co">#</span></span>
+<span><span class="co"># Then build a calibration setup table from the edited CSVs:</span></span>
+<span><span class="va">cs_all</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/calib_setup_from_tables.html">calib_setup_from_tables</a></span><span class="op">(</span></span>
+<span>  folder_in <span class="op">=</span> <span class="st">"calibration"</span>,</span>
+<span>  model_coupled <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"GLM-AED2"</span>, <span class="st">"GOTM-WET"</span>, <span class="st">"GOTM-Selmaprotbas"</span>, <span class="st">"Simstrat-AED2"</span><span class="op">)</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Calibrate all coupled models at once, with optional DE refinement and parallelism.</span></span>
+<span><span class="va">result_all</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/cali_ensemble_wq.html">cali_ensemble_wq</a></span><span class="op">(</span></span>
+<span>  models          <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"GOTM-WET"</span>, <span class="st">"GOTM-Selmaprotbas"</span>, <span class="st">"GLM-AED2"</span>, <span class="st">"Simstrat-AED2"</span><span class="op">)</span>,</span>
+<span>  calib_setup     <span class="op">=</span> <span class="va">cs_all</span>,</span>
+<span>  yaml_file       <span class="op">=</span> <span class="st">"Output.yaml"</span>,</span>
+<span>  folder          <span class="op">=</span> <span class="st">"."</span>,</span>
+<span>  n_samples       <span class="op">=</span> <span class="fl">16</span>,     <span class="co"># LHC seed</span></span>
+<span>  use_de          <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  de_popsize      <span class="op">=</span> <span class="fl">12</span>,</span>
+<span>  de_iterations   <span class="op">=</span> <span class="fl">8</span>,</span>
+<span>  de_parallel     <span class="op">=</span> <span class="cn">TRUE</span>,   <span class="co"># &lt;- must flip this on to use de_n_workers</span></span>
+<span>  de_n_workers    <span class="op">=</span> <span class="fl">4</span>,</span>
+<span>  n_workers       <span class="op">=</span> <span class="fl">4</span>,</span>
+<span>  parallel_models <span class="op">=</span> <span class="cn">FALSE</span>,   <span class="co"># keep this -- see why below</span></span>
+<span>  obs_file        <span class="op">=</span> <span class="st">"standart_observed_data.csv"</span>,</span>
+<span>  wq_config_file  <span class="op">=</span> <span class="st">"LakeEnsemblR_WQ.yaml"</span>,</span>
+<span>  ler_config_file <span class="op">=</span> <span class="st">"LakeEnsemblR.yaml"</span>,</span>
+<span>  best_metric     <span class="op">=</span> <span class="st">"KGE"</span>,</span>
+<span>  target_variables <span class="op">=</span> <span class="st">"DO_gramsPerCubicMeter"</span>,</span>
+<span>  parallel        <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  force_parallel_glm_simstrat <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  verbose         <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  on_error        <span class="op">=</span> <span class="st">"skip"</span>,</span>
+<span>  save_results    <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  output_dir      <span class="op">=</span> <span class="st">"calibration_results"</span>,</span>
+<span>  write_best      <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  write_target    <span class="op">=</span> <span class="st">"config"</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">result_all</span><span class="op">$</span><span class="va">summary</span>                            <span class="co"># success/failure + row counts per model</span></span>
+<span><span class="va">result_all</span><span class="op">$</span><span class="va">best_parameter_sets</span><span class="op">[[</span><span class="st">"GLM-AED2"</span><span class="op">]</span><span class="op">]</span>   <span class="co"># winning parameters for one model</span></span></code></pre></div>
+<p><code>parallel_models</code> stacks with <code>parallel</code>/<code>de_parallel</code> (which parallelize LHC samples or DE evaluations <em>within</em> one model’s run) – if you turn multiple of these on together, size worker counts so <code>n_model_workers * n_workers</code> (or <code>* de_n_workers</code>) doesn’t oversubscribe your CPU cores. Worker processes have no attached console, so with <code>parallel_models = TRUE</code> progress messages are written to <code>&lt;output_dir&gt;/cali_ensemble_wq_workers.log</code> instead of printing live – tail that file to watch progress while it runs.</p>
 <p>See the <a href="https://tubabucak.github.io/LakeEnsemblR.WQ/articles/full-workflow.html">Full Workflow</a> article (or <code><a href="articles/full-workflow.html">vignette("full-workflow")</a></code> if you installed with <code>build_vignettes = TRUE</code>) for the full calibration workflow, including single-model LHC/DE runs via <code><a href="reference/calib_wq.html">calib_wq()</a></code>, writing best parameters back with <code><a href="reference/write_best_calib_to_par_files.html">write_best_calib_to_par_files()</a></code> and post-processing functions. See the <a href="https://tubabucak.github.io/LakeEnsemblR.WQ/articles/config-reference.html">Configuration File Reference</a> article for a field-by-field breakdown of <code>LakeEnsemblR_WQ.yaml</code> and <code>Output.yaml</code>.</p>
 </div>
 <div class="section level2">
@@ -229,7 +249,7 @@
 <li>set_value_config()</li>
 </ul>
 </li>
-<li>Validation and run: These functions are used to validate the configuration files and input files for the water quality models before running the models. If the validation fails, the function will return an error message and stop the execution of the code. They are included in the export_config_wq() function and can also be called separately if needed.
+<li>Validation and run: The validation functions check the configuration and input files of each model before it is run. <code><a href="reference/run_ensemble_wq.html">run_ensemble_wq()</a></code> calls them when <code>validate = TRUE</code> (the default) and skips models that fail validation (or stops, with <code>on_error = "stop"</code>); they can also be called separately.
 <ul>
 <li>validate_glm_aed()</li>
 <li>validate_gotm_wet()</li>
@@ -289,10 +309,10 @@
 <div class="section level2">
 <h2 id="output-structure">Output structure<a class="anchor" aria-label="anchor" href="#output-structure"></a>
 </h2>
-<p><code><a href="reference/cal_metrics.html">cal_metrics()</a></code> returns a nested list by metric and model. For each metric/model combination, values are stored as data frames with <code>datetime</code> and depth/value columns.</p>
+<p><code><a href="reference/cal_metrics.html">cal_metrics()</a></code> returns a nested list by metric, then model. For each metric/model combination, values are stored as data frames with <code>datetime</code> and depth/value columns.</p>
 <p>Example access:</p>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">metric_out</span><span class="op">$</span><span class="va">GLM</span><span class="op">$</span><span class="va">TP_gramsPerCubicMeter</span></span></code></pre></div>
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">metric_out</span><span class="op">$</span><span class="va">TP_gramsPerCubicMeter</span><span class="op">$</span><span class="va">GLM</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="troubleshooting">Troubleshooting<a class="anchor" aria-label="anchor" href="#troubleshooting"></a>
@@ -304,12 +324,12 @@
 <li>Confirm the model actually wrote that variable to output.</li>
 </ol>
 <p>For Simstrat-AED2 specifically, missing derived metrics (for example total chlorophyll-a or total phosphorus) are often caused by missing output variables in the Simstrat/AED2 output configuration (OutputDiagnosticVars should be ‘true’ ), not by run failure.</p>
-<p>If you’re developing against a local clone and see errors like <code>unused arguments (...)</code> for a parameter that clearly exists in the function’s source, your session is likely running a stale <strong>installed</strong> copy of the package rather than your edited source – reload with <code>devtools::load_all(".")</code> instead of <code><a href="https://github.com/tubabucak/LakeEnsemblR.WQ" class="external-link">library(LakeEnsemblR.WQ)</a></code>.</p>
+<p>If you’re developing against a local clone and see errors like <code>unused arguments (...)</code> for a parameter that clearly exists in the function’s source, your session is likely running a stale <strong>installed</strong> copy of the package rather than your edited source – reload with <code>devtools::load_all(".")</code> instead of <code><a href="https://github.com/tubabucak/LakeEnsemblR.WQ" class="external-link">library(LakeEnsemblR.WQ)</a></code>. The parallel options (<code>parallel</code>, <code>de_parallel</code>, <code>parallel_models</code>) load the <em>installed</em> package on each worker, so reinstall (<code>devtools::install()</code>) after changing code before using them.</p>
 </div>
 <div class="section level2">
 <h2 id="development">Development<a class="anchor" aria-label="anchor" href="#development"></a>
 </h2>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu">devtools</span><span class="fu">::</span><span class="fu">load_all</span><span class="op">(</span><span class="st">"."</span><span class="op">)</span>     <span class="co"># load current source (not a stale install)</span></span>
 <span><span class="fu">devtools</span><span class="fu">::</span><span class="fu">document</span><span class="op">(</span><span class="op">)</span>        <span class="co"># regenerate NAMESPACE/man/ from roxygen tags</span></span>
 <span><span class="fu">devtools</span><span class="fu">::</span><span class="fu">test</span><span class="op">(</span><span class="op">)</span>            <span class="co"># run the tests/testthat suite</span></span>
@@ -332,13 +352,13 @@
 <li>Open a pull request.</li>
 </ol>
 <p>Example git commands:</p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a><span class="fu">git</span> clone git@github.com:<span class="op">&lt;</span>username<span class="op">&gt;</span>/LakeEnsemblR.WQ.git</span>
-<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a><span class="bu">cd</span> LakeEnsemblR.WQ</span>
-<span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a><span class="fu">git</span> remote add upstream git@github.com:aemon-j/LakeEnsemblR.WQ.git</span>
-<span id="cb7-4"><a href="#cb7-4" tabindex="-1"></a><span class="fu">git</span> fetch upstream</span>
-<span id="cb7-5"><a href="#cb7-5" tabindex="-1"></a><span class="fu">git</span> checkout <span class="at">-b</span> my-feature</span>
-<span id="cb7-6"><a href="#cb7-6" tabindex="-1"></a><span class="fu">git</span> merge upstream/main</span>
-<span id="cb7-7"><a href="#cb7-7" tabindex="-1"></a><span class="fu">git</span> push <span class="at">-u</span> origin my-feature</span></code></pre></div>
+<div class="sourceCode" id="cb9"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb9-1"><a href="#cb9-1" tabindex="-1"></a><span class="fu">git</span> clone git@github.com:<span class="op">&lt;</span>username<span class="op">&gt;</span>/LakeEnsemblR.WQ.git</span>
+<span id="cb9-2"><a href="#cb9-2" tabindex="-1"></a><span class="bu">cd</span> LakeEnsemblR.WQ</span>
+<span id="cb9-3"><a href="#cb9-3" tabindex="-1"></a><span class="fu">git</span> remote add upstream git@github.com:aemon-j/LakeEnsemblR.WQ.git</span>
+<span id="cb9-4"><a href="#cb9-4" tabindex="-1"></a><span class="fu">git</span> fetch upstream</span>
+<span id="cb9-5"><a href="#cb9-5" tabindex="-1"></a><span class="fu">git</span> checkout <span class="at">-b</span> my-feature</span>
+<span id="cb9-6"><a href="#cb9-6" tabindex="-1"></a><span class="fu">git</span> merge upstream/main</span>
+<span id="cb9-7"><a href="#cb9-7" tabindex="-1"></a><span class="fu">git</span> push <span class="at">-u</span> origin my-feature</span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="license">License<a class="anchor" aria-label="anchor" href="#license"></a>
@@ -382,7 +402,6 @@
 <div class="dev-status">
 <h2 data-toc-skip>Dev status</h2>
 <ul class="list-unstyled">
-<li><a href="https://www.repostatus.org/#wip" class="external-link"><img src="https://www.repostatus.org/badges/latest/wip.svg" alt="Project Status: WIP – Initial development is in progress, but there has not yet been a stable, usable release suitable for the public."></a></li>
 <li><a href="https://lifecycle.r-lib.org/articles/stages.html#experimental" class="external-link"><img src="https://img.shields.io/badge/lifecycle-experimental-orange.svg" alt="Lifecycle: experimental"></a></li>
 <li><a href="https://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html" class="external-link"><img src="https://img.shields.io/badge/License-GPL%20(%3E%3D%202)-blue.svg" alt="License: GPL (&gt;= 2)"></a></li>
 <li><a href="https://github.com/tubabucak/LakeEnsemblR.WQ/actions/workflows/R-CMD-check.yaml" class="external-link"><img src="https://github.com/tubabucak/LakeEnsemblR.WQ/actions/workflows/R-CMD-check.yaml/badge.svg" alt="R-CMD-check"></a></li>
