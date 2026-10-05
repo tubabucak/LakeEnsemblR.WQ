@@ -60,32 +60,22 @@ ex <- lerwq_example()
 cal_dir <- file.path(ex, "calibration")
 create_calibration_tables(folder = ex, config_file = "LakeEnsemblR_WQ.yaml",
                           folder_out = cal_dir, models_coupled = "GLM-AED2")
-#> Skipping 16 integer/boolean-typed parameter(s) (not calibratable via percentage-based bounds): alk_mode, co2_model, co2_piston_model, ch4_piston_model, fT_method, lightModel, simN2O, n2o_piston_model, salTol, simDINUptake, simDIPUptake, simDONUptake, simINDynamics, simIPDynamics, simNFixation, simSiUptake
-#> Skipping 9 zero-default parameter(s) with no dictionary min/max to fall back on (default * bounds_factor gives a zero-width range): K_Si, N_o, P_0, Fsed_n2o, R_nfix, Si_0, X_sicon, Smin_zoo, oxy_min
-#> Created master reference: /tmp/RtmppCmTTx/lerwq_example/calibration/calibration_master.csv
-#> Created: /tmp/RtmppCmTTx/lerwq_example/calibration/calibration_oxygen.csv
-#> Created: /tmp/RtmppCmTTx/lerwq_example/calibration/calibration_carbon.csv
-#> Created: /tmp/RtmppCmTTx/lerwq_example/calibration/calibration_nitrogen.csv
-#> Created: /tmp/RtmppCmTTx/lerwq_example/calibration/calibration_phosphorus.csv
-#> Created: /tmp/RtmppCmTTx/lerwq_example/calibration/calibration_silicon.csv
-#> Created: /tmp/RtmppCmTTx/lerwq_example/calibration/calibration_diatoms.csv
-#> Created: /tmp/RtmppCmTTx/lerwq_example/calibration/calibration_cyanobacteria.csv
-#> Created: /tmp/RtmppCmTTx/lerwq_example/calibration/calibration_daphnia.csv
-#> 
-#> Edit the per-module CSVs: set include = TRUE for parameters to calibrate.
-#> Then call calib_setup_from_tables() to build the calib_setup for calib_wq().
+#> Error in .wq_model_key(models_coupled): could not find function ".wq_model_key"
 
 # Normally done by hand in a spreadsheet editor: mark two sediment oxygen
 # parameters for calibration
 tab <- read.csv(file.path(cal_dir, "calibration_oxygen.csv"))
+#> Warning: cannot open file '/tmp/Rtmp4mu0F0/lerwq_example/calibration/calibration_oxygen.csv': No such file or directory
+#> Error in file(file, "rt"): cannot open the connection
 tab$include[tab$parameter %in% c("Fsed_oxy", "Ksed_oxy")] <- TRUE
+#> Error: object 'tab' not found
 write.csv(tab, file.path(cal_dir, "calibration_oxygen.csv"), row.names = FALSE)
+#> Error in eval(expr, p): object 'tab' not found
 
 calib_setup <- calib_setup_from_tables(folder_in = cal_dir,
                                        model_coupled = "GLM-AED2")
-#> calib_setup built: 2 parameter(s) for GLM-AED2
+#> Error in calib_setup_from_tables(folder_in = cal_dir, model_coupled = "GLM-AED2"): No calibration_<module>.csv files found in: /tmp/Rtmp4mu0F0/lerwq_example/calibration
+#> Run create_calibration_tables() first.
 calib_setup[, c("pars", "lb", "ub", "x0", "file")]
-#>       pars     lb    ub    x0                 file
-#> 1 Fsed_oxy -12.00 -8.00 -10.0 aed2_oxygen/Fsed_oxy
-#> 2 Ksed_oxy   5.44  8.16   6.8 aed2_oxygen/Ksed_oxy
+#> Error: object 'calib_setup' not found
 ```

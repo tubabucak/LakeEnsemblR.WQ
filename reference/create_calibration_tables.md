@@ -82,26 +82,9 @@ create_calibration_tables(
   models_coupled = c("GOTM-Selmaprotbas", "GLM-AED2"),
   bounds_factor  = 0.2
 )
-#> Skipping 28 integer/boolean-typed parameter(s) (not calibratable via percentage-based bounds): alk_mode, co2_model, co2_piston_model, ch4_piston_model, fT_method, lightModel, buoy_nutrient, simN2O, n2o_piston_model, buoy_temperature, buoyancy_regulation, couple_dom, diagnostics, llim, salTol, simDINUptake, simDIPUptake, nitrogen_fixation, simDONUptake, simINDynamics, simIPDynamics, simNFixation, simSiUptake, tlim, use_24h_light, nprey
-#> Skipping 23 zero-default parameter(s) with no dictionary min/max to fall back on (default * bounds_factor gives a zero-width range): alpha_si, K_Si, N_o, P_0, buoy_nutrient_limit, Fsed_n2o, buoy_temp_limit, dd_p, R_nfix, Si_0, rfs, sedrate, X_sicon, vert_vel_nutrient, c0, vert_vel_temp, Smin_zoo, vert_vel3, wz, oxy_min, o2corr_method, elevation
-#> Created master reference: /tmp/RtmppCmTTx/lerwq_example/calibration/calibration_master.csv
-#> Created: /tmp/RtmppCmTTx/lerwq_example/calibration/calibration_oxygen.csv
-#> Created: /tmp/RtmppCmTTx/lerwq_example/calibration/calibration_carbon.csv
-#> Created: /tmp/RtmppCmTTx/lerwq_example/calibration/calibration_nitrogen.csv
-#> Created: /tmp/RtmppCmTTx/lerwq_example/calibration/calibration_phosphorus.csv
-#> Created: /tmp/RtmppCmTTx/lerwq_example/calibration/calibration_silicon.csv
-#> Created: /tmp/RtmppCmTTx/lerwq_example/calibration/calibration_diatoms.csv
-#> Created: /tmp/RtmppCmTTx/lerwq_example/calibration/calibration_cyanobacteria.csv
-#> Created: /tmp/RtmppCmTTx/lerwq_example/calibration/calibration_daphnia.csv
-#> 
-#> Edit the per-module CSVs: set include = TRUE for parameters to calibrate.
-#> Then call calib_setup_from_tables() to build the calib_setup for calib_wq().
+#> Error in .wq_model_key(models_coupled): could not find function ".wq_model_key"
 list.files(file.path(ex, "calibration"))
-#> [1] "calibration_carbon.csv"        "calibration_cyanobacteria.csv"
-#> [3] "calibration_daphnia.csv"       "calibration_diatoms.csv"      
-#> [5] "calibration_master.csv"        "calibration_nitrogen.csv"     
-#> [7] "calibration_oxygen.csv"        "calibration_phosphorus.csv"   
-#> [9] "calibration_silicon.csv"      
+#> character(0)
 
 # Next: edit calibration/calibration_<module>.csv, set include = TRUE for
 # the parameters to calibrate, and build the setup table with
