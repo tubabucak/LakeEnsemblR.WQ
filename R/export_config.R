@@ -19,7 +19,7 @@
 #' including expanded phytoplankton groups.
 
 #'
-#' @examplesIf requireNamespace("GLM3r", quietly = TRUE) && requireNamespace("WETr", quietly = TRUE) && requireNamespace("SelmaprotbasR", quietly = TRUE) && requireNamespace("SimstratR", quietly = TRUE)
+#' @examplesIf requireNamespace("GLMr", quietly = TRUE) && requireNamespace("WETr", quietly = TRUE) && requireNamespace("SelmaprotbasR", quietly = TRUE) && requireNamespace("SimstratR", quietly = TRUE)
 #' \donttest{
 #' ex <- lerwq_example()
 #'
@@ -29,7 +29,7 @@
 #'               model = c("GLM", "GOTM", "Simstrat"))
 #' export_config_wq("LakeEnsemblR_WQ.yaml", folder = ex)
 #'
-#' list.files(file.path(ex, "GLM-AED2"))
+#' list.files(file.path(ex, "GLM-AED"))
 #' }
 #'
 #' @importFrom configr read.config
@@ -150,6 +150,13 @@ export_config_wq <- function(config_file, folder = ".", verbose = FALSE,
   }
   
   set_coupling(config_file, folder = folder)
+
+  # GLM 4 runs AED 3, which needs aed_* section names; Simstrat-AED2 shares
+  # the AED2-named generator above, so only GLM's file is converted here.
+  if("GLM-AED" %in% lst_config[["models"]]){
+    glm_aed <- file.path(folder, lst_config[["config_files"]][["GLM-AED"]])
+    if(file.exists(glm_aed)) .convert_aed2_nml_to_aed3(glm_aed)
+  }
 
 # --- SIMSTRAT-AED2 INFLOW GENERATION ---
   # If Simstrat is a target model, we likely need these files

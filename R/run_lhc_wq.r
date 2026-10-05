@@ -231,7 +231,7 @@
     return(list())
   }
 
-  unresolved_template <- grepl("\\{group\\}|\\{idx:02d\\}",
+  unresolved_template <- grepl("\\{group\\}|\\{idx:02d\\}|\\{zoo_group\\}",
                                model_dict$variable_model_name)
   model_dict <- model_dict[!unresolved_template, , drop = FALSE]
 
@@ -623,7 +623,7 @@ model_key <- names(cfg$model_folders)[toupper(names(cfg$model_folders)) == toupp
 #' for coupled water-quality model setups and evaluates each sampled run using
 #' either \code{cal_metrics()} outputs or observed-data statistics.
 #'
-#' @param model Character. One of \code{"GLM-AED2"}, \code{"GOTM-WET"},
+#' @param model Character. One of \code{"GLM-AED"}, \code{"GOTM-WET"},
 #'   \code{"GOTM-Selmaprotbas"}, or \code{"Simstrat-AED2"}.
 #' @param param_names Character vector. Parameter names to vary.
 #' @param calib_setup Data frame with at least columns \code{pars}, \code{lb},
@@ -746,7 +746,7 @@ model_key <- names(cfg$model_folders)[toupper(names(cfg$model_folders)) == toupp
 #'   object itself and its raw best member are always available via attributes
 #'   \code{de_phase} and \code{de_best_params}.
 #'
-#' @examplesIf requireNamespace("GLM3r", quietly = TRUE) && requireNamespace("WETr", quietly = TRUE) && requireNamespace("SelmaprotbasR", quietly = TRUE) && requireNamespace("SimstratR", quietly = TRUE)
+#' @examplesIf requireNamespace("GLMr", quietly = TRUE) && requireNamespace("WETr", quietly = TRUE) && requireNamespace("SelmaprotbasR", quietly = TRUE) && requireNamespace("SimstratR", quietly = TRUE)
 #' \donttest{
 #' ex <- lerwq_example()
 #' library(LakeEnsemblR)  # export_config() needs LakeEnsemblR attached
@@ -754,24 +754,24 @@ model_key <- names(cfg$model_folders)[toupper(names(cfg$model_folders)) == toupp
 #'               model = c("GLM", "GOTM", "Simstrat"))
 #' export_config_wq("LakeEnsemblR_WQ.yaml", folder = ex)
 #'
-#' # Select two GLM-AED2 sediment oxygen parameters to calibrate
+#' # Select two GLM-AED sediment oxygen parameters to calibrate
 #' cal_dir <- file.path(ex, "calibration")
 #' create_calibration_tables(folder = ex, config_file = "LakeEnsemblR_WQ.yaml",
-#'                           folder_out = cal_dir, models_coupled = "GLM-AED2")
+#'                           folder_out = cal_dir, models_coupled = "GLM-AED")
 #' tab <- read.csv(file.path(cal_dir, "calibration_oxygen.csv"))
 #' tab$include[tab$parameter %in% c("Fsed_oxy", "Ksed_oxy")] <- TRUE
 #' write.csv(tab, file.path(cal_dir, "calibration_oxygen.csv"), row.names = FALSE)
-#' cs <- calib_setup_from_tables(folder_in = cal_dir, model_coupled = "GLM-AED2")
+#' cs <- calib_setup_from_tables(folder_in = cal_dir, model_coupled = "GLM-AED")
 #'
 #' # Latin hypercube calibration against observed oxygen (use far more
 #' # samples in practice)
 #' old <- setwd(ex)
 #' res <- calib_wq(
-#'   model            = "GLM-AED2",
+#'   model            = "GLM-AED",
 #'   param_names      = cs$pars,
 #'   calib_setup      = cs,
 #'   yaml_file        = "Output.yaml",
-#'   model_dir        = "GLM-AED2",
+#'   model_dir        = "GLM-AED",
 #'   n_samples        = 3,
 #'   wq_config_file   = "LakeEnsemblR_WQ.yaml",
 #'   obs_file         = "standart_observed_data.csv",
@@ -1055,11 +1055,8 @@ calib_wq <- function(model,
 
     run_model_in_eval_dir <- function() {
       out <- switch(toupper(model),
-        "GLM-AED2" = {
-          if (!requireNamespace("GLM3r", quietly = TRUE)) {
-            stop("Package 'GLM3r' is required to run GLM-AED2.")
-          }
-          GLM3r::run_glm(sim_folder = eval_dir, verbose = verbose)
+        "GLM-AED" = {
+          .run_glm_engine(sim_folder = eval_dir, verbose = verbose)
         },
         "GOTM-WET" = {
           if (!requireNamespace("WETr", quietly = TRUE)) {
@@ -1242,7 +1239,7 @@ calib_wq <- function(model,
 
   # Input validation
   model_upper <- toupper(model)
-  supported <- c("GLM-AED2", "GOTM-WET", "GOTM-SELMAPROTBAS", "SIMSTRAT-AED2")
+  supported <- c("GLM-AED", "GOTM-WET", "GOTM-SELMAPROTBAS", "SIMSTRAT-AED2")
   if (!model_upper %in% supported) {
     stop("'model' must be one of: ", paste(supported, collapse = ", "),
          "\nProvided: ", model)
@@ -1305,7 +1302,7 @@ calib_wq <- function(model,
 
   # Map full model name to the short model name used in the metrics dictionary
   model_short <- switch(model_upper,
-    "GLM-AED2"          = "GLM",
+    "GLM-AED"          = "GLM",
     "GOTM-WET"          = "WET",
     "GOTM-SELMAPROTBAS" = "SELMAPROTBAS",
     "SIMSTRAT-AED2"     = "SIMSTRAT"
@@ -1460,11 +1457,8 @@ calib_wq <- function(model,
   # Model runner by coupling
   .run_model <- function() {
     out <- switch(model_upper,
-      "GLM-AED2" = {
-        if (!requireNamespace("GLM3r", quietly = TRUE)) {
-          stop("Package 'GLM3r' is required to run GLM-AED2.")
-        }
-        GLM3r::run_glm(sim_folder = model_dir, verbose = verbose)
+      "GLM-AED" = {
+        .run_glm_engine(sim_folder = model_dir, verbose = verbose)
       },
       "GOTM-WET" = {
         if (!requireNamespace("WETr", quietly = TRUE)) {
@@ -1525,26 +1519,22 @@ calib_wq <- function(model,
     if (grepl("\\.nml$", file_or_path, ignore.case = TRUE)) {
       
       # SAFE INTERCEPT: If it's an AED2 file, do NOT use glmtools!
-      if (model_upper %in% c("GLM-AED2", "SIMSTRAT-AED2") || grepl("aed2", basename(param_path), ignore.case = TRUE)) {
+      if (model_upper %in% c("GLM-AED", "SIMSTRAT-AED2") || grepl("aed2", basename(param_path), ignore.case = TRUE)) {
         
         path_parts <- strsplit(file_or_path, "/", fixed = TRUE)[[1]]
         nml_lines <- readLines(param_path, warn = FALSE)
         
         # If it's a standard dictionary path format (e.g., "aed2_oxygen/Fsed_oxy")
         if (length(path_parts) == 2L) {
-          target_sec <- paste0("&", trimws(path_parts[1]))
           target_var <- trimws(path_parts[2])
-          
-          sec_idx <- which(grepl(paste0("^\\s*", target_sec, "\\b"), nml_lines, ignore.case = TRUE))
-          if (length(sec_idx) > 0) {
-            sec_start <- sec_idx[1]
-            # Find the end of this namelist block (marked by a forward slash)
-            slashes <- Jack <- which(grepl("^\\s*/\\s*$", nml_lines))
-            sec_end <- slashes[slashes > sec_start][1]
-            if (is.na(sec_end)) sec_end <- length(nml_lines)
+
+          # Accepts AED2 or GLM 4's AED 3 section names -- see helpers.R
+          sec <- .find_nml_section(nml_lines, path_parts[1])
+          if (!is.null(sec)) {
+            if (sec$aed3) target_var <- .aed3_name(target_var)
 
             group_col_k <- if ("group_name" %in% names(rows)) rows$group_name[k] else NA_character_
-            upd <- .update_nml_group_value(nml_lines, sec_start, sec_end, target_var,
+            upd <- .update_nml_group_value(nml_lines, sec$start, sec$end, target_var,
                                            value, group_name = group_col_k)
             if (isTRUE(upd$found)) {
               nml_lines <- upd$lines
@@ -1564,7 +1554,7 @@ calib_wq <- function(model,
         }
       }
       
-      # Standard glmtools processing ONLY for native glm3.nml files
+      # Standard glmtools processing ONLY for the GLM namelist itself (glm3.nml/glm4.nml)
       nml <- glmtools::read_nml(param_path)
       nml <- glmtools::set_nml(nml, p, value)
       glmtools::write_nml(nml, param_path)
@@ -1590,7 +1580,7 @@ calib_wq <- function(model,
       LakeEnsemblR::input_yaml_multiple(file = param_path, value = value,
                                         key1 = p, verbose = FALSE)
 
-    } else if (model_upper %in% c("GLM-AED2", "SIMSTRAT-AED2")) {
+    } else if (model_upper %in% c("GLM-AED", "SIMSTRAT-AED2")) {
       # Dictionary path (e.g. "aed2_oxygen/Fsed_oxy") -- see helpers.R
       .write_aed2_dict_param(
         file_or_path, p, value, current_dir = current_dir, model = model.,
@@ -1943,7 +1933,7 @@ calib_wq <- function(model,
       F = de_f,
       CR = de_cr,
       trace = if (isTRUE(verbose)) 1 else FALSE,
-      packages = c("stats", "utils", "yaml", "readr", "dplyr", "ncdf4", "lubridate", "glmtools", "gotmtools", "configr", "GLM3r")
+      packages = c("stats", "utils", "yaml", "readr", "dplyr", "ncdf4", "lubridate", "glmtools", "gotmtools", "configr", "GLMr")
     )
 
     # Seed DE's starting population from the best LHC samples (see

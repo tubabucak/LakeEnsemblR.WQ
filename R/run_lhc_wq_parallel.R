@@ -6,7 +6,7 @@
 #' samples there -- \code{model_dir} itself is only written to for the worker
 #' log (\code{lhc_debug_logs/lhc_workers.log}) and the final results file.
 #'
-#' @param model Character. One of \code{"GLM-AED2"}, \code{"GOTM-WET"},
+#' @param model Character. One of \code{"GLM-AED"}, \code{"GOTM-WET"},
 #'   \code{"GOTM-Selmaprotbas"}, or \code{"Simstrat-AED2"}.
 #' @param param_names Character vector. Parameter names to vary.
 #' @param calib_setup Data frame with calibration bounds and target files.
@@ -232,7 +232,7 @@ calib_wq_parallel <- function(model,
 
   parallel::clusterEvalQ(cl, {
     for (pkg in c("lhs", "readr", "yaml", "dplyr", "glmtools", "gotmtools",
-                  "configr", "ncdf4", "lubridate", "reshape2", "GLM3r",
+                  "configr", "ncdf4", "lubridate", "reshape2", "GLMr",
                   "LakeEnsemblR.WQ")) {
       suppressMessages(require(pkg, character.only = TRUE))
     }

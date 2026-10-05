@@ -44,7 +44,7 @@
 #'   folder         = ex,
 #'   config_file    = "LakeEnsemblR_WQ.yaml",
 #'   folder_out     = file.path(ex, "calibration"),
-#'   models_coupled = c("GOTM-Selmaprotbas", "GLM-AED2"),
+#'   models_coupled = c("GOTM-Selmaprotbas", "GLM-AED"),
 #'   bounds_factor  = 0.2
 #' )
 #' list.files(file.path(ex, "calibration"))
@@ -58,7 +58,7 @@
 create_calibration_tables <- function(folder = ".",
                                       config_file,
                                       folder_out     = folder,
-                                      models_coupled = c("GLM-AED2", "GOTM-Selmaprotbas",
+                                      models_coupled = c("GLM-AED", "GOTM-Selmaprotbas",
                                                          "GOTM-WET", "Simstrat-AED2"),
                                       bounds_factor  = 0.2) {
 
@@ -69,8 +69,7 @@ create_calibration_tables <- function(folder = ".",
   lst_config <- read.config(file.path(folder, config_file))
 
   # Map coupled model names to the short model name used in the dictionary
-  wq_models <- strsplit(models_coupled, "-")
-  wq_models <- sapply(wq_models, function(x) tolower(x[length(x)]))
+  wq_models <- .wq_model_key(models_coupled)
   names(wq_models) <- models_coupled
 
   calib_table <- LakeEnsemblR_WQ_dictionary
@@ -96,6 +95,13 @@ create_calibration_tables <- function(folder = ".",
 
   # Keep only models requested by the user
   calib_table <- calib_table[calib_table$model_coupled %in% models_coupled, ]
+
+  # GLM-AED runs AED 3: write its paths with AED 3 names (aed_oxygen/...,
+  # kanammox), as in GLM's exported AED file. Simstrat-AED2 keeps AED2 names.
+  is_glm <- calib_table$model_coupled == "GLM-AED"
+  calib_table$path[is_glm] <- vapply(strsplit(calib_table$path[is_glm], "/", fixed = TRUE),
+                                     function(p) paste(.aed3_name(p), collapse = "/"),
+                                     character(1))
 
   # Skip integer- and boolean-typed parameters -- flagged in the dictionary's
   # `unit` column as "(integer)"/"(boolean)" (e.g. mode selectors like

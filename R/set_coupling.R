@@ -345,8 +345,7 @@ set_coupling <- function(config_file, folder){
   lst_config <- read.config(file.path(folder, config_file)) 
   
   models_coupled <- lst_config[["models"]]
-  wq_models <- strsplit(models_coupled, "-")
-  wq_models <- sapply(wq_models, function (x) tolower(x[length(x)]))
+  wq_models <- .wq_model_key(models_coupled)
   
   for(i in seq_len(length(models_coupled))){
     model_cfg_rel <- lst_config[["config_files"]][[models_coupled[i]]]
@@ -781,7 +780,7 @@ if(j == "humus"){
           wq_config[[j]]["si_uptake_target_variable"] <- "SIL_rsi"
           wq_config[[j]]["do_uptake_target_variable"] <- "OXY_oxy"
           wq_config[[j]]["c_uptake_target_variable"] <- "CAR_dic"
-          wq_config[[j]]["dbase"] <- "aed2_phyto_pars.nml"}
+          wq_config[[j]]["dbase"] <- .aed_par_file(models_coupled[i], "phytoplankton")}
 
   else if(j == "aed2_zooplankton"){
           wq_config[[j]]["dn_target_variable"] <- "OGM_don"
@@ -790,7 +789,7 @@ if(j == "humus"){
           wq_config[[j]]["pp_target_variable"] <- "OGM_pop"
           wq_config[[j]]["dc_target_variable"] <- "OGM_doc"
           wq_config[[j]]["pc_target_variable"] <- "OGM_poc"
-          wq_config[[j]]["dbase"] <- "aed2_zoop_pars.nml"}
+          wq_config[[j]]["dbase"] <- .aed_par_file(models_coupled[i], "zooplankton")}
      
   } 
 
@@ -801,18 +800,20 @@ if(j == "humus"){
       if(lst_config[["phytoplankton"]][["use"]]){
         loc <- file.path(folder,
                          lst_config[["config_files"]][[models_coupled[i]]])
-        phy_config <- read_nml(file.path(paste0(sub("\\.nml.*", "", loc),'_phyto_pars.nml')))
+        # Same name set_up_configs() writes (see .aed_par_file()), whatever the AED file is called
+        phyto_file <- file.path(dirname(loc), .aed_par_file(models_coupled[i], "phytoplankton"))
+        phy_config <- read_nml(phyto_file)
         strng <- toString(names(lst_config[["phytoplankton"]]$groups))
         phy_config[[1]]["pd%p_name"] = gsub(" ", "", strng, fixed = TRUE)
-        
-        write_nml(phy_config, file.path(folder,
-                                        file.path(paste0(sub("\\.nml.*", "", loc),'_phyto_pars.nml'))))
+
+        write_nml(phy_config, phyto_file)
       }
       
       if(lst_config[["zooplankton"]][["use"]]){
         loc <- file.path(folder,
                          lst_config[["config_files"]][[models_coupled[i]]])
-        zoop_config <- read_nml(file.path(paste0(sub("\\.nml.*", "", loc),'_zoop_pars.nml')))
+        zoop_file <- file.path(dirname(loc), .aed_par_file(models_coupled[i], "zooplankton"))
+        zoop_config <- read_nml(zoop_file)
         zoo_groups <- names(lst_config[["zooplankton"]][["groups"]])
 
         # Prey names per group, in group order (same convention as pd%p_name
@@ -853,8 +854,7 @@ if(j == "humus"){
           zoop_config[["zoop_params"]][[paste0("zoop_param%prey(", p, ")%zoop_prey")]] <- quote_nml(prey_p)
         }
 
-        write_nml(zoop_config, file.path(folder,
-                                        file.path(paste0(sub("\\.nml.*", "", loc),'_zoop_pars.nml'))))
+        write_nml(zoop_config, zoop_file)
       }
       
 

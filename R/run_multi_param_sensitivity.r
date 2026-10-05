@@ -30,9 +30,9 @@
 #'   model-folder resolution by \code{get_output_wq()} (output.yaml).
 #' @param model_dir Path to the directory containing the lake model files and subdirectories.
 #' @param n_steps Number of LHS iterations (i.e., model realizations).
-#' @param model Character. One of \code{"GLM-AED2"}, \code{"GOTM-WET"},
+#' @param model Character. One of \code{"GLM-AED"}, \code{"GOTM-WET"},
 #'   \code{"GOTM-Selmaprotbas"}, or \code{"Simstrat-AED2"}. Determines both how each parameter is
-#'   written to its target file and which model engine is run. Default \code{"GLM-AED2"} for
+#'   written to its target file and which model engine is run. Default \code{"GLM-AED"} for
 #'   backwards compatibility.
 #' @param model_filter Character or \code{NULL}. Model identifier used by \code{cal_metrics()}/
 #'   \code{get_output_wq()}. If \code{NULL} (default), auto-derived from \code{model}.
@@ -43,7 +43,7 @@
 #'   \code{model} is \code{"Simstrat-AED2"}. \code{NULL} (default) falls back to \code{"simstrat.par"}.
 #' @param wq_config_file Character or \code{NULL}. Path to the LakeEnsemblR_WQ config file, passed
 #'   through to \code{cal_metrics()}. Required when \code{output_mode = "metrics"}. For
-#'   GLM-AED2/Simstrat-AED2 it is also used (in either mode) to locate the AED2 namelist a
+#'   GLM-AED/Simstrat-AED2 it is also used (in either mode) to locate the AED2 namelist a
 #'   parameter is written to; if \code{NULL}, the standard AED2 namelists in \code{model_dir}
 #'   are used.
 #' @param output_mode Character. \code{"metrics"} (default) runs each step through
@@ -92,7 +92,7 @@
 #' }
 
 run_multi_param_sensitivity <- function(param_names = NULL, calib_setup, rel_change = NULL,
-                                        yaml_file, model_dir, n_steps = 10, model = "GLM-AED2",
+                                        yaml_file, model_dir, n_steps = 10, model = "GLM-AED",
                                         model_filter = NULL, yaml_file_model = NULL,
                                         par_file = NULL, wq_config_file = NULL,
                                         output_mode = "metrics", vars = NULL, obs_depths = NULL,
@@ -108,7 +108,7 @@ run_multi_param_sensitivity <- function(param_names = NULL, calib_setup, rel_cha
   }
 
   model_upper <- toupper(model)
-  supported <- c("GLM-AED2", "GOTM-WET", "GOTM-SELMAPROTBAS", "SIMSTRAT-AED2")
+  supported <- c("GLM-AED", "GOTM-WET", "GOTM-SELMAPROTBAS", "SIMSTRAT-AED2")
   if (!model_upper %in% supported) {
     stop("'model' must be one of: ", paste(supported, collapse = ", "),
          "\nProvided: ", model)
@@ -128,7 +128,7 @@ run_multi_param_sensitivity <- function(param_names = NULL, calib_setup, rel_cha
   # Auto-derive model_filter from model if not provided.
   if (is.null(model_filter)) {
     model_filter <- switch(model_upper,
-      "GLM-AED2"          = "GLM",
+      "GLM-AED"          = "GLM",
       "GOTM-WET"          = "WET",
       "GOTM-SELMAPROTBAS" = "SELMAPROTBAS",
       "SIMSTRAT-AED2"     = "SIMSTRAT"
@@ -263,7 +263,7 @@ run_multi_param_sensitivity <- function(param_names = NULL, calib_setup, rel_cha
         }
         readr::write_csv(df, param_path)
 
-      } else if (model_upper %in% c("GLM-AED2", "SIMSTRAT-AED2")) {
+      } else if (model_upper %in% c("GLM-AED", "SIMSTRAT-AED2")) {
         # Dictionary path (e.g. "aed2_oxygen/Fsed_oxy") -- see helpers.R
         found <- .write_aed2_dict_param(
           file_or_path, p, value, current_dir = model_dir,
@@ -280,11 +280,8 @@ run_multi_param_sensitivity <- function(param_names = NULL, calib_setup, rel_cha
 
     # Run the model.
     out <- switch(model_upper,
-      "GLM-AED2" = {
-        if (!requireNamespace("GLM3r", quietly = TRUE)) {
-          stop("Package 'GLM3r' is required to run GLM-AED2.")
-        }
-        GLM3r::run_glm(sim_folder = model_dir, verbose = verbose)
+      "GLM-AED" = {
+        .run_glm_engine(sim_folder = model_dir, verbose = verbose)
       },
       "GOTM-WET" = {
         if (!requireNamespace("WETr", quietly = TRUE)) {

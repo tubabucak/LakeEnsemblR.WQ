@@ -9,7 +9,7 @@
 #'@param domain character;
 #'@param process character; 
 #'@param subprocess character; 
-#'@param model_coupled character; options one of "GLM-AED2", "GOTM-Selmaprotbas", "GOTM-WET",
+#'@param model_coupled character; options one of "GLM-AED", "GOTM-Selmaprotbas", "GOTM-WET",
 #'                                       "Simstrat-AED2", "MyLake", "PCLake"
 #'@param parameter character;
 #'@param value character or numeric; what value to enter 
@@ -40,8 +40,7 @@ set_value_config <- function(config_file, module, group_name = NULL, group_posit
                              folder, verbose = FALSE){
   model_coupled_norm <- toupper(as.character(model_coupled))
   
-  model <- strsplit(as.character(model_coupled), "-")[[1]]
-  model <- tolower(model[length(model)])
+  model <- .wq_model_key(model_coupled)
   
   # Check if arguments are allowed
   chck_args <- sapply(c("module", "domain", "process", "subprocess", "model", "parameter"),
@@ -79,7 +78,7 @@ set_value_config <- function(config_file, module, group_name = NULL, group_posit
     stop("Could not resolve config_files entry for model_coupled: ", model_coupled)
   }
   
-  if(model_coupled_norm %in% c("GLM-AED2", "SIMSTRAT-AED2")){
+  if(model_coupled_norm %in% c("GLM-AED", "SIMSTRAT-AED2")){
     # Different files for phytoplankton and zooplankton
     if(!(module %in% c("phytoplankton", "zooplankton"))){
       aed_config_path <- file.path(folder, model_config)
@@ -87,9 +86,9 @@ set_value_config <- function(config_file, module, group_name = NULL, group_posit
         aed_config_path <- file.path(dirname(aed_config_path), "aed2.nml")
       }
     }else if(module == "phytoplankton"){
-      aed_config_path <- file.path(folder, dirname(model_config), "aed2_phyto_pars.nml")
+      aed_config_path <- file.path(folder, dirname(model_config), .aed_par_file(model_coupled_norm, "phytoplankton"))
     }else if(module == "zooplankton"){
-      aed_config_path <- file.path(folder, dirname(model_config), "aed2_zoop_pars.nml")
+      aed_config_path <- file.path(folder, dirname(model_config), .aed_par_file(model_coupled_norm, "zooplankton"))
     }
     if (!file.exists(aed_config_path)) {
       stop("Resolved AED2 config file does not exist: ", aed_config_path)
@@ -101,7 +100,12 @@ set_value_config <- function(config_file, module, group_name = NULL, group_posit
       stop("Path for AED2 parameter does not consist of two parts; needs ",
            "to be section/par_name")
     }
-    
+    # GLM 4 files use AED 3 names (aed_oxygen, kanammox) -- see helpers.R
+    if(!(path_parts[1] %in% names(aed_config)) &&
+       .aed3_name(path_parts[1]) %in% names(aed_config)){
+      path_parts <- .aed3_name(path_parts)
+    }
+
     if(is.null(group_position)){
       # Resolve the group's array index from the section's own name array
       # (e.g. pd%p_name = 'diatoms','cyanobacteria', or

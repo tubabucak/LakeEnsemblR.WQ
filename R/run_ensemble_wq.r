@@ -16,7 +16,7 @@
 #'
 #' @return A list containing validation results, run results, and NetCDF paths for successful runs.
 #'
-#' @examplesIf requireNamespace("GLM3r", quietly = TRUE) && requireNamespace("WETr", quietly = TRUE) && requireNamespace("SelmaprotbasR", quietly = TRUE) && requireNamespace("SimstratR", quietly = TRUE)
+#' @examplesIf requireNamespace("GLMr", quietly = TRUE) && requireNamespace("WETr", quietly = TRUE) && requireNamespace("SelmaprotbasR", quietly = TRUE) && requireNamespace("SimstratR", quietly = TRUE)
 #' \donttest{
 #' ex <- lerwq_example()
 #' library(LakeEnsemblR)  # export_config() needs LakeEnsemblR attached
@@ -27,7 +27,7 @@
 #' # Run all four coupled models for the example year
 #' res <- run_ensemble_wq(
 #'   config_file = "LakeEnsemblR_WQ.yaml",
-#'   models      = c("GLM-AED2", "GOTM-WET", "GOTM-Selmaprotbas", "Simstrat-AED2"),
+#'   models      = c("GLM-AED", "GOTM-WET", "GOTM-Selmaprotbas", "Simstrat-AED2"),
 #'   folder      = ex,
 #'   verbose     = FALSE
 #' )
@@ -35,7 +35,7 @@
 #' }
 #' @export
 run_ensemble_wq <- function(config_file,
-                            models = c("GLM-AED2","GOTM-WET","GOTM-Selmaprotbas", "SIMSTRAT-AED2"),
+                            models = c("GLM-AED","GOTM-WET","GOTM-Selmaprotbas", "SIMSTRAT-AED2"),
                             folder = ".",
                             parallel = FALSE,
                             ncores = NULL,
@@ -63,7 +63,7 @@ run_ensemble_wq <- function(config_file,
   # Match model names case-insensitively to the registry keys below, so
   # e.g. "Simstrat-AED2" (as used in LakeEnsemblR_WQ.yaml and calib_wq())
   # works as well as "SIMSTRAT-AED2".
-  known_models <- c("GLM-AED2", "GOTM-WET", "GOTM-Selmaprotbas", "SIMSTRAT-AED2")
+  known_models <- c("GLM-AED", "GOTM-WET", "GOTM-Selmaprotbas", "SIMSTRAT-AED2")
   model_idx <- match(toupper(models), toupper(known_models))
   if (anyNA(model_idx)) {
     stop("Unknown model(s): ", paste(models[is.na(model_idx)], collapse = ", "),
@@ -94,9 +94,9 @@ run_ensemble_wq <- function(config_file,
 
   validators <- list(
 
-    `GLM-AED2` = function(sim_folder, cfg = NULL, config_file = NULL, ...) {
+    `GLM-AED` = function(sim_folder, cfg = NULL, config_file = NULL, ...) {
       # Call your real validation function
-      validate_glm_aed(sim_folder = sim_folder, file = "glm3.nml", verbose = TRUE)
+      validate_glm_aed(sim_folder = sim_folder, file = .glm_nml_file(sim_folder), verbose = TRUE)
       TRUE
     },
 
@@ -128,16 +128,13 @@ get_runner <- function(model) {
 
   runners <- list(
 
-    `GLM-AED2` = function(sim_folder, cfg = NULL, config_file = NULL, verbose = TRUE, ...) {
-      if (!requireNamespace("GLM3r", quietly = TRUE)) {
-        stop("Package 'GLM3r' is required to run GLM-AED2.", call. = FALSE)
-      }
+    `GLM-AED` = function(sim_folder, cfg = NULL, config_file = NULL, verbose = TRUE, ...) {
       if (!dir.exists(sim_folder)) stop("Missing sim_folder: ", sim_folder, call. = FALSE)
 
-      res <- GLM3r::run_glm(sim_folder = sim_folder, verbose = verbose, ...)
+      res <- .run_glm_engine(sim_folder = sim_folder, verbose = verbose, ...)
 
       nc_path <- .find_latest_netcdf(sim_folder)
-      list(model = "GLM-AED2", sim_folder = sim_folder, nc_path = nc_path,
+      list(model = "GLM-AED", sim_folder = sim_folder, nc_path = nc_path,
            ok = !is.na(nc_path) && file.exists(nc_path), runner_return = res)
     },
 

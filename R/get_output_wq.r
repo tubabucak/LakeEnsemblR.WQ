@@ -16,17 +16,17 @@
 #' 
 #' @return dataframe or list of output variables
 #'
-#' @examplesIf requireNamespace("GLM3r", quietly = TRUE) && requireNamespace("WETr", quietly = TRUE) && requireNamespace("SelmaprotbasR", quietly = TRUE) && requireNamespace("SimstratR", quietly = TRUE)
+#' @examplesIf requireNamespace("GLMr", quietly = TRUE) && requireNamespace("WETr", quietly = TRUE) && requireNamespace("SelmaprotbasR", quietly = TRUE) && requireNamespace("SimstratR", quietly = TRUE)
 #' \donttest{
 #' ex <- lerwq_example()
 #' library(LakeEnsemblR)  # export_config() needs LakeEnsemblR attached
 #' export_config("LakeEnsemblR.yaml", folder = ex,
 #'               model = c("GLM", "GOTM", "Simstrat"))
 #' export_config_wq("LakeEnsemblR_WQ.yaml", folder = ex)
-#' run_ensemble_wq("LakeEnsemblR_WQ.yaml", models = "GLM-AED2", folder = ex,
+#' run_ensemble_wq("LakeEnsemblR_WQ.yaml", models = "GLM-AED", folder = ex,
 #'                 verbose = FALSE)
 #'
-#' # GLM-AED2 oxygen (mmol O2/m3) at 1, 10 and 20 m, converted to g/m3
+#' # GLM-AED oxygen (mmol O2/m3) at 1, 10 and 20 m, converted to g/m3
 #' old <- setwd(ex)
 #' do <- get_output_wq(config_file = "Output.yaml", model = "GLM", vars = "OXY_oxy",
 #'                     obs_depths = c(1, 10, 20), conversion_factor = 0.032)
@@ -78,7 +78,7 @@ get_output_wq <- function(config_file,
       # glm_nml_rel (e.g. "GLM/glm3.nml") is used here as-is, assuming the
       # standard LakeEnsemblR layout (a "GLM/" folder next to the LER
       # config file). Projects with a differently-named model folder and
-      # no such nesting (e.g. glm3.nml living directly in "GLM-AED2/",
+      # no such nesting (e.g. glm3.nml living directly in "GLM-AED/",
       # this project's actual layout) get a nonexistent path here -- and
       # it breaks worse inside a parallel worker sandbox, which has no
       # project-root "GLM/" folder to fall back into at all. Derive from

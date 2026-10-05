@@ -22,11 +22,11 @@
 # folder_out = "."
 # input = c("oxygen/initial_conditions",
 #           "phytoplankton/growth/maximum_growth_rates")
-# models_coupled = c("GLM-AED2", "GOTM-Selmaprotbas", "GOTM-WET",
+# models_coupled = c("GLM-AED", "GOTM-Selmaprotbas", "GOTM-WET",
 #                    "Simstrat-AED2", "MyLake", "PCLake")
 
 create_input_tables <- function(folder = ".", config_file, folder_out = folder, input = NULL,
-                                models_coupled = c("GLM-AED2", "GOTM-Selmaprotbas", "GOTM-WET",
+                                models_coupled = c("GLM-AED", "GOTM-Selmaprotbas", "GOTM-WET",
                                                    "Simstrat-AED2", "MyLake", "PCLake")){
 
   .Deprecated(msg = paste0(
@@ -42,8 +42,7 @@ create_input_tables <- function(folder = ".", config_file, folder_out = folder, 
 
   lst_config <- read.config(file.path(folder, config_file))
 
-  wq_models <- strsplit(models_coupled, "-")
-  wq_models <- sapply(wq_models, function (x) tolower(x[length(x)]))
+  wq_models <- .wq_model_key(models_coupled)
   names(wq_models) <- models_coupled
 
   input_table <- LakeEnsemblR_WQ_dictionary

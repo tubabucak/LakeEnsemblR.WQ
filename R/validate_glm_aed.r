@@ -10,7 +10,7 @@
 #' error message describing which file(s) could not be found.
 #' @name  validate_glm_aed 
 #' @param sim_folder Character. Path to the GLM simulation folder containing the namelist and input files.
-#' @param file Character. Name of the GLM namelist file inside \code{sim_folder}. Default is \code{"glm3.nml"}.
+#' @param file Character. Name of the GLM namelist file inside \code{sim_folder}. Default \code{NULL} uses \code{"glm4.nml"} if present, otherwise \code{"glm3.nml"}.
 #' @param verbose Logical. If \code{TRUE}, progress messages are printed using \code{message()}. Default is \code{TRUE}.
 #'
 #' @return Invisibly returns \code{TRUE} if validation succeeds. Otherwise, the
@@ -29,9 +29,13 @@
 #' @export
 
 
-validate_glm_aed <- function(sim_folder = ".", file = "glm3.nml", verbose = TRUE) {
-  
+validate_glm_aed <- function(sim_folder = ".", file = NULL, verbose = TRUE) {
+
   msg <- function(...) if (isTRUE(verbose)) message(...)
+
+  if (is.null(file)) {
+    file <- if (file.exists(file.path(sim_folder, "glm4.nml"))) "glm4.nml" else "glm3.nml"
+  }
   
   msg("Validating GLM run folder: ", normalizePath(sim_folder, winslash = "/"))
   
@@ -82,7 +86,15 @@ validate_glm_aed <- function(sim_folder = ".", file = "glm3.nml", verbose = TRUE
   check_files("inflow_fl", inflow)
   check_files("outflow_fl", outflow)
   check_files("wq_nml_file", wq)
-  
+
+  # GLM 4 only runs AED through wq_lib = 'api'
+  wq_lib <- get_quoted_vec("wq_lib")
+  if (length(wq_lib) > 0 && tolower(wq_lib[1]) != "api") {
+    stop("wq_lib = '", wq_lib[1], "' in ", file, " is not supported by GLM 4; ",
+         "use wq_lib = 'api' (re-run export_config_wq() to regenerate).",
+         call. = FALSE)
+  }
+
   # output directory
   if (length(out_dir) > 0) {
     od <- file.path(sim_folder, out_dir[1])

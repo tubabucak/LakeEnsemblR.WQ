@@ -14,7 +14,7 @@
 #' @param config_file character; path to the Output config YAML (as used by
 #'   \code{load_config()}/\code{get_output_wq()}).
 #' @param model character vector; one or more models to extract, e.g.
-#'   \code{"GLM-AED2"}, \code{"GOTM-WET"}, \code{"GOTM-Selmaprotbas"}, or
+#'   \code{"GLM-AED"}, \code{"GOTM-WET"}, \code{"GOTM-Selmaprotbas"}, or
 #'   \code{"Simstrat-AED2"} (also accepts the short forms \code{"GLM"},
 #'   \code{"WET"}, \code{"SELMAPROTBAS"}, \code{"SIMSTRAT"}). Passing more
 #'   than one plots them together against the same observations, one line
@@ -97,17 +97,17 @@
 #' @importFrom dplyr filter mutate arrange inner_join group_by summarise bind_rows
 #' @importFrom tidyr pivot_longer
 #' @importFrom utils read.csv
-#' @examplesIf requireNamespace("GLM3r", quietly = TRUE) && requireNamespace("WETr", quietly = TRUE) && requireNamespace("SelmaprotbasR", quietly = TRUE) && requireNamespace("SimstratR", quietly = TRUE)
+#' @examplesIf requireNamespace("GLMr", quietly = TRUE) && requireNamespace("WETr", quietly = TRUE) && requireNamespace("SelmaprotbasR", quietly = TRUE) && requireNamespace("SimstratR", quietly = TRUE)
 #' \donttest{
 #' ex <- lerwq_example()
 #' library(LakeEnsemblR)  # export_config() needs LakeEnsemblR attached
 #' export_config("LakeEnsemblR.yaml", folder = ex,
 #'               model = c("GLM", "GOTM", "Simstrat"))
 #' export_config_wq("LakeEnsemblR_WQ.yaml", folder = ex)
-#' run_ensemble_wq("LakeEnsemblR_WQ.yaml", models = "GLM-AED2", folder = ex,
+#' run_ensemble_wq("LakeEnsemblR_WQ.yaml", models = "GLM-AED", folder = ex,
 #'                 verbose = FALSE)
 #'
-#' # Simulated vs observed dissolved oxygen for GLM-AED2
+#' # Simulated vs observed dissolved oxygen for GLM-AED
 #' old <- setwd(ex)
 #' p <- plot_model_vs_obs_wq(config_file = "Output.yaml", model = "GLM",
 #'                           obs_data = "standart_observed_data.csv",

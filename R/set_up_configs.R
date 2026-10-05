@@ -288,7 +288,7 @@ for (l in seq_len(nrow(dict_biology))) {
       write.config(lst, file.path(folder, filename), write.type = "yaml")
     }
     
-    if(models_coupled[i] == "GLM-AED2" | models_coupled[i] == "Simstrat-AED2"){
+    if(models_coupled[i] == "GLM-AED" | models_coupled[i] == "Simstrat-AED2"){
       
       dict <- LakeEnsemblR_WQ_dictionary[LakeEnsemblR_WQ_dictionary$model == "aed2",]
       
@@ -327,7 +327,15 @@ for (l in seq_len(nrow(dict_biology))) {
         path <-  strsplit(as.character(dict_biogeochem[j, "path"]), "/")[[1]]
         lst[[path[1]]][[path[2]]] <- coerce_default(dict_biogeochem[j, "default"])
       }
-      
+
+      # GLM 4 (AED 3): simN2O = 2 switches on the advanced nitrogen redox
+      # scheme, which strips O2 within hours and destabilises the run with the
+      # dictionary defaults. Use the standard nitrification scheme instead;
+      # par_file overrides are applied after this, so users can still set it.
+      if(models_coupled[i] == "GLM-AED" && !is.null(lst[["aed2_nitrogen"]])){
+        lst[["aed2_nitrogen"]][["simN2O"]] <- 0L
+      }
+
       # Phytoplankton
       if(lst_config[["phytoplankton"]][["use"]]){
         
@@ -355,7 +363,7 @@ for (l in seq_len(nrow(dict_biology))) {
         }
         
         filename <- file.path(dirname(lst_config[["config_files"]][[models_coupled[i]]]),
-                              "aed2_phyto_pars.nml")
+                              .aed_par_file(models_coupled[i], "phytoplankton"))
         if(!dir.exists(file.path(folder, dirname(filename)))) {
           dir.create(file.path(folder, dirname(filename)))
         }
@@ -389,7 +397,7 @@ for (l in seq_len(nrow(dict_biology))) {
         }
         
         filename <- file.path(dirname(lst_config[["config_files"]][[models_coupled[i]]]),
-                              "aed2_zoop_pars.nml")
+                              .aed_par_file(models_coupled[i], "zooplankton"))
         if(!dir.exists(file.path(folder, dirname(filename)))) {
           dir.create(file.path(folder, dirname(filename)))
         }

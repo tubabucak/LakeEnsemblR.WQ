@@ -14,10 +14,10 @@
 #' @param yaml_file Character. Path to the YAML file defining which metrics to extract (output.yaml).
 #' @param model_dir Character. Path to the model directory where the input files and outputs are located.
 #' @param n_steps Integer. Number of steps (iterations) in the parameter value sequence (default = 10).
-#' @param model Character. One of \code{"GLM-AED2"}, \code{"GOTM-WET"},
+#' @param model Character. One of \code{"GLM-AED"}, \code{"GOTM-WET"},
 #'   \code{"GOTM-Selmaprotbas"}, or \code{"Simstrat-AED2"}. Determines both how
 #'   \code{param_name} is written to its target file and which model engine is run.
-#'   Default \code{"GLM-AED2"} for backwards compatibility.
+#'   Default \code{"GLM-AED"} for backwards compatibility.
 #' @param model_filter Character or \code{NULL}. Model identifier used by `cal_metrics()` to
 #' filter the results. If \code{NULL} (default), auto-derived from \code{model} (e.g.
 #' \code{"GLM"}, \code{"WET"}, \code{"SELMAPROTBAS"}, \code{"SIMSTRAT"}).
@@ -37,7 +37,7 @@
 #'   (e.g. \code{"LakeEnsemblR_WQ.yaml"}), passed through to \code{cal_metrics()}. Required
 #'   when \code{output_mode = "metrics"} -- \code{cal_metrics()} uses it to expand
 #'   phytoplankton/zooplankton group templates in the metrics dictionary and has no default
-#'   of its own. For GLM-AED2/Simstrat-AED2 it is also used (in either mode) to locate
+#'   of its own. For GLM-AED/Simstrat-AED2 it is also used (in either mode) to locate
 #'   the AED2 namelist a parameter is written to; if \code{NULL}, the standard
 #'   \code{aed2.nml}/\code{aed2_phyto_pars.nml}/\code{aed2_zoop_pars.nml} in
 #'   \code{model_dir} are used.
@@ -51,7 +51,7 @@
 #'   entry for it.
 #' @param vars Character vector. Required when \code{output_mode = "raw"} -- the model output
 #'   variable name(s) to extract at each step (as they appear in the model's native output,
-#'   e.g. \code{"sO2W"} for GOTM-WET/GOTM-Selmaprotbas, \code{"OXY_oxy"} for GLM-AED2/Simstrat-AED2).
+#'   e.g. \code{"sO2W"} for GOTM-WET/GOTM-Selmaprotbas, \code{"OXY_oxy"} for GLM-AED/Simstrat-AED2).
 #'   Passed through to \code{get_output_wq()}'s \code{vars} argument.
 #' @param obs_depths Numeric vector or \code{NULL}. Only used when \code{output_mode = "raw"}.
 #'   Passed through to \code{get_output_wq()} -- depths to interpolate the raw output to, when
@@ -80,7 +80,7 @@
 #' }
 #'
 #' @details
-#' The function supports `.nml` and `.csv` parameter files (used by \code{"GLM-AED2"} and
+#' The function supports `.nml` and `.csv` parameter files (used by \code{"GLM-AED"} and
 #' \code{"Simstrat-AED2"}), as well as FABM `.yaml`/`.yml` parameter files (used by
 #' \code{"GOTM-WET"} and \code{"GOTM-Selmaprotbas"}, where `calib_setup$file` holds the FABM
 #' instance/key path, e.g. `"abiotic_water/parameters/hO2Nitr"`, written into `fabm.yaml`
@@ -94,7 +94,7 @@
 #' @importFrom glmtools read_nml set_nml write_nml
 #' @importFrom LakeEnsemblR input_yaml_multiple
 #'
-#' @examplesIf requireNamespace("GLM3r", quietly = TRUE) && requireNamespace("WETr", quietly = TRUE) && requireNamespace("SelmaprotbasR", quietly = TRUE) && requireNamespace("SimstratR", quietly = TRUE)
+#' @examplesIf requireNamespace("GLMr", quietly = TRUE) && requireNamespace("WETr", quietly = TRUE) && requireNamespace("SelmaprotbasR", quietly = TRUE) && requireNamespace("SimstratR", quietly = TRUE)
 #' \donttest{
 #' ex <- lerwq_example()
 #' library(LakeEnsemblR)  # export_config() needs LakeEnsemblR attached
@@ -104,18 +104,18 @@
 #'
 #' cal_dir <- file.path(ex, "calibration")
 #' create_calibration_tables(folder = ex, config_file = "LakeEnsemblR_WQ.yaml",
-#'                           folder_out = cal_dir, models_coupled = "GLM-AED2")
+#'                           folder_out = cal_dir, models_coupled = "GLM-AED")
 #' tab <- read.csv(file.path(cal_dir, "calibration_oxygen.csv"))
 #' tab$include[tab$parameter == "Fsed_oxy"] <- TRUE
 #' write.csv(tab, file.path(cal_dir, "calibration_oxygen.csv"), row.names = FALSE)
-#' cs <- calib_setup_from_tables(folder_in = cal_dir, model_coupled = "GLM-AED2")
+#' cs <- calib_setup_from_tables(folder_in = cal_dir, model_coupled = "GLM-AED")
 #'
 #' # Vary the sediment oxygen flux across its bounds and keep the raw
-#' # GLM-AED2 oxygen output of each run
+#' # GLM-AED oxygen output of each run
 #' old <- setwd(ex)
 #' sens <- run_sensitivity(param_name = "Fsed_oxy", calib_setup = cs,
-#'                         yaml_file = "Output.yaml", model_dir = "GLM-AED2",
-#'                         n_steps = 3, model = "GLM-AED2",
+#'                         yaml_file = "Output.yaml", model_dir = "GLM-AED",
+#'                         n_steps = 3, model = "GLM-AED",
 #'                         output_mode = "raw", vars = "OXY_oxy")
 #' plot_sensitivity(sens, depth = 20, ylab = "DO (mmol/m3)")
 #' setwd(old)
@@ -124,14 +124,14 @@
 #' @export
 
 run_sensitivity <- function(param_name, calib_setup, yaml_file, model_dir, n_steps = 10,
-                            model = "GLM-AED2", model_filter = NULL, group_name = NULL,
+                            model = "GLM-AED", model_filter = NULL, group_name = NULL,
                             yaml_file_model = NULL, par_file = NULL, wq_config_file = NULL,
                             output_mode = "metrics", vars = NULL, obs_depths = NULL,
                             depth_01 = 1, conversion_factor = 1, target_variable = NULL,
                             verbose = TRUE) {
 
   model_upper <- toupper(model)
-  supported <- c("GLM-AED2", "GOTM-WET", "GOTM-SELMAPROTBAS", "SIMSTRAT-AED2")
+  supported <- c("GLM-AED", "GOTM-WET", "GOTM-SELMAPROTBAS", "SIMSTRAT-AED2")
   if (!model_upper %in% supported) {
     stop("'model' must be one of: ", paste(supported, collapse = ", "),
          "\nProvided: ", model)
@@ -153,7 +153,7 @@ run_sensitivity <- function(param_name, calib_setup, yaml_file, model_dir, n_ste
   # model key regardless of which calibration entry point was used.
   if (is.null(model_filter)) {
     model_filter <- switch(model_upper,
-      "GLM-AED2"          = "GLM",
+      "GLM-AED"          = "GLM",
       "GOTM-WET"          = "WET",
       "GOTM-SELMAPROTBAS" = "SELMAPROTBAS",
       "SIMSTRAT-AED2"     = "SIMSTRAT"
@@ -253,7 +253,7 @@ run_sensitivity <- function(param_name, calib_setup, yaml_file, model_dir, n_ste
         }
         readr::write_csv(df, param_path)
 
-      } else if (model_upper %in% c("GLM-AED2", "SIMSTRAT-AED2")) {
+      } else if (model_upper %in% c("GLM-AED", "SIMSTRAT-AED2")) {
         # Dictionary path (e.g. "aed2_oxygen/Fsed_oxy") -- see helpers.R
         found <- .write_aed2_dict_param(
           file_or_path, param_name, param_values[i], current_dir = model_dir,
@@ -269,11 +269,8 @@ run_sensitivity <- function(param_name, calib_setup, yaml_file, model_dir, n_ste
     }
 
     out <- switch(model_upper,
-      "GLM-AED2" = {
-        if (!requireNamespace("GLM3r", quietly = TRUE)) {
-          stop("Package 'GLM3r' is required to run GLM-AED2.")
-        }
-        GLM3r::run_glm(sim_folder = model_dir, verbose = verbose)
+      "GLM-AED" = {
+        .run_glm_engine(sim_folder = model_dir, verbose = verbose)
       },
       "GOTM-WET" = {
         if (!requireNamespace("WETr", quietly = TRUE)) {

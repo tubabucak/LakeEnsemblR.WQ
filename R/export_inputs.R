@@ -118,7 +118,7 @@ export_inputs <- function(config_file, folder = ".",
   for(i in models_coupled){
     model_name_parsed <- strsplit(i, "-")[[1L]]
     phys_model <- model_name_parsed[1L]
-    wq_model <- tolower(model_name_parsed[length(model_name_parsed)])
+    wq_model <- .wq_model_key(i)
     
     if(toupper(phys_model) == "GOTM"){
       gotmyaml <- read.config(file.path(folder, i, "gotm.yaml"))
