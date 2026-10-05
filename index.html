@@ -73,7 +73,7 @@
 </ul>
 <p>Supported 1D model frameworks:</p>
 <ul>
-<li>GLM-AED2</li>
+<li>GLM-AED</li>
 <li>GOTM-WET</li>
 <li>GOTM-Selmaprotbas</li>
 <li>Simstrat-AED2</li>
@@ -87,12 +87,12 @@
 <span><span class="co"># Currently in development on tubabucak's fork; will move to the aemon-j</span></span>
 <span><span class="co"># organization (https://github.com/aemon-j/LakeEnsemblR.WQ) after release.</span></span>
 <span><span class="fu">remotes</span><span class="fu">::</span><span class="fu"><a href="https://remotes.r-lib.org/reference/install_github.html" class="external-link">install_github</a></span><span class="op">(</span><span class="st">"tubabucak/LakeEnsemblR.WQ"</span><span class="op">)</span></span></code></pre></div>
-<p>Some dependencies are GitHub-only wrappers around external lake model binaries: <code>GLM3r</code>, <code>WETr</code>, <code>SelmaprotbasR</code>, <code>SimstratR</code>. These are optional – you only need the one(s) matching the model(s) you actually run. If a required one is missing, <code><a href="reference/run_ensemble_wq.html">run_ensemble_wq()</a></code>/<code><a href="reference/calib_wq.html">calib_wq()</a></code> will tell you at call time rather than fail silently. All of them are listed in <code>Remotes:</code> in <code>DESCRIPTION</code>, so <code><a href="https://remotes.r-lib.org/reference/install_github.html" class="external-link">remotes::install_github()</a></code> installs them automatically along with everything else.</p>
+<p>Some dependencies are GitHub-only wrappers around external lake model binaries: <code>GLMr</code> (GLM 4 with AED 3; currently Windows-only), <code>WETr</code>, <code>SelmaprotbasR</code>, <code>SimstratR</code>. These are optional – you only need the one(s) matching the model(s) you actually run. If a required one is missing, <code><a href="reference/run_ensemble_wq.html">run_ensemble_wq()</a></code>/<code><a href="reference/calib_wq.html">calib_wq()</a></code> will tell you at call time rather than fail silently. All of them are listed in <code>Remotes:</code> in <code>DESCRIPTION</code>, so <code><a href="https://remotes.r-lib.org/reference/install_github.html" class="external-link">remotes::install_github()</a></code> installs them automatically along with everything else.</p>
 <p><code>MyLakeR</code> is only needed for the MyLake configuration template (see the experimental note above): <code>remotes::install_github("aemon-j/MyLakeR")</code>.</p>
 <p><code>LakeEnsemblR</code> is installed from <a href="https://github.com/tubabucak/LakeEnsemblR" class="external-link">tubabucak/LakeEnsemblR</a>, which supports the Simstrat version used by <code>SimstratR</code>. If you already have <code>LakeEnsemblR</code> from <code>aemon-j</code>, reinstall it from the fork, otherwise <code><a href="https://aemon-j.github.io/LakeEnsemblR/reference/export_config.html" class="external-link">export_config()</a></code> fails for Simstrat:</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu">remotes</span><span class="fu">::</span><span class="fu"><a href="https://remotes.r-lib.org/reference/install_github.html" class="external-link">install_github</a></span><span class="op">(</span><span class="st">"tubabucak/LakeEnsemblR"</span><span class="op">)</span></span></code></pre></div>
-<p><code>glmtools</code> is always required, no matter which model you run. It in turn needs <code>GLM3r</code>, but doesn’t say where to find it – so tools that resolve dependencies automatically (<code>pak</code>, and anything built on it, like <code>devtools::install_deps()</code>/<code>build_vignettes()</code>) can fail with <code>Can't find package called GLM3r</code>, even though <code>GLM3r</code> is listed in this package’s own <code>Remotes:</code>. If that happens, install <code>GLM3r</code> yourself first, then install this package as normal:</p>
+<p><code>glmtools</code> is always required, no matter which model you run. It in turn needs <code>GLM3r</code> (only as its own dependency; GLM itself now runs through <code>GLMr</code>), but doesn’t say where to find it – so tools that resolve dependencies automatically (<code>pak</code>, and anything built on it, like <code>devtools::install_deps()</code>/<code>build_vignettes()</code>) can fail with <code>Can't find package called GLM3r</code>, even though <code>GLM3r</code> is listed in this package’s own <code>Remotes:</code>. If that happens, install <code>GLM3r</code> yourself first, then install this package as normal:</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu">remotes</span><span class="fu">::</span><span class="fu"><a href="https://remotes.r-lib.org/reference/install_github.html" class="external-link">install_github</a></span><span class="op">(</span><span class="st">"aemon-j/GLM3r@v3.3-lerwq"</span><span class="op">)</span></span>
 <span><span class="fu">remotes</span><span class="fu">::</span><span class="fu"><a href="https://remotes.r-lib.org/reference/install_github.html" class="external-link">install_github</a></span><span class="op">(</span><span class="st">"tubabucak/LakeEnsemblR.WQ"</span><span class="op">)</span></span></code></pre></div>
@@ -111,7 +111,7 @@
 <span><span class="fu"><a href="reference/export_config_wq.html">export_config_wq</a></span><span class="op">(</span><span class="st">"LakeEnsemblR_WQ.yaml"</span>, folder <span class="op">=</span> <span class="va">ex</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">res</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/run_ensemble_wq.html">run_ensemble_wq</a></span><span class="op">(</span><span class="st">"LakeEnsemblR_WQ.yaml"</span>,</span>
-<span>                       models <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"GLM-AED2"</span>, <span class="st">"GOTM-WET"</span>, <span class="st">"GOTM-Selmaprotbas"</span>, <span class="st">"Simstrat-AED2"</span><span class="op">)</span>,</span>
+<span>                       models <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"GLM-AED"</span>, <span class="st">"GOTM-WET"</span>, <span class="st">"GOTM-Selmaprotbas"</span>, <span class="st">"Simstrat-AED2"</span><span class="op">)</span>,</span>
 <span>                       folder <span class="op">=</span> <span class="va">ex</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">old</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/getwd.html" class="external-link">setwd</a></span><span class="op">(</span><span class="va">ex</span><span class="op">)</span>        <span class="co"># Output.yaml uses paths relative to the project folder</span></span>
@@ -161,7 +161,7 @@
 <span><span class="co"># and save their outputs in the output folders of the models.</span></span>
 <span><span class="va">run_res</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/run_ensemble_wq.html">run_ensemble_wq</a></span><span class="op">(</span></span>
 <span>  config_file <span class="op">=</span> <span class="st">"LakeEnsemblR_WQ.yaml"</span>,</span>
-<span>  models <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"GLM-AED2"</span>, <span class="st">"GOTM-WET"</span>, <span class="st">"GOTM-Selmaprotbas"</span>, <span class="st">"Simstrat-AED2"</span><span class="op">)</span>,</span>
+<span>  models <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"GLM-AED"</span>, <span class="st">"GOTM-WET"</span>, <span class="st">"GOTM-Selmaprotbas"</span>, <span class="st">"Simstrat-AED2"</span><span class="op">)</span>,</span>
 <span>  folder <span class="op">=</span> <span class="st">"."</span>,</span>
 <span>  validate <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  verbose <span class="op">=</span> <span class="cn">TRUE</span></span>
@@ -187,7 +187,7 @@
 <span>  folder <span class="op">=</span> <span class="st">"."</span>,</span>
 <span>  config_file <span class="op">=</span> <span class="st">"LakeEnsemblR_WQ.yaml"</span>,</span>
 <span>  folder_out <span class="op">=</span> <span class="st">"calibration"</span>,</span>
-<span>  models_coupled <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"GLM-AED2"</span>, <span class="st">"GOTM-WET"</span>, <span class="st">"GOTM-Selmaprotbas"</span>, <span class="st">"Simstrat-AED2"</span><span class="op">)</span>,</span>
+<span>  models_coupled <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"GLM-AED"</span>, <span class="st">"GOTM-WET"</span>, <span class="st">"GOTM-Selmaprotbas"</span>, <span class="st">"Simstrat-AED2"</span><span class="op">)</span>,</span>
 <span>  bounds_factor <span class="op">=</span> <span class="fl">0.2</span></span>
 <span><span class="op">)</span></span>
 <span></span>
@@ -200,12 +200,12 @@
 <span><span class="co"># Then build a calibration setup table from the edited CSVs:</span></span>
 <span><span class="va">cs_all</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/calib_setup_from_tables.html">calib_setup_from_tables</a></span><span class="op">(</span></span>
 <span>  folder_in <span class="op">=</span> <span class="st">"calibration"</span>,</span>
-<span>  model_coupled <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"GLM-AED2"</span>, <span class="st">"GOTM-WET"</span>, <span class="st">"GOTM-Selmaprotbas"</span>, <span class="st">"Simstrat-AED2"</span><span class="op">)</span></span>
+<span>  model_coupled <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"GLM-AED"</span>, <span class="st">"GOTM-WET"</span>, <span class="st">"GOTM-Selmaprotbas"</span>, <span class="st">"Simstrat-AED2"</span><span class="op">)</span></span>
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Calibrate all coupled models at once, with optional DE refinement and parallelism.</span></span>
 <span><span class="va">result_all</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/cali_ensemble_wq.html">cali_ensemble_wq</a></span><span class="op">(</span></span>
-<span>  models          <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"GOTM-WET"</span>, <span class="st">"GOTM-Selmaprotbas"</span>, <span class="st">"GLM-AED2"</span>, <span class="st">"Simstrat-AED2"</span><span class="op">)</span>,</span>
+<span>  models          <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"GOTM-WET"</span>, <span class="st">"GOTM-Selmaprotbas"</span>, <span class="st">"GLM-AED"</span>, <span class="st">"Simstrat-AED2"</span><span class="op">)</span>,</span>
 <span>  calib_setup     <span class="op">=</span> <span class="va">cs_all</span>,</span>
 <span>  yaml_file       <span class="op">=</span> <span class="st">"Output.yaml"</span>,</span>
 <span>  folder          <span class="op">=</span> <span class="st">"."</span>,</span>
@@ -233,7 +233,7 @@
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">result_all</span><span class="op">$</span><span class="va">summary</span>                            <span class="co"># success/failure + row counts per model</span></span>
-<span><span class="va">result_all</span><span class="op">$</span><span class="va">best_parameter_sets</span><span class="op">[[</span><span class="st">"GLM-AED2"</span><span class="op">]</span><span class="op">]</span>   <span class="co"># winning parameters for one model</span></span></code></pre></div>
+<span><span class="va">result_all</span><span class="op">$</span><span class="va">best_parameter_sets</span><span class="op">[[</span><span class="st">"GLM-AED"</span><span class="op">]</span><span class="op">]</span>   <span class="co"># winning parameters for one model</span></span></code></pre></div>
 <p><code>parallel_models</code> stacks with <code>parallel</code>/<code>de_parallel</code> (which parallelize LHC samples or DE evaluations <em>within</em> one model’s run) – if you turn multiple of these on together, size worker counts so <code>n_model_workers * n_workers</code> (or <code>* de_n_workers</code>) doesn’t oversubscribe your CPU cores. Worker processes have no attached console, so with <code>parallel_models = TRUE</code> progress messages are written to <code>&lt;output_dir&gt;/cali_ensemble_wq_workers.log</code> instead of printing live – tail that file to watch progress while it runs.</p>
 <p>See the <a href="https://tubabucak.github.io/LakeEnsemblR.WQ/articles/full-workflow.html">Full Workflow</a> article (or <code><a href="articles/full-workflow.html">vignette("full-workflow")</a></code> if you installed with <code>build_vignettes = TRUE</code>) for the full calibration workflow, including single-model LHC/DE runs via <code><a href="reference/calib_wq.html">calib_wq()</a></code>, writing best parameters back with <code><a href="reference/write_best_calib_to_par_files.html">write_best_calib_to_par_files()</a></code> and post-processing functions. See the <a href="https://tubabucak.github.io/LakeEnsemblR.WQ/articles/config-reference.html">Configuration File Reference</a> article for a field-by-field breakdown of <code>LakeEnsemblR_WQ.yaml</code> and <code>Output.yaml</code>.</p>
 </div>
