@@ -74,12 +74,12 @@
 
 #' @title Write an AED2 parameter given as a dictionary path
 #'
-#' @description Writes \code{value} for a GLM-AED2/Simstrat-AED2 parameter whose
+#' @description Writes \code{value} for a GLM-AED/Simstrat-AED2 parameter whose
 #'   \code{calib_setup$file} entry is a dictionary path such as
 #'   \code{"aed2_oxygen/Fsed_oxy"} (namelist section / variable) rather than a
 #'   file name. Resolves the target namelist from \code{wq_config_file}'s
-#'   \code{config_files} entry for \code{model} (\code{aed2_phyto_pars.nml} /
-#'   \code{aed2_zoop_pars.nml} for the phytoplankton/zooplankton modules), or
+#'   \code{config_files} entry for \code{model} (the phyto-/zooplankton file
+#'   from \code{.aed_par_file()} for those modules), or
 #'   falls back to the standard file names in \code{current_dir} when
 #'   \code{wq_config_file} is not supplied. Shared by \code{calib_wq()},
 #'   \code{run_sensitivity()} and \code{run_multi_param_sensitivity()}.
@@ -88,7 +88,7 @@
 #' @param p character; parameter name (used when the path has no variable part).
 #' @param value the value to write.
 #' @param current_dir character; the model directory being modified.
-#' @param model character; coupled model name (\code{"GLM-AED2"} or
+#' @param model character; coupled model name (\code{"GLM-AED"} or
 #'   \code{"Simstrat-AED2"}).
 #' @param wq_config_file character or \code{NULL}; LakeEnsemblR_WQ config file.
 #' @param module character or \code{NA}; the parameter's module.
@@ -127,7 +127,20 @@
       if (!is.na(cfg_idx)) model_cfg <- cfg_files[[cfg_idx]]
     }
   }
-  if (is.null(model_cfg) || !nzchar(model_cfg)) model_cfg <- "aed2.nml"
+  if (is.null(model_cfg) || !nzchar(model_cfg)) {
+    # No wq_config_file: for GLM take the AED file GLM itself is set up to
+    # read (wq_setup/wq_nml_file, e.g. 'aed.nml'), else the standard name
+    model_cfg <- "aed2.nml"
+    if (model_upper == "GLM-AED") {
+      glm_nml <- tryCatch(file.path(current_dir, .glm_nml_file(current_dir)),
+                          error = function(e) NA_character_)
+      if (!is.na(glm_nml)) {
+        hit <- grep("^\\s*wq_nml_file\\s*=", readLines(glm_nml, warn = FALSE), value = TRUE)
+        wq_nml <- gsub("^[^=]*=\\s*|['\"[:space:]]", "", sub("!.*$", "", hit[1]))
+        if (!is.na(wq_nml) && nzchar(wq_nml)) model_cfg <- wq_nml
+      }
+    }
+  }
 
   if (model_upper == "SIMSTRAT-AED2" && grepl("\\.par$", model_cfg, ignore.case = TRUE)) {
     model_cfg <- file.path(dirname(model_cfg), "aed2.nml")
@@ -135,7 +148,7 @@
 
   if (isTRUE(module %in% c("phytoplankton", "zooplankton"))) {
     model_cfg <- file.path(dirname(model_cfg),
-                           if (module == "phytoplankton") "aed2_phyto_pars.nml" else "aed2_zoop_pars.nml")
+                           .aed_par_file(model, module))
   }
 
   nml_candidates <- c(file.path(current_dir, model_cfg), file.path(current_dir, basename(model_cfg)))
@@ -145,17 +158,14 @@
 
   path_parts <- strsplit(file_or_path, "/", fixed = TRUE)[[1]]
   nml_lines <- readLines(nml_path, warn = FALSE)
-  target_sec <- paste0("&", trimws(path_parts[1]))
   target_var <- if (length(path_parts) == 2L) trimws(path_parts[2]) else p
 
-  sec_idx <- which(grepl(paste0("^\\s*", target_sec, "\\b"), nml_lines, ignore.case = TRUE))
-  if (length(sec_idx) == 0) return(invisible(FALSE))
-  sec_start <- sec_idx[1]
-  slashes <- which(grepl("^\\s*/\\s*$", nml_lines))
-  sec_end <- slashes[slashes > sec_start][1]
-  if (is.na(sec_end)) sec_end <- length(nml_lines)
+  # GLM 4 files use AED 3 names (aed_oxygen, kanammox); see .find_nml_section()
+  sec <- .find_nml_section(nml_lines, path_parts[1])
+  if (is.null(sec)) return(invisible(FALSE))
+  if (sec$aed3) target_var <- .aed3_name(target_var)
 
-  upd <- .update_nml_group_value(nml_lines, sec_start, sec_end, target_var,
+  upd <- .update_nml_group_value(nml_lines, sec$start, sec$end, target_var,
                                  value, group_name = group_name)
   if (isTRUE(upd$found)) writeLines(upd$lines, nml_path)
   invisible(isTRUE(upd$found))
@@ -847,6 +857,17 @@ expand_templates <- function(sel_metric, wq_config_file) {
       next
     }
 
+    # ---- expand zoo group name (GLM 4 / AED 3, e.g. ZOO_daphnia) ----
+    if (grepl("\\{zoo_group\\}", varname) && !is.na(zoo_n)) {
+
+      for (g in names(cfg$zooplankton$groups)) {
+        rr <- row
+        rr$variable_model_name <- gsub("\\{zoo_group\\}", g, varname)
+        out[[length(out) + 1]] <- rr
+      }
+      next
+    }
+
     # ---- expand zoo index ----
     if (grepl("\\{idx:02d\\}", varname) && !is.na(zoo_n)) {
 
@@ -865,4 +886,179 @@ expand_templates <- function(sel_metric, wq_config_file) {
   }
 
   dplyr::bind_rows(out)
+}
+
+#' @title Ratio of two metric tables, with NA where undefined
+#'
+#' @description Divides \code{num} by \code{den} (data frames, or vectors for
+#'   a single depth) and sets non-finite results to \code{NA}, so a zero
+#'   denominator (e.g. DOC or TP reaching 0) gives \code{NA} instead of
+#'   \code{Inf}/\code{NaN}. \code{Inf} cannot be written to the float NetCDF
+#'   variables of \code{create_netcdf_output()}.
+#'
+#' @param num,den data.frame or numeric; numerator and denominator.
+#'
+#' @noRd
+.safe_ratio <- function(num, den) {
+  r <- num / den
+  if (is.data.frame(r)) {
+    r[] <- lapply(r, function(x) { x[!is.finite(x)] <- NA; x })
+  } else {
+    r[!is.finite(r)] <- NA
+  }
+  r
+}
+
+#' @title File name of the AED phyto-/zooplankton parameter namelist
+#'
+#' @description \code{aed_phyto_pars.nml} / \code{aed_zoop_pars.nml} for
+#'   GLM-AED (AED 3), \code{aed2_phyto_pars.nml} / \code{aed2_zoop_pars.nml}
+#'   for Simstrat-AED2. The file sits next to the model's AED namelist.
+#'
+#' @param model character; coupled model name, e.g. \code{"GLM-AED"}.
+#' @param module character; \code{"phytoplankton"} or \code{"zooplankton"}.
+#'
+#' @noRd
+.aed_par_file <- function(model, module) {
+  prefix <- if (toupper(model) == "GLM-AED") "aed" else "aed2"
+  paste0(prefix, if (module == "phytoplankton") "_phyto_pars.nml" else "_zoop_pars.nml")
+}
+
+#' @title Biogeochemical model key of a coupled model name
+#'
+#' @description Returns the part after the last "-" in lower case (e.g.
+#'   \code{"GOTM-WET"} -> \code{"wet"}), as used in the \code{model} column of
+#'   \code{LakeEnsemblR_WQ_dictionary} and the columns of \code{wq_var_dic}.
+#'   \code{"GLM-AED"} maps to \code{"aed2"}: GLM 4 runs AED 3, but shares the
+#'   AED2-named dictionary entries with Simstrat-AED2.
+#'
+#' @param models_coupled character; coupled model name(s).
+#'
+#' @noRd
+.wq_model_key <- function(models_coupled) {
+  key <- vapply(strsplit(as.character(models_coupled), "-"),
+                function(x) tolower(x[length(x)]), character(1))
+  key[key == "aed"] <- "aed2"
+  key
+}
+
+#' @title Find the GLM namelist in a simulation folder
+#'
+#' @description Returns the name of the GLM namelist in \code{sim_folder}:
+#'   \code{glm4.nml} if present, otherwise \code{glm3.nml} (the name
+#'   LakeEnsemblR::export_config() writes; GLM 4 reads it fine when passed
+#'   via \code{--nml}).
+#'
+#' @param sim_folder character; GLM simulation folder.
+#'
+#' @noRd
+.glm_nml_file <- function(sim_folder) {
+  for (f in c("glm4.nml", "glm3.nml")) {
+    if (file.exists(file.path(sim_folder, f))) return(f)
+  }
+  stop("No GLM namelist (glm4.nml or glm3.nml) found in ", sim_folder, call. = FALSE)
+}
+
+#' @title Run GLM 4 (GLMr)
+#'
+#' @description Runs GLM 4 with AED in \code{sim_folder} via
+#'   \code{GLMr::run_glm()}. GLM's exit status is not reliable (a \code{STOP}
+#'   inside AED still returns 0), so any existing output file is removed first
+#'   and the run is treated as failed if no new output file appears.
+#'
+#' @param sim_folder character; GLM simulation folder.
+#' @param verbose logical; passed to \code{GLMr::run_glm()}.
+#' @param ... further arguments passed to \code{GLMr::run_glm()}.
+#'
+#' @return The value returned by \code{GLMr::run_glm()}.
+#'
+#' @noRd
+.run_glm_engine <- function(sim_folder, verbose = TRUE, ...) {
+  if (!requireNamespace("GLMr", quietly = TRUE)) {
+    stop("Package 'GLMr' is required to run GLM-AED.", call. = FALSE)
+  }
+  nml_file <- .glm_nml_file(sim_folder)
+
+  out_nml <- tryCatch(glmtools::read_nml(file.path(sim_folder, nml_file))[["output"]],
+                      error = function(e) NULL)
+  out_dir <- gsub("^['\"]|['\"]$", "", if (is.null(out_nml$out_dir)) "output" else out_nml$out_dir)
+  out_fn <- gsub("^['\"]|['\"]$", "", if (is.null(out_nml$out_fn)) "output" else out_nml$out_fn)
+  nc_path <- file.path(sim_folder, out_dir, paste0(out_fn, ".nc"))
+  if (file.exists(nc_path)) unlink(nc_path)
+
+  res <- GLMr::run_glm(sim_folder = sim_folder, nml_file = nml_file,
+                       verbose = verbose, ...)
+
+  if (!file.exists(nc_path)) {
+    stop("GLM did not produce ", nc_path, " -- the simulation failed. ",
+         "Run with verbose = TRUE to see the GLM/AED messages.", call. = FALSE)
+  }
+  res
+}
+
+#' @title Translate an AED2 section/parameter name to its AED 3 equivalent
+#'
+#' @description GLM 4 runs AED 3, whose namelist sections are named
+#'   \code{aed_*} instead of \code{aed2_*}, and which replaced a few
+#'   parameters. The dictionary keeps the AED2 names because Simstrat-AED2
+#'   still uses them, so GLM paths are translated with this.
+#'
+#' @param x character; section or parameter name(s).
+#'
+#' @noRd
+.aed3_name <- function(x) {
+  x <- sub("^aed2_", "aed_", x)
+  renamed <- c(Ranammox = "kanammox")
+  hit <- x %in% names(renamed)
+  x[hit] <- renamed[x[hit]]
+  x
+}
+
+#' @title Convert an AED2 namelist to AED 3 naming for GLM 4
+#'
+#' @description Rewrites \code{nml_path} in place: \code{&aed2_*} section
+#'   headers and quoted model names in \code{models = ...} become
+#'   \code{aed_*}, and renamed parameters (see \code{.aed3_name()}) are
+#'   renamed. Quoted file names (e.g. \code{'aed2_phyto_pars.nml'}) are left
+#'   alone. Safe to run on a file that is already converted.
+#'
+#' @param nml_path character; path to the AED namelist.
+#'
+#' @noRd
+.convert_aed2_nml_to_aed3 <- function(nml_path) {
+  lines <- readLines(nml_path, warn = FALSE)
+  lines <- gsub("^(\\s*&)aed2_", "\\1aed_", lines)
+  lines <- gsub("'aed2_([A-Za-z_]+)'", "'aed_\\1'", lines)
+  lines <- gsub("^(\\s*)Ranammox(\\s*=)", "\\1kanammox\\2", lines)
+  writeLines(lines, nml_path)
+  invisible(nml_path)
+}
+
+#' @title Locate a namelist section, accepting AED2 or AED 3 names
+#'
+#' @description Returns the line range of \code{&section ... /} in
+#'   \code{nml_lines}, trying the AED 3 name (\code{.aed3_name()}) when
+#'   \code{section} itself is not present, so dictionary paths like
+#'   \code{"aed2_oxygen/Fsed_oxy"} also work on GLM 4's \code{aed_oxygen}.
+#'
+#' @param nml_lines character vector; file content from \code{readLines()}.
+#' @param section character; section name without the leading \code{&}.
+#'
+#' @return A list with \code{start}, \code{end} and \code{aed3} (whether the
+#'   AED 3 name matched), or \code{NULL} if neither name is found.
+#'
+#' @noRd
+.find_nml_section <- function(nml_lines, section) {
+  section <- trimws(section)
+  for (s in unique(c(section, .aed3_name(section)))) {
+    sec_idx <- which(grepl(paste0("^\\s*&", s, "\\b"), nml_lines, ignore.case = TRUE))
+    if (length(sec_idx) > 0) {
+      start <- sec_idx[1]
+      slashes <- which(grepl("^\\s*/\\s*$", nml_lines))
+      end <- slashes[slashes > start][1]
+      if (is.na(end)) end <- length(nml_lines)
+      return(list(start = start, end = end, aed3 = s != section))
+    }
+  }
+  NULL
 }

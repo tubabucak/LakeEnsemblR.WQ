@@ -374,7 +374,7 @@ pkgdown:
         <div class="cards">
           <details class="card">
             <summary><span class="fn-name mono">validate_glm_aed()</span><span class="chev">&#9654;</span></summary>
-            <p class="one-liner">Checks a GLM-AED2 folder's glm3.nml / aed2.nml for required sections.</p>
+            <p class="one-liner">Checks a GLM-AED folder's glm3.nml / aed2.nml for required sections.</p>
           </details>
           <details class="card">
             <summary><span class="fn-name mono">validate_gotm_wet()</span><span class="chev">&#9654;</span></summary>
@@ -397,7 +397,7 @@ pkgdown:
         <div class="cards">
           <details class="card">
             <summary><span class="fn-name mono">run_ensemble_wq()</span><span class="chev">&#9654;</span></summary>
-            <p class="one-liner">Runs the requested models via GLM3r / WETr / SelmaprotbasR / SimstratR, skipping or stopping on failure per <span class="mono">on_error</span>.</p>
+            <p class="one-liner">Runs the requested models via GLMr / WETr / SelmaprotbasR / SimstratR, skipping or stopping on failure per <span class="mono">on_error</span>.</p>
             <p class="detail"><b>Takes in</b> exported model folders.<br><b>Hands off</b> each model's <span class="mono">output.nc</span>, ready for metrics.</p>
           </details>
         </div>

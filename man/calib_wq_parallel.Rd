@@ -40,7 +40,7 @@ calib_wq_parallel(
 )
 }
 \arguments{
-\item{model}{Character. One of \code{"GLM-AED2"}, \code{"GOTM-WET"},
+\item{model}{Character. One of \code{"GLM-AED"}, \code{"GOTM-WET"},
 \code{"GOTM-Selmaprotbas"}, or \code{"Simstrat-AED2"}.}
 
 \item{param_names}{Character vector. Parameter names to vary.}

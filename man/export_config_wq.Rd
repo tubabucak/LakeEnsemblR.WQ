@@ -40,7 +40,7 @@ create template boundary condition files for all active AED2 modules,
 including expanded phytoplankton groups.
 }
 \examples{
-\dontshow{if (requireNamespace("GLM3r", quietly = TRUE) && requireNamespace("WETr", quietly = TRUE) && requireNamespace("SelmaprotbasR", quietly = TRUE) && requireNamespace("SimstratR", quietly = TRUE)) withAutoprint(\{ # examplesIf}
+\dontshow{if (requireNamespace("GLMr", quietly = TRUE) && requireNamespace("WETr", quietly = TRUE) && requireNamespace("SelmaprotbasR", quietly = TRUE) && requireNamespace("SimstratR", quietly = TRUE)) withAutoprint(\{ # examplesIf}
 \donttest{
 ex <- lerwq_example()
 
@@ -50,7 +50,7 @@ export_config("LakeEnsemblR.yaml", folder = ex,
               model = c("GLM", "GOTM", "Simstrat"))
 export_config_wq("LakeEnsemblR_WQ.yaml", folder = ex)
 
-list.files(file.path(ex, "GLM-AED2"))
+list.files(file.path(ex, "GLM-AED"))
 }
 \dontshow{\}) # examplesIf}
 }
