@@ -52,7 +52,7 @@ going to fail.
 
 validate_glm_aed()▶
 
-Checks a GLM-AED2 folder's glm3.nml / aed2.nml for required sections.
+Checks a GLM-AED folder's glm3.nml / aed2.nml for required sections.
 
 validate_gotm_wet()▶
 
@@ -73,7 +73,7 @@ Execute each coupled model through its own runner package.
 
 run_ensemble_wq()▶
 
-Runs the requested models via GLM3r / WETr / SelmaprotbasR / SimstratR,
+Runs the requested models via GLMr / WETr / SelmaprotbasR / SimstratR,
 skipping or stopping on failure per on_error.
 
 **Takes in** exported model folders.  

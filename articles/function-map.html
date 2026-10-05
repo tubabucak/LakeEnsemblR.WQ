@@ -418,7 +418,7 @@
         </div>
         <p class="stage-desc">Catch a broken config before spending minutes on a run that was always going to fail.</p>
         <div class="cards">
-          <details class="card"><summary><span class="fn-name mono">validate_glm_aed()</span><span class="chev">▶</span></summary><p class="one-liner">Checks a GLM-AED2 folder's glm3.nml / aed2.nml for required sections.</p>
+          <details class="card"><summary><span class="fn-name mono">validate_glm_aed()</span><span class="chev">▶</span></summary><p class="one-liner">Checks a GLM-AED folder's glm3.nml / aed2.nml for required sections.</p>
           </details><details class="card"><summary><span class="fn-name mono">validate_gotm_wet()</span><span class="chev">▶</span></summary><p class="one-liner">Same check for GOTM-WET / GOTM-Selmaprotbas's gotm.yaml + fabm.yaml.</p>
           </details><details class="card"><summary><span class="fn-name mono">validate_simstrat()</span><span class="chev">▶</span></summary><p class="one-liner">Same check for Simstrat-AED2's simstrat.par.</p>
           </details>
@@ -430,7 +430,7 @@
         </div>
         <p class="stage-desc">Execute each coupled model through its own runner package.</p>
         <div class="cards">
-          <details class="card"><summary><span class="fn-name mono">run_ensemble_wq()</span><span class="chev">▶</span></summary><p class="one-liner">Runs the requested models via GLM3r / WETr / SelmaprotbasR / SimstratR, skipping or stopping on failure per <span class="mono">on_error</span>.</p>
+          <details class="card"><summary><span class="fn-name mono">run_ensemble_wq()</span><span class="chev">▶</span></summary><p class="one-liner">Runs the requested models via GLMr / WETr / SelmaprotbasR / SimstratR, skipping or stopping on failure per <span class="mono">on_error</span>.</p>
             <p class="detail"><b>Takes in</b> exported model folders.<br><b>Hands off</b> each model's <span class="mono">output.nc</span>, ready for metrics.</p>
           </details>
 </div>

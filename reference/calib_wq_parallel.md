@@ -51,8 +51,8 @@ calib_wq_parallel(
 
 - model:
 
-  Character. One of `"GLM-AED2"`, `"GOTM-WET"`, `"GOTM-Selmaprotbas"`,
-  or `"Simstrat-AED2"`.
+  Character. One of `"GLM-AED"`, `"GOTM-WET"`, `"GOTM-Selmaprotbas"`, or
+  `"Simstrat-AED2"`.
 
 - param_names:
 

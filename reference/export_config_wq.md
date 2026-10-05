@@ -60,7 +60,7 @@ groups.
 ## Examples
 
 ``` r
-if (FALSE) { # requireNamespace("GLM3r", quietly = TRUE) && requireNamespace("WETr", quietly = TRUE) && requireNamespace("SelmaprotbasR", quietly = TRUE) && requireNamespace("SimstratR", quietly = TRUE)
+if (FALSE) { # requireNamespace("GLMr", quietly = TRUE) && requireNamespace("WETr", quietly = TRUE) && requireNamespace("SelmaprotbasR", quietly = TRUE) && requireNamespace("SimstratR", quietly = TRUE)
 # \donttest{
 ex <- lerwq_example()
 
@@ -70,7 +70,7 @@ export_config("LakeEnsemblR.yaml", folder = ex,
               model = c("GLM", "GOTM", "Simstrat"))
 export_config_wq("LakeEnsemblR_WQ.yaml", folder = ex)
 
-list.files(file.path(ex, "GLM-AED2"))
+list.files(file.path(ex, "GLM-AED"))
 # }
 }
 ```

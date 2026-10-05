@@ -22,7 +22,7 @@ This vignette provides an end-to-end workflow for LakeEnsemblR.WQ:
 - A water-quality config file: LakeEnsemblR_WQ.yaml.
 - A metrics config file: Output.yaml.
 - Supported model folders, for example:
-  - GLM-AED2
+  - GLM-AED
   - GOTM-WET
   - GOTM-Selmaprotbas
   - Simstrat-AED2
@@ -63,7 +63,7 @@ config files for errors.
 ``` r
 
 
-validate_glm_aed(sim_folder = "GLM-AED2", file = "glm3.nml", verbose = TRUE)
+validate_glm_aed(sim_folder = "GLM-AED", verbose = TRUE)
 validate_gotm_wet(sim_folder = "GOTM-WET", file = "gotm.yaml", verbose = TRUE)
 validate_gotm_wet(sim_folder = "GOTM-Selmaprotbas", file = "gotm.yaml", verbose = TRUE)
 validate_simstrat(sim_folder = "Simstrat-AED2", file = "simstrat.par", verbose = TRUE)
@@ -86,7 +86,7 @@ setup first and skips models that fail.
 
 run_res <- run_ensemble_wq(
   config_file = "LakeEnsemblR_WQ.yaml",
-  models = c("GLM-AED2", "GOTM-WET", "GOTM-Selmaprotbas", "Simstrat-AED2"),
+  models = c("GLM-AED", "GOTM-WET", "GOTM-Selmaprotbas", "Simstrat-AED2"),
   folder = ".",
   validate = TRUE,
   verbose = TRUE
@@ -138,7 +138,7 @@ create_calibration_tables(
   folder = ".",
   config_file = "LakeEnsemblR_WQ.yaml",
   folder_out = "calibration",
-  models_coupled = c("GLM-AED2", "GOTM-WET", "GOTM-Selmaprotbas", "Simstrat-AED2"),
+  models_coupled = c("GLM-AED", "GOTM-WET", "GOTM-Selmaprotbas", "Simstrat-AED2"),
   bounds_factor = 0.2
 )
 ```
@@ -157,7 +157,7 @@ for (f in list.files("calibration", pattern = "^calibration_.*\\.csv$", full.nam
   if (grepl("master", f)) next
   tab <- read.csv(f)
   sel <- (tab$model_coupled == "GOTM-Selmaprotbas" & tab$parameter %in% c("nitrif_rate", "r0")) |
-         (tab$model_coupled == "GLM-AED2" & tab$parameter %in% c("Fsed_oxy", "Ksed_oxy"))
+         (tab$model_coupled == "GLM-AED" & tab$parameter %in% c("Fsed_oxy", "Ksed_oxy"))
   if (any(sel)) {
     tab$include[sel] <- TRUE
     write.csv(tab, f, row.names = FALSE)
@@ -171,7 +171,7 @@ for (f in list.files("calibration", pattern = "^calibration_.*\\.csv$", full.nam
 
 cs_all <- calib_setup_from_tables(
   folder_in = "calibration",
-  model_coupled = c("GLM-AED2", "GOTM-WET", "GOTM-Selmaprotbas", "Simstrat-AED2")
+  model_coupled = c("GLM-AED", "GOTM-WET", "GOTM-Selmaprotbas", "Simstrat-AED2")
 )
 ```
 
@@ -184,7 +184,7 @@ spending compute on calibrating parameters that turn out not to matter
 (or whose ranges are far wider than they need to be).
 
 Two functions cover this, both supporting all four coupled models
-(`"GLM-AED2"`, `"GOTM-WET"`, `"GOTM-Selmaprotbas"`, `"Simstrat-AED2"`)
+(`"GLM-AED"`, `"GOTM-WET"`, `"GOTM-Selmaprotbas"`, `"Simstrat-AED2"`)
 via the same `model` argument used elsewhere in this vignette:
 
 - [`run_sensitivity()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/run_sensitivity.md)
@@ -205,7 +205,7 @@ Both support two output modes:
   [`get_output_wq()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/get_output_wq.md).
   Requires `vars` (the model-native variable name,
   e.g. `"selmaprotbas_DO_mg"` for GOTM-Selmaprotbas, `"OXY_oxy"` for
-  GLM-AED2/Simstrat-AED2, `"sO2W"` for GOTM-WET) instead of
+  GLM-AED/Simstrat-AED2, `"sO2W"` for GOTM-WET) instead of
   `wq_config_file`. Useful for a quick look at a raw variable without
   needing a dictionary entry for it.
 - `output_mode = "metrics"` (default) – runs
@@ -332,15 +332,15 @@ metrics only.
 
 ``` r
 
-cs_glm <- subset(cs_all, model_coupled == "GLM-AED2")
+cs_glm <- subset(cs_all, model_coupled == "GLM-AED")
 
 param_glm <- unique(cs_glm$pars)
 res_glm <- calib_wq(
-  model          = "GLM-AED2",
+  model          = "GLM-AED",
   param_names    = param_glm,
   calib_setup    = cs_glm,
   yaml_file      = "Output.yaml",
-  model_dir      = "GLM-AED2",
+  model_dir      = "GLM-AED",
   n_samples      = 10,
   wq_config_file = "LakeEnsemblR_WQ.yaml",
   obs_file       = "standart_observed_data.csv",   # datetime, depth, variable_global_name, value
@@ -369,11 +369,11 @@ the original LHC-phase best is still available under
 ``` r
 
     res <- calib_wq(
-        model          = "GLM-AED2",
+        model          = "GLM-AED",
         param_names    = param_glm,
         calib_setup    = cs_glm,
         yaml_file      = "Output.yaml",
-        model_dir      = "GLM-AED2",
+        model_dir      = "GLM-AED",
         obs_file       = "standart_observed_data.csv",
         wq_config_file = "LakeEnsemblR_WQ.yaml",
         verbose        = TRUE,
@@ -425,7 +425,7 @@ Re-run the model so output.nc reflects those parameters
 
 run_ensemble_wq(
   config_file = "LakeEnsemblR_WQ.yaml",
-  models = c("GLM-AED2"),
+  models = c("GLM-AED"),
   folder = ".",
   validate = TRUE,
   verbose = TRUE
@@ -454,7 +454,7 @@ to `models` once parameters are selected for them.
 ``` r
 
 result_all <- cali_ensemble_wq(
-  models          = c("GLM-AED2", "GOTM-Selmaprotbas"),
+  models          = c("GLM-AED", "GOTM-Selmaprotbas"),
   calib_setup     = cs_all,
   yaml_file       = "Output.yaml",
   folder          = ".",
@@ -602,7 +602,7 @@ modified, e.g. to shorten the date labels.
 
 ``` r
 
-models <- c("GLM-AED2", "GOTM-WET", "GOTM-Selmaprotbas", "Simstrat-AED2")
+models <- c("GLM-AED", "GOTM-WET", "GOTM-Selmaprotbas", "Simstrat-AED2")
 obs <- read.csv("standart_observed_data.csv")
 
 # Water temperature at three depths
@@ -644,4 +644,4 @@ chla$stats
 
 With a single model, the facet labels also show that model’s KGE and
 RMSE per depth. `vars` can then be given explicitly to plot any
-model-native variable, e.g. `model = "GLM-AED2", vars = "OXY_oxy"`.
+model-native variable, e.g. `model = "GLM-AED", vars = "OXY_oxy"`.
