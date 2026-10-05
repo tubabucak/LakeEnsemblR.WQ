@@ -10,17 +10,17 @@
 #'
 #' @return A list of extractedf variables for each model and for each metric defined in output.yaml
 #'
-#' @examplesIf requireNamespace("GLM3r", quietly = TRUE) && requireNamespace("WETr", quietly = TRUE) && requireNamespace("SelmaprotbasR", quietly = TRUE) && requireNamespace("SimstratR", quietly = TRUE)
+#' @examplesIf requireNamespace("GLMr", quietly = TRUE) && requireNamespace("WETr", quietly = TRUE) && requireNamespace("SelmaprotbasR", quietly = TRUE) && requireNamespace("SimstratR", quietly = TRUE)
 #' \donttest{
 #' ex <- lerwq_example()
 #' library(LakeEnsemblR)  # export_config() needs LakeEnsemblR attached
 #' export_config("LakeEnsemblR.yaml", folder = ex,
 #'               model = c("GLM", "GOTM", "Simstrat"))
 #' export_config_wq("LakeEnsemblR_WQ.yaml", folder = ex)
-#' run_ensemble_wq("LakeEnsemblR_WQ.yaml", models = "GLM-AED2", folder = ex,
+#' run_ensemble_wq("LakeEnsemblR_WQ.yaml", models = "GLM-AED", folder = ex,
 #'                 verbose = FALSE)
 #'
-#' # Harmonized metrics listed in Output.yaml, for GLM-AED2
+#' # Harmonized metrics listed in Output.yaml, for GLM-AED
 #' old <- setwd(ex)
 #' metrics <- cal_metrics(metric_yaml_file = "Output.yaml", model_filter = "GLM",
 #'                        wq_config_file = "LakeEnsemblR_WQ.yaml")
@@ -262,7 +262,7 @@ if ("DIC_gramsPerCubicMeter" %in% names(metric_out) &
       stop("Date columns in DIC_gramsPerCubicMeter and DOC_gramsPerCubicMeter do not match!")
     }
     # divide the corresponding columns directly (excluding datetime column)
-    DIC_DOC_ratio <- data.frame(datetime = DIC$datetime, DIC[, -1]/DOC[, -1])
+    DIC_DOC_ratio <- data.frame(datetime = DIC$datetime, .safe_ratio(DIC[, -1], DOC[, -1]))
     
     # Initialize the ratio list if it doesn't exist
             if (!"DIC_DOC_ratio" %in% names(metric_out)) {
@@ -333,7 +333,7 @@ if ("TP_gramsPerCubicMeter" %in% names(metric_out) &
       stop("Date columns in TP_gramsPerCubicMeter and Total_Chla_miligramsPerCubicMeter do not match!")
     }
     # Unit of Tchla was g/L, hence it is divided by 1000 to harmonize the units
-    Chla_TP_ratio <- data.frame(datetime = TChla$datetime, (TChla[, -1]/1000)/TP[, -1])
+    Chla_TP_ratio <- data.frame(datetime = TChla$datetime, .safe_ratio(TChla[, -1]/1000, TP[, -1]))
     
     # Initialize the ratio list if it doesn't exist
             if (!"Chla_TP_ratio" %in% names(metric_out)) {
@@ -367,7 +367,7 @@ if ("TP_gramsPerCubicMeter" %in% names(metric_out) &
       stop("Date columns in TP_gramsPerCubicMeter and TN_gramsPerCubicMeter do not match!")
     }
     
-   TN_TP_ratio <- data.frame(datetime = TN$datetime, (TN[, -1])/TP[, -1])
+   TN_TP_ratio <- data.frame(datetime = TN$datetime, .safe_ratio(TN[, -1], TP[, -1]))
     
     # Initialize the ratio list if it doesn't exist
             if (!"TN_TP_ratio" %in% names(metric_out)) {

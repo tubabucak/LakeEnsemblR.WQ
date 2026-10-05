@@ -30,6 +30,14 @@ convert_ler_to_lerwq <- function(ler_config_file = "LakeEnsemblR.yaml",
   lst_config_wq <- read.config(file.path(folder, lerwq_config_file)) 
   
   models_coupled <- lst_config_wq[["models"]]
+  no_cfg <- setdiff(models_coupled, names(lst_config_wq[["config_files"]]))
+  if(length(no_cfg) > 0){
+    stop("No config_files entry in ", lerwq_config_file, " for model(s): ",
+         paste(no_cfg, collapse = ", "), ". The names under config_files must ",
+         "match those under models (config_files has: ",
+         paste(names(lst_config_wq[["config_files"]]), collapse = ", "), ").",
+         call. = FALSE)
+  }
   phys_models <- strsplit(models_coupled, "-")
   phys_models <- sapply(phys_models, function (x) x[1L])
   table_phys_models <- table(phys_models)
@@ -143,11 +151,17 @@ convert_ler_to_lerwq <- function(ler_config_file = "LakeEnsemblR.yaml",
           ode_num <- which(valid_ode == ode_method)
         }
         
-        # If not yet present, add wq_setup section to the glm nml file
+        # If not yet present, add wq_setup section to the glm nml file.
+        # wq_nml_file always points at the AED file that export_config_wq()
+        # writes, i.e. the config_files entry (e.g. "GLM-AED/aed.nml")
         if(!("wq_setup" %in% names(nml))){
-          nml[["wq_setup"]] <- list(wq_lib = "aed2",
-                                    wq_nml_file = "aed2.nml")
+          nml[["wq_setup"]] <- list()
         }
+        nml[["wq_setup"]][["wq_nml_file"]] <-
+          basename(lst_config_wq[["config_files"]][[models_coupled[i]]])
+        # GLM 4 (GLMr) only accepts wq_lib = 'api' for AED; 'aed2' is
+        # rejected and 'aed' crashes after initialisation
+        nml[["wq_setup"]][["wq_lib"]] <- "api"
         nml[["wq_setup"]][["ode_method"]] <- ode_num
         nml[["wq_setup"]][["split_factor"]] <- split
         nml[["wq_setup"]][["repair_state"]] <- repair

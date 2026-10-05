@@ -2,7 +2,7 @@
 # main, plus a standalone testthat run so test failures show up clearly even
 # if a full R CMD check NOTE/WARNING buries them.
 #
-# NOTE: several Suggests (GLM3r, WETr, SelmaprotbasR, SimstratR, MyLakeR) are
+# NOTE: several Suggests (GLMr, WETr, SelmaprotbasR, SimstratR, MyLakeR) are
 # GitHub-only wrappers around external model binaries. `dependencies: '"hard"'`
 # below tells pak to resolve only Depends/Imports/LinkingTo and skip Suggests
 # entirely -- test/build tooling (testthat/knitr/rmarkdown) is added back

@@ -7,7 +7,7 @@
 #' list of per-model setup tables.
 #'
 #' @param models Character vector of models to calibrate. Supported values are
-#'   \code{"GLM-AED2"}, \code{"GOTM-WET"}, \code{"GOTM-Selmaprotbas"}, and
+#'   \code{"GLM-AED"}, \code{"GOTM-WET"}, \code{"GOTM-Selmaprotbas"}, and
 #'   \code{"Simstrat-AED2"}. Matching is case-insensitive.
 #' @param calib_setup Either a data frame in \code{calib_setup} format or a
 #'   named list of such data frames. If a data frame is supplied and contains
@@ -53,7 +53,7 @@
 #' @param best_metric Character. Passed to \code{calib_wq()}.
 #' @param parallel Logical. Passed to \code{calib_wq()} (parallelizes LHC
 #'   samples \emph{within} a single model's run).
-#' @param force_parallel_glm_simstrat Logical. GLM-AED2 and Simstrat-AED2 edit
+#' @param force_parallel_glm_simstrat Logical. GLM-AED and Simstrat-AED2 edit
 #'   their config files in-place during each LHC sample; by default (\code{FALSE})
 #'   their LHC phase always runs sequentially even when \code{parallel = TRUE},
 #'   to avoid file write collisions. \code{calib_wq_parallel()} isolates each
@@ -107,7 +107,7 @@
 #'   \item{write_back}{Named list with best-write status per model (when enabled).}
 #' }
 #' @export
-cali_ensemble_wq <- function(models = c("GLM-AED2", "GOTM-WET", "GOTM-Selmaprotbas", "Simstrat-AED2"),
+cali_ensemble_wq <- function(models = c("GLM-AED", "GOTM-WET", "GOTM-Selmaprotbas", "Simstrat-AED2"),
                              calib_setup,
                              yaml_file,
                              folder = ".",
@@ -187,7 +187,8 @@ cali_ensemble_wq <- function(models = c("GLM-AED2", "GOTM-WET", "GOTM-Selmaprotb
   .canon_model <- function(x) {
     x0 <- .normalize_model_key(x)
     normalized_map <- c(
-      "GLM-AED2" = "GLM-AED2",
+      "GLM-AED" = "GLM-AED",
+      "GLM-AED2" = "GLM-AED", # pre-GLM 4 name
       "GOTM-WET" = "GOTM-WET",
       "GOTM-SELMAPROTBAS" = "GOTM-Selmaprotbas",
       "GOTM-SELMA" = "GOTM-Selmaprotbas",
@@ -259,7 +260,7 @@ cali_ensemble_wq <- function(models = c("GLM-AED2", "GOTM-WET", "GOTM-Selmaprotb
   }
 
   models <- vapply(models, .canon_model, character(1))
-  supported <- c("GLM-AED2", "GOTM-WET", "GOTM-Selmaprotbas", "Simstrat-AED2")
+  supported <- c("GLM-AED", "GOTM-WET", "GOTM-Selmaprotbas", "Simstrat-AED2")
   bad <- setdiff(models, supported)
   if (length(bad) > 0L) {
     stop("Unsupported model(s): ", paste(bad, collapse = ", "),
@@ -462,12 +463,12 @@ cali_ensemble_wq <- function(models = c("GLM-AED2", "GOTM-WET", "GOTM-Selmaprotb
     # calib_wq_parallel() already isolates each worker onto its own copy of
     # model_dir (the same mechanism DE already relies on safely), so this is
     # conservative rather than a known-necessary restriction -- kept off by
-    # default (force_parallel_glm_simstrat = FALSE) since GLM-AED2/Simstrat-AED2
+    # default (force_parallel_glm_simstrat = FALSE) since GLM-AED/Simstrat-AED2
     # parallel LHC hasn't been validated as thoroughly as GOTM's. Set
     # force_parallel_glm_simstrat = TRUE to test parallel LHC for these models too.
     parallel_i <- isTRUE(parallel)
     n_workers_i <- n_workers
-    if (parallel_i && m %in% c("GLM-AED2", "Simstrat-AED2") && !isTRUE(force_parallel_glm_simstrat)) {
+    if (parallel_i && m %in% c("GLM-AED", "Simstrat-AED2") && !isTRUE(force_parallel_glm_simstrat)) {
       if (isTRUE(verbose)) {
         message("[cali_ensemble_wq] Parallel disabled for ", m,
                 " to avoid in-place file write collisions. Running sequentially. ",
@@ -572,7 +573,7 @@ cali_ensemble_wq <- function(models = c("GLM-AED2", "GOTM-WET", "GOTM-Selmaprotb
     parallel::clusterEvalQ(cl, {
       for (pkg in c("lhs", "readr", "yaml", "dplyr", "glmtools", "gotmtools",
                     "configr", "ncdf4", "lubridate", "reshape2", "DEoptim",
-                    "GLM3r", "WETr", "SelmaprotbasR", "SimstratR",
+                    "GLMr", "WETr", "SelmaprotbasR", "SimstratR",
                     "LakeEnsemblR.WQ")) {
         suppressMessages(try(require(pkg, character.only = TRUE), silent = TRUE))
       }
