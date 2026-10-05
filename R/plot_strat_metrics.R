@@ -328,6 +328,14 @@ plot_strat_metrics <- function(metrics_list,
   # Accept either the full cal_metrics() output or the sub-list for one metric
   if (metric_name %in% names(metrics_list)) {
     strat_list <- metrics_list[[metric_name]]
+  } else if (length(names(metrics_list)) > 0 &&
+             !any(toupper(names(metrics_list)) %in%
+                  c("GLM", "WET", "SELMAPROTBAS", "SIMSTRAT"))) {
+    # Names are metrics, not models: a full cal_metrics() output without it
+    stop("'", metric_name, "' not found in metrics_list. Is it enabled in ",
+         "Output.yaml (e.g. Level1 > LER > Duration_of_Stratification)? ",
+         "Available metrics: ", paste(names(metrics_list), collapse = ", "),
+         call. = FALSE)
   } else {
     # Assume the user passed the sub-list directly
     strat_list <- metrics_list
