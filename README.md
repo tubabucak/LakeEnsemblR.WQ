@@ -40,7 +40,7 @@ LakeEnsemblR.WQ extends LakeEnsemblR workflows with tools to:
 
 Supported 1D model frameworks:
 
-- GLM-AED2
+- GLM-AED
 - GOTM-WET
 - GOTM-Selmaprotbas
 - Simstrat-AED2
@@ -62,7 +62,7 @@ remotes::install_github("tubabucak/LakeEnsemblR.WQ")
 ```
 
 Some dependencies are GitHub-only wrappers around external lake model
-binaries: `GLM3r`, `WETr`, `SelmaprotbasR`, `SimstratR`. These are
+binaries: `GLMr` (GLM 4 with AED 3; currently Windows-only), `WETr`, `SelmaprotbasR`, `SimstratR`. These are
 optional – you only need the one(s) matching the model(s) you actually
 run. If a required one is missing, `run_ensemble_wq()`/`calib_wq()` will
 tell you at call time rather than fail silently. All of them are listed
@@ -83,7 +83,7 @@ remotes::install_github("tubabucak/LakeEnsemblR")
 ```
 
 `glmtools` is always required, no matter which model you run. It in turn
-needs `GLM3r`, but doesn’t say where to find it – so tools that resolve
+needs `GLM3r` (only as its own dependency; GLM itself now runs through `GLMr`), but doesn’t say where to find it – so tools that resolve
 dependencies automatically (`pak`, and anything built on it, like
 `devtools::install_deps()`/`build_vignettes()`) can fail with
 `Can't find package called GLM3r`, even though `GLM3r` is listed in this
@@ -112,7 +112,7 @@ export_config("LakeEnsemblR.yaml", folder = ex, model = c("GLM", "GOTM", "Simstr
 export_config_wq("LakeEnsemblR_WQ.yaml", folder = ex)
 
 res <- run_ensemble_wq("LakeEnsemblR_WQ.yaml",
-                       models = c("GLM-AED2", "GOTM-WET", "GOTM-Selmaprotbas", "Simstrat-AED2"),
+                       models = c("GLM-AED", "GOTM-WET", "GOTM-Selmaprotbas", "Simstrat-AED2"),
                        folder = ex)
 
 old <- setwd(ex)        # Output.yaml uses paths relative to the project folder
@@ -167,7 +167,7 @@ export_config_wq(
 # and save their outputs in the output folders of the models.
 run_res <- run_ensemble_wq(
   config_file = "LakeEnsemblR_WQ.yaml",
-  models = c("GLM-AED2", "GOTM-WET", "GOTM-Selmaprotbas", "Simstrat-AED2"),
+  models = c("GLM-AED", "GOTM-WET", "GOTM-Selmaprotbas", "Simstrat-AED2"),
   folder = ".",
   validate = TRUE,
   verbose = TRUE
@@ -193,7 +193,7 @@ create_calibration_tables(
   folder = ".",
   config_file = "LakeEnsemblR_WQ.yaml",
   folder_out = "calibration",
-  models_coupled = c("GLM-AED2", "GOTM-WET", "GOTM-Selmaprotbas", "Simstrat-AED2"),
+  models_coupled = c("GLM-AED", "GOTM-WET", "GOTM-Selmaprotbas", "Simstrat-AED2"),
   bounds_factor = 0.2
 )
 
@@ -206,12 +206,12 @@ create_calibration_tables(
 # Then build a calibration setup table from the edited CSVs:
 cs_all <- calib_setup_from_tables(
   folder_in = "calibration",
-  model_coupled = c("GLM-AED2", "GOTM-WET", "GOTM-Selmaprotbas", "Simstrat-AED2")
+  model_coupled = c("GLM-AED", "GOTM-WET", "GOTM-Selmaprotbas", "Simstrat-AED2")
 )
 
 # Calibrate all coupled models at once, with optional DE refinement and parallelism.
 result_all <- cali_ensemble_wq(
-  models          = c("GOTM-WET", "GOTM-Selmaprotbas", "GLM-AED2", "Simstrat-AED2"),
+  models          = c("GOTM-WET", "GOTM-Selmaprotbas", "GLM-AED", "Simstrat-AED2"),
   calib_setup     = cs_all,
   yaml_file       = "Output.yaml",
   folder          = ".",
@@ -239,7 +239,7 @@ result_all <- cali_ensemble_wq(
 )
 
 result_all$summary                            # success/failure + row counts per model
-result_all$best_parameter_sets[["GLM-AED2"]]   # winning parameters for one model
+result_all$best_parameter_sets[["GLM-AED"]]   # winning parameters for one model
 ```
 
 `parallel_models` stacks with `parallel`/`de_parallel` (which
