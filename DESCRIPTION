@@ -13,7 +13,7 @@ Authors@R: c(
     person("Robert", "Ladwig", role = "aut", email = "rladwig@ecos.au.dk"))
 Description: Extends the 'LakeEnsemblR' physical-model ensemble framework
     with water quality and biogeochemical simulation. Configures, runs, and
-    calibrates coupled physical-biogeochemical 1D lake models -- GLM-AED2,
+    calibrates coupled physical-biogeochemical 1D lake models -- GLM-AED,
     GOTM-Selmaprotbas, GOTM-WET, and Simstrat-AED2 -- built on the same
     bathymetry, meteorology, and inflow setup that 'LakeEnsemblR' produces.
     Provides tools to build calibration parameter tables from a shared
@@ -60,12 +60,13 @@ Suggests:
     rmarkdown,
     pkgdown,
     testthat (>= 3.0.0),
-    GLM3r,
+    GLMr,
     WETr,
     SelmaprotbasR,
     SimstratR,
     jsonlite,
     MyLakeR,
+    RNetCDF,
     withr
 VignetteBuilder: knitr
 Encoding: UTF-8
@@ -73,6 +74,7 @@ LazyData: true
 LazyLoad: true
 Config/testthat/edition: 3
 Remotes:
+    aemon-j/GLMr,
     aemon-j/GLM3r@v3.3-lerwq,
     aemon-j/WETr@v2.3-lerwq,
     aemon-j/SelmaprotbasR@v1.2.2-lerwq,
