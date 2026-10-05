@@ -15,12 +15,53 @@
 #'   If NULL, the function tries `files$LER_config_file` from `wq_config_file`,
 #'   then `folder/LakeEnsemblR.yaml`.
 #' @param wq_config_file character; optional path to LakeEnsemblR_WQ.yaml.
-#'   Used only to discover `files$LER_config_file` if `ler_config_file` is NULL.
+#'   Used to discover `files$LER_config_file` if `ler_config_file` is NULL, and
+#'   for the phyto-/zooplankton group names: per-group metrics are written as
+#'   one variable per group, `<metric>_<group>` (e.g.
+#'   `Phyto_C_miligramsPerCubicMeter_diatoms`). Without it, the model's own
+#'   variable name is used as suffix (e.g. `..._PHY_diatoms`), which differs
+#'   between models.
 #' @param compression integer; compression level from 1 (least) to 9 (most).
 #' @param members integer; number of ensemble members in output NetCDF.
 #' @param out_file character; output NetCDF filename.
+#' @param format character; \code{"lerwq"} (default) writes one ensemble file
+#'   with all metrics and models. \code{"isimip"} writes ISIMIP3 lake-sector
+#'   files instead: one file per variable and model, daily, full profile,
+#'   dimensions \code{(time, levlak, lat, lon)} with a \code{depth(levlak)}
+#'   variable, units in mol m-3 (g m-3 for \code{chl}). Variables:
+#'   \code{chl}, \code{phytobio} (total and one file per group, e.g.
+#'   \code{phytobio-diatoms}), \code{zoobio}, \code{tp}, \code{pp}, \code{tpd},
+#'   \code{tn}, \code{pn}, \code{tdn}, \code{do}, \code{doc}, \code{si}.
+#'   \code{tpd} = PO4 + DOP, \code{pp} = TP - tpd, \code{tdn} = NO3 + NH4 +
+#'   DON, \code{pn} = TN - tdn. A variable is skipped (with a message) when a
+#'   metric it needs is not in \code{output_lists}. \code{out_file},
+#'   \code{out_time} and \code{members} are not used.
+#' @param isimip list; settings for \code{format = "isimip"}, all optional:
+#'   \code{forcing} (default \code{"gswp3-w5e5"}), \code{bias_adjustment}
+#'   (default \code{""}, left out of the file name), \code{climate_scenario}
+#'   (\code{"obsclim"}), \code{soc_scenario} (\code{"histsoc"}),
+#'   \code{sens_scenario} (\code{"default"}), \code{lake} (default
+#'   \code{location$name} from LakeEnsemblR.yaml), \code{model_names} (named
+#'   vector overriding the ISIMIP model names, defaults \code{GLM = "glm-aed"},
+#'   \code{SIMSTRAT = "simstrat-aed2"}, \code{WET = "gotm-wet"},
+#'   \code{SELMAPROTBAS = "gotm-selmaprotbas"}), \code{time_ref}
+#'   (\code{"1901-01-01"} for ISIMIP3a; use \code{"1601-01-01"} for ISIMIP3b),
+#'   \code{contact}, \code{institution}, \code{comment} (global attributes;
+#'   contact and institution are required by ISIMIP), \code{variables}
+#'   (subset to write) and \code{out_dir} (default \code{folder/output/isimip}).
+#'   File names follow
+#'   \code{<model>_<forcing>[_<bias>]_<climate>_<soc>_<sens>_<var>_<lake>_daily_<start>_<end>.nc}.
 #'
-#' @return Invisibly returns the output NetCDF file path.
+#' @return Invisibly returns the output NetCDF file path (for
+#'   \code{format = "isimip"}, the paths of all files written).
+#'
+#' @examples
+#' \dontrun{
+#' create_netcdf_output(metric_out, folder = ".", model = c("GLM", "SIMSTRAT"),
+#'                      wq_config_file = "LakeEnsemblR_WQ.yaml",
+#'                      format = "isimip",
+#'                      isimip = list(contact = "name <mail>", institution = "Aarhus University"))
+#' }
 #' @export
 create_netcdf_output <- function(output_lists,
                                  folder = ".",
@@ -32,8 +73,11 @@ create_netcdf_output <- function(output_lists,
                                  wq_config_file = NULL,
                                  compression = 4,
                                  members = 25,
-                                 out_file = "ensemble_output.nc") {
+                                 out_file = "ensemble_output.nc",
+                                 format = c("lerwq", "isimip"),
+                                 isimip = list()) {
 
+  format <- match.arg(format)
   if (!is.list(output_lists) || length(output_lists) == 0) {
     stop("output_lists must be a non-empty list.")
   }
@@ -98,8 +142,53 @@ create_netcdf_output <- function(output_lists,
 
     list(
       longitude = .as_single_numeric(ler_cfg$location$longitude),
-      latitude = .as_single_numeric(ler_cfg$location$latitude)
+      latitude = .as_single_numeric(ler_cfg$location$latitude),
+      name = ler_cfg$location$name
     )
+  }
+
+  if (format == "isimip") {
+    coords <- .infer_coords_from_ler(folder = folder, ler_config_file = ler_config_file,
+                                     wq_config_file = wq_config_file)
+    lon <- if (is.null(longitude)) coords$longitude else longitude
+    lat <- if (is.null(latitude)) coords$latitude else latitude
+    if (is.null(lon) || is.null(lat)) {
+      stop("ISIMIP output needs the lake's longitude/latitude: pass them, or ",
+           "set location in LakeEnsemblR.yaml.", call. = FALSE)
+    }
+    compression <- max(compression, 5)  # ISIMIP asks for compression level >= 5
+    return(.write_isimip_output(
+      output_lists, folder = folder, model = model,
+      longitude = lon, latitude = lat,
+      lake_name = if (is.null(coords$name)) "" else as.character(coords$name),
+      wq_config_file = .resolve_config_path(wq_config_file, folder = folder),
+      compression = compression, isimip = isimip))
+  }
+
+  # Phyto-/zooplankton metrics come as one data.frame per group (instance
+  # "<metric>_<model variable>", e.g. "..._PHY_diatoms" or "..._diatoms_c").
+  # The file has one slot per model and variable, so each group gets its own
+  # variable "<metric>_<group>", named by the group in the WQ config so that
+  # it matches across models.
+  bio_groups <- character()
+  wq_path <- .resolve_config_path(wq_config_file, folder = folder)
+  if (!is.null(wq_path) && file.exists(wq_path)) {
+    wq_cfg <- tryCatch(yaml::read_yaml(wq_path), error = function(e) NULL)
+    bio_groups <- c(names(wq_cfg$phytoplankton$groups), names(wq_cfg$zooplankton$groups))
+  }
+
+  .group_var_key <- function(metric_name, inst_name) {
+    if (identical(inst_name, metric_name) || !startsWith(inst_name, metric_name)) {
+      return(metric_name)
+    }
+    suffix <- substring(inst_name, nchar(metric_name) + 2)
+    if (length(bio_groups) == 0) {
+      return(paste(metric_name, suffix, sep = "_"))
+    }
+    hit <- bio_groups[vapply(bio_groups, function(g) grepl(g, suffix, fixed = TRUE), logical(1))]
+    # No group in the name (e.g. GLM's total PHY_gpp next to per-group rows)
+    if (length(hit) == 0) return(metric_name)
+    paste(metric_name, hit[which.max(nchar(hit))], sep = "_")
   }
 
   .normalize_output_lists <- function(x) {
@@ -185,7 +274,7 @@ create_netcdf_output <- function(output_lists,
               if (metric_name == "Duration_of_Stratification" && .emit_strat(model_name, inst_obj)) {
                 next
               }
-              .add_df(metric_name, model_name, inst_obj)
+              .add_df(.group_var_key(metric_name, inst_name), model_name, inst_obj)
               next
             }
 
@@ -565,6 +654,8 @@ create_netcdf_output <- function(output_lists,
         }
       }
 
+      # Inf / out-of-range values can't be stored as float; write them as missing
+      arr[!is.finite(arr) | abs(arr) > 3.4e38] <- NA_real_
       ncdf4::ncvar_put(ncout, nc_vars[[i]], arr)
       ncdf4::ncatt_put(ncout, nc_vars[[i]], attname = "coordinates", attval = c("lon lat member model"))
       ncdf4::ncvar_change_missval(ncout, nc_vars[[i]], missval = fillvalue)
@@ -601,6 +692,8 @@ create_netcdf_output <- function(output_lists,
         arr[1, 1, 1, model_idx, , ] <- aligned
       }
 
+      # Inf / out-of-range values can't be stored as float; write them as missing
+      arr[!is.finite(arr) | abs(arr) > 3.4e38] <- NA_real_
       ncdf4::ncvar_put(nc = ncout, varid = nc_vars[[i]], vals = arr)
       ncdf4::ncatt_put(ncout, nc_vars[[i]], attname = "coordinates", attval = c("lon lat member model z"))
       ncdf4::ncvar_change_missval(ncout, nc_vars[[i]], missval = fillvalue)
@@ -627,7 +720,9 @@ create_netcdf_wq <- function(output_lists,
                              wq_config_file = NULL,
                              compression = 4,
                              members = 25,
-                             out_file = "ensemble_output.nc") {
+                             out_file = "ensemble_output.nc",
+                             format = c("lerwq", "isimip"),
+                             isimip = list()) {
   create_netcdf_output(
     output_lists = output_lists,
     folder = folder,
@@ -639,6 +734,8 @@ create_netcdf_wq <- function(output_lists,
     wq_config_file = wq_config_file,
     compression = compression,
     members = members,
-    out_file = out_file
+    out_file = out_file,
+    format = format,
+    isimip = isimip
   )
 }
