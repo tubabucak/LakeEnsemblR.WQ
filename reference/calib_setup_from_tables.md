@@ -25,7 +25,7 @@ calib_setup_from_tables(folder_in, model_coupled, group_name = NULL)
 - model_coupled:
 
   character; one coupled model name (e.g. `"GOTM-Selmaprotbas"`,
-  `"GLM-AED2"`), or a character vector of coupled model names. Only
+  `"GLM-AED"`), or a character vector of coupled model names. Only
   parameters for these models are included in the output.
 
 - group_name:
@@ -59,13 +59,13 @@ different model couplings remain distinguishable.
 ex <- lerwq_example()
 cal_dir <- file.path(ex, "calibration")
 create_calibration_tables(folder = ex, config_file = "LakeEnsemblR_WQ.yaml",
-                          folder_out = cal_dir, models_coupled = "GLM-AED2")
+                          folder_out = cal_dir, models_coupled = "GLM-AED")
 #> Error in .wq_model_key(models_coupled): could not find function ".wq_model_key"
 
 # Normally done by hand in a spreadsheet editor: mark two sediment oxygen
 # parameters for calibration
 tab <- read.csv(file.path(cal_dir, "calibration_oxygen.csv"))
-#> Warning: cannot open file '/tmp/Rtmp4mu0F0/lerwq_example/calibration/calibration_oxygen.csv': No such file or directory
+#> Warning: cannot open file '/tmp/Rtmp4welDr/lerwq_example/calibration/calibration_oxygen.csv': No such file or directory
 #> Error in file(file, "rt"): cannot open the connection
 tab$include[tab$parameter %in% c("Fsed_oxy", "Ksed_oxy")] <- TRUE
 #> Error: object 'tab' not found
@@ -73,8 +73,8 @@ write.csv(tab, file.path(cal_dir, "calibration_oxygen.csv"), row.names = FALSE)
 #> Error in eval(expr, p): object 'tab' not found
 
 calib_setup <- calib_setup_from_tables(folder_in = cal_dir,
-                                       model_coupled = "GLM-AED2")
-#> Error in calib_setup_from_tables(folder_in = cal_dir, model_coupled = "GLM-AED2"): No calibration_<module>.csv files found in: /tmp/Rtmp4mu0F0/lerwq_example/calibration
+                                       model_coupled = "GLM-AED")
+#> Error in calib_setup_from_tables(folder_in = cal_dir, model_coupled = "GLM-AED"): No calibration_<module>.csv files found in: /tmp/Rtmp4welDr/lerwq_example/calibration
 #> Run create_calibration_tables() first.
 calib_setup[, c("pars", "lb", "ub", "x0", "file")]
 #> Error: object 'calib_setup' not found

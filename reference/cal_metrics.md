@@ -34,17 +34,17 @@ defined in output.yaml
 ## Examples
 
 ``` r
-if (FALSE) { # requireNamespace("GLM3r", quietly = TRUE) && requireNamespace("WETr", quietly = TRUE) && requireNamespace("SelmaprotbasR", quietly = TRUE) && requireNamespace("SimstratR", quietly = TRUE)
+if (FALSE) { # requireNamespace("GLMr", quietly = TRUE) && requireNamespace("WETr", quietly = TRUE) && requireNamespace("SelmaprotbasR", quietly = TRUE) && requireNamespace("SimstratR", quietly = TRUE)
 # \donttest{
 ex <- lerwq_example()
 library(LakeEnsemblR)  # export_config() needs LakeEnsemblR attached
 export_config("LakeEnsemblR.yaml", folder = ex,
               model = c("GLM", "GOTM", "Simstrat"))
 export_config_wq("LakeEnsemblR_WQ.yaml", folder = ex)
-run_ensemble_wq("LakeEnsemblR_WQ.yaml", models = "GLM-AED2", folder = ex,
+run_ensemble_wq("LakeEnsemblR_WQ.yaml", models = "GLM-AED", folder = ex,
                 verbose = FALSE)
 
-# Harmonized metrics listed in Output.yaml, for GLM-AED2
+# Harmonized metrics listed in Output.yaml, for GLM-AED
 old <- setwd(ex)
 metrics <- cal_metrics(metric_yaml_file = "Output.yaml", model_filter = "GLM",
                        wq_config_file = "LakeEnsemblR_WQ.yaml")

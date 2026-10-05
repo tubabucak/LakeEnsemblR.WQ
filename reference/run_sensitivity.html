@@ -63,7 +63,7 @@ calculated at each step.</p>
 <span>  <span class="va">yaml_file</span>,</span>
 <span>  <span class="va">model_dir</span>,</span>
 <span>  n_steps <span class="op">=</span> <span class="fl">10</span>,</span>
-<span>  model <span class="op">=</span> <span class="st">"GLM-AED2"</span>,</span>
+<span>  model <span class="op">=</span> <span class="st">"GLM-AED"</span>,</span>
 <span>  model_filter <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  group_name <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  yaml_file_model <span class="op">=</span> <span class="cn">NULL</span>,</span>
@@ -107,10 +107,10 @@ parameters. This is the same table produced by <code><a href="calib_setup_from_t
 
 
 <dt id="arg-model">model<a class="anchor" aria-label="anchor" href="#arg-model"></a></dt>
-<dd><p>Character. One of <code>"GLM-AED2"</code>, <code>"GOTM-WET"</code>,
+<dd><p>Character. One of <code>"GLM-AED"</code>, <code>"GOTM-WET"</code>,
 <code>"GOTM-Selmaprotbas"</code>, or <code>"Simstrat-AED2"</code>. Determines both how
 <code>param_name</code> is written to its target file and which model engine is run.
-Default <code>"GLM-AED2"</code> for backwards compatibility.</p></dd>
+Default <code>"GLM-AED"</code> for backwards compatibility.</p></dd>
 
 
 <dt id="arg-model-filter">model_filter<a class="anchor" aria-label="anchor" href="#arg-model-filter"></a></dt>
@@ -145,7 +145,7 @@ only used/required when <code>model</code> is <code>"GOTM-WET"</code> or <code>"
 (e.g. <code>"LakeEnsemblR_WQ.yaml"</code>), passed through to <code><a href="cal_metrics.html">cal_metrics()</a></code>. Required
 when <code>output_mode = "metrics"</code> – <code><a href="cal_metrics.html">cal_metrics()</a></code> uses it to expand
 phytoplankton/zooplankton group templates in the metrics dictionary and has no default
-of its own. For GLM-AED2/Simstrat-AED2 it is also used (in either mode) to locate
+of its own. For GLM-AED/Simstrat-AED2 it is also used (in either mode) to locate
 the AED2 namelist a parameter is written to; if <code>NULL</code>, the standard
 <code>aed2.nml</code>/<code>aed2_phyto_pars.nml</code>/<code>aed2_zoop_pars.nml</code> in
 <code>model_dir</code> are used.</p></dd>
@@ -165,7 +165,7 @@ entry for it.</p></dd>
 <dt id="arg-vars">vars<a class="anchor" aria-label="anchor" href="#arg-vars"></a></dt>
 <dd><p>Character vector. Required when <code>output_mode = "raw"</code> – the model output
 variable name(s) to extract at each step (as they appear in the model's native output,
-e.g. <code>"sO2W"</code> for GOTM-WET/GOTM-Selmaprotbas, <code>"OXY_oxy"</code> for GLM-AED2/Simstrat-AED2).
+e.g. <code>"sO2W"</code> for GOTM-WET/GOTM-Selmaprotbas, <code>"OXY_oxy"</code> for GLM-AED/Simstrat-AED2).
 Passed through to <code><a href="get_output_wq.html">get_output_wq()</a></code>'s <code>vars</code> argument.</p></dd>
 
 
@@ -217,7 +217,7 @@ own <code>verbose</code> argument. Default <code>TRUE</code>.</p></dd>
 </dl></div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
-    <p>The function supports `.nml` and `.csv` parameter files (used by <code>"GLM-AED2"</code> and
+    <p>The function supports `.nml` and `.csv` parameter files (used by <code>"GLM-AED"</code> and
 <code>"Simstrat-AED2"</code>), as well as FABM `.yaml`/`.yml` parameter files (used by
 <code>"GOTM-WET"</code> and <code>"GOTM-Selmaprotbas"</code>, where `calib_setup$file` holds the FABM
 instance/key path, e.g. `"abiotic_water/parameters/hO2Nitr"`, written into `fabm.yaml`
@@ -230,7 +230,7 @@ it into the `{group_name}` placeholder of the `path` (`.yaml`/`.yml`). Otherwise
 
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span> <span class="co"># requireNamespace("GLM3r", quietly = TRUE) &amp;&amp; requireNamespace("WETr", quietly = TRUE) &amp;&amp; requireNamespace("SelmaprotbasR", quietly = TRUE) &amp;&amp; requireNamespace("SimstratR", quietly = TRUE)</span></span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span> <span class="co"># requireNamespace("GLMr", quietly = TRUE) &amp;&amp; requireNamespace("WETr", quietly = TRUE) &amp;&amp; requireNamespace("SelmaprotbasR", quietly = TRUE) &amp;&amp; requireNamespace("SimstratR", quietly = TRUE)</span></span></span>
 <span class="r-in"><span><span class="co"># \donttest{</span></span></span>
 <span class="r-in"><span><span class="va">ex</span> <span class="op">&lt;-</span> <span class="fu"><a href="lerwq_example.html">lerwq_example</a></span><span class="op">(</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/aemon-j/LakeEnsemblR" class="external-link">LakeEnsemblR</a></span><span class="op">)</span>  <span class="co"># export_config() needs LakeEnsemblR attached</span></span></span>
@@ -240,18 +240,18 @@ it into the `{group_name}` placeholder of the `path` (`.yaml`/`.yml`). Otherwise
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="va">cal_dir</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="va">ex</span>, <span class="st">"calibration"</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="create_calibration_tables.html">create_calibration_tables</a></span><span class="op">(</span>folder <span class="op">=</span> <span class="va">ex</span>, config_file <span class="op">=</span> <span class="st">"LakeEnsemblR_WQ.yaml"</span>,</span></span>
-<span class="r-in"><span>                          folder_out <span class="op">=</span> <span class="va">cal_dir</span>, models_coupled <span class="op">=</span> <span class="st">"GLM-AED2"</span><span class="op">)</span></span></span>
+<span class="r-in"><span>                          folder_out <span class="op">=</span> <span class="va">cal_dir</span>, models_coupled <span class="op">=</span> <span class="st">"GLM-AED"</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">tab</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/utils/read.table.html" class="external-link">read.csv</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="va">cal_dir</span>, <span class="st">"calibration_oxygen.csv"</span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">tab</span><span class="op">$</span><span class="va">include</span><span class="op">[</span><span class="va">tab</span><span class="op">$</span><span class="va">parameter</span> <span class="op">==</span> <span class="st">"Fsed_oxy"</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="cn">TRUE</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/write.table.html" class="external-link">write.csv</a></span><span class="op">(</span><span class="va">tab</span>, <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="va">cal_dir</span>, <span class="st">"calibration_oxygen.csv"</span><span class="op">)</span>, row.names <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="va">cs</span> <span class="op">&lt;-</span> <span class="fu"><a href="calib_setup_from_tables.html">calib_setup_from_tables</a></span><span class="op">(</span>folder_in <span class="op">=</span> <span class="va">cal_dir</span>, model_coupled <span class="op">=</span> <span class="st">"GLM-AED2"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">cs</span> <span class="op">&lt;-</span> <span class="fu"><a href="calib_setup_from_tables.html">calib_setup_from_tables</a></span><span class="op">(</span>folder_in <span class="op">=</span> <span class="va">cal_dir</span>, model_coupled <span class="op">=</span> <span class="st">"GLM-AED"</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Vary the sediment oxygen flux across its bounds and keep the raw</span></span></span>
-<span class="r-in"><span><span class="co"># GLM-AED2 oxygen output of each run</span></span></span>
+<span class="r-in"><span><span class="co"># GLM-AED oxygen output of each run</span></span></span>
 <span class="r-in"><span><span class="va">old</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/getwd.html" class="external-link">setwd</a></span><span class="op">(</span><span class="va">ex</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">sens</span> <span class="op">&lt;-</span> <span class="fu">run_sensitivity</span><span class="op">(</span>param_name <span class="op">=</span> <span class="st">"Fsed_oxy"</span>, calib_setup <span class="op">=</span> <span class="va">cs</span>,</span></span>
-<span class="r-in"><span>                        yaml_file <span class="op">=</span> <span class="st">"Output.yaml"</span>, model_dir <span class="op">=</span> <span class="st">"GLM-AED2"</span>,</span></span>
-<span class="r-in"><span>                        n_steps <span class="op">=</span> <span class="fl">3</span>, model <span class="op">=</span> <span class="st">"GLM-AED2"</span>,</span></span>
+<span class="r-in"><span>                        yaml_file <span class="op">=</span> <span class="st">"Output.yaml"</span>, model_dir <span class="op">=</span> <span class="st">"GLM-AED"</span>,</span></span>
+<span class="r-in"><span>                        n_steps <span class="op">=</span> <span class="fl">3</span>, model <span class="op">=</span> <span class="st">"GLM-AED"</span>,</span></span>
 <span class="r-in"><span>                        output_mode <span class="op">=</span> <span class="st">"raw"</span>, vars <span class="op">=</span> <span class="st">"OXY_oxy"</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="plot_sensitivity.html">plot_sensitivity</a></span><span class="op">(</span><span class="va">sens</span>, depth <span class="op">=</span> <span class="fl">20</span>, ylab <span class="op">=</span> <span class="st">"DO (mmol/m3)"</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/getwd.html" class="external-link">setwd</a></span><span class="op">(</span><span class="va">old</span><span class="op">)</span></span></span>

@@ -67,7 +67,7 @@ model output for each iteration.</p>
 <span>  <span class="va">yaml_file</span>,</span>
 <span>  <span class="va">model_dir</span>,</span>
 <span>  n_steps <span class="op">=</span> <span class="fl">10</span>,</span>
-<span>  model <span class="op">=</span> <span class="st">"GLM-AED2"</span>,</span>
+<span>  model <span class="op">=</span> <span class="st">"GLM-AED"</span>,</span>
 <span>  model_filter <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  yaml_file_model <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  par_file <span class="op">=</span> <span class="cn">NULL</span>,</span>
@@ -122,9 +122,9 @@ model-folder resolution by <code><a href="get_output_wq.html">get_output_wq()</a
 
 
 <dt id="arg-model">model<a class="anchor" aria-label="anchor" href="#arg-model"></a></dt>
-<dd><p>Character. One of <code>"GLM-AED2"</code>, <code>"GOTM-WET"</code>,
+<dd><p>Character. One of <code>"GLM-AED"</code>, <code>"GOTM-WET"</code>,
 <code>"GOTM-Selmaprotbas"</code>, or <code>"Simstrat-AED2"</code>. Determines both how each parameter is
-written to its target file and which model engine is run. Default <code>"GLM-AED2"</code> for
+written to its target file and which model engine is run. Default <code>"GLM-AED"</code> for
 backwards compatibility.</p></dd>
 
 
@@ -147,7 +147,7 @@ back to <code>"gotm.yaml"</code>.</p></dd>
 <dt id="arg-wq-config-file">wq_config_file<a class="anchor" aria-label="anchor" href="#arg-wq-config-file"></a></dt>
 <dd><p>Character or <code>NULL</code>. Path to the LakeEnsemblR_WQ config file, passed
 through to <code><a href="cal_metrics.html">cal_metrics()</a></code>. Required when <code>output_mode = "metrics"</code>. For
-GLM-AED2/Simstrat-AED2 it is also used (in either mode) to locate the AED2 namelist a
+GLM-AED/Simstrat-AED2 it is also used (in either mode) to locate the AED2 namelist a
 parameter is written to; if <code>NULL</code>, the standard AED2 namelists in <code>model_dir</code>
 are used.</p></dd>
 

@@ -19,7 +19,7 @@ run_multi_param_sensitivity(
   yaml_file,
   model_dir,
   n_steps = 10,
-  model = "GLM-AED2",
+  model = "GLM-AED",
   model_filter = NULL,
   yaml_file_model = NULL,
   par_file = NULL,
@@ -82,10 +82,10 @@ run_multi_param_sensitivity(
 
 - model:
 
-  Character. One of `"GLM-AED2"`, `"GOTM-WET"`, `"GOTM-Selmaprotbas"`,
-  or `"Simstrat-AED2"`. Determines both how each parameter is written to
-  its target file and which model engine is run. Default `"GLM-AED2"`
-  for backwards compatibility.
+  Character. One of `"GLM-AED"`, `"GOTM-WET"`, `"GOTM-Selmaprotbas"`, or
+  `"Simstrat-AED2"`. Determines both how each parameter is written to
+  its target file and which model engine is run. Default `"GLM-AED"` for
+  backwards compatibility.
 
 - model_filter:
 
@@ -111,7 +111,7 @@ run_multi_param_sensitivity(
   Character or `NULL`. Path to the LakeEnsemblR_WQ config file, passed
   through to
   [`cal_metrics()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/cal_metrics.md).
-  Required when `output_mode = "metrics"`. For GLM-AED2/Simstrat-AED2 it
+  Required when `output_mode = "metrics"`. For GLM-AED/Simstrat-AED2 it
   is also used (in either mode) to locate the AED2 namelist a parameter
   is written to; if `NULL`, the standard AED2 namelists in `model_dir`
   are used.

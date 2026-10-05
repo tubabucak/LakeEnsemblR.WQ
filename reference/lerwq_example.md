@@ -5,7 +5,7 @@ choice, so it can be configured and run without modifying the installed
 package. The example covers one year (1995) of Lake Mendota (Wisconsin,
 USA): meteorological forcing, inflow/outflow, bathymetry, observed water
 temperature and water quality, and LakeEnsemblR/LakeEnsemblR.WQ
-configuration files for GLM-AED2, GOTM-WET, GOTM-Selmaprotbas and
+configuration files for GLM-AED, GOTM-WET, GOTM-Selmaprotbas and
 Simstrat-AED2. It is used by the examples throughout this package.
 
 ## Usage

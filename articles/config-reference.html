@@ -109,16 +109,16 @@ end-to-end against actual data.</p>
 <code>LakeEnsemblR_WQ.yaml</code><a class="anchor" aria-label="anchor" href="#lakeensemblr_wq-yaml"></a>
 </h2>
 <p>A complete, real example (from a coupled
-GLM-AED2/GOTM-WET/GOTM-Selmaprotbas/ Simstrat-AED2 setup):</p>
+GLM-AED/GOTM-WET/GOTM-Selmaprotbas/ Simstrat-AED2 setup):</p>
 <div class="sourceCode" id="cb1"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="fu">models</span><span class="kw">:</span></span>
 <span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a><span class="at">   </span><span class="kw">-</span><span class="at"> GOTM-WET</span></span>
 <span id="cb1-3"><a href="#cb1-3" tabindex="-1"></a><span class="at">   </span><span class="kw">-</span><span class="at"> GOTM-Selmaprotbas</span></span>
-<span id="cb1-4"><a href="#cb1-4" tabindex="-1"></a><span class="at">   </span><span class="kw">-</span><span class="at"> GLM-AED2</span></span>
+<span id="cb1-4"><a href="#cb1-4" tabindex="-1"></a><span class="at">   </span><span class="kw">-</span><span class="at"> GLM-AED</span></span>
 <span id="cb1-5"><a href="#cb1-5" tabindex="-1"></a><span class="at">   </span><span class="kw">-</span><span class="at"> Simstrat-AED2</span></span>
 <span id="cb1-6"><a href="#cb1-6" tabindex="-1"></a><span class="fu">config_files</span><span class="kw">:</span></span>
 <span id="cb1-7"><a href="#cb1-7" tabindex="-1"></a><span class="at">   </span><span class="fu">GOTM-WET</span><span class="kw">:</span><span class="at"> GOTM-WET/fabm.yaml</span></span>
 <span id="cb1-8"><a href="#cb1-8" tabindex="-1"></a><span class="at">   </span><span class="fu">GOTM-Selmaprotbas</span><span class="kw">:</span><span class="at"> GOTM-Selmaprotbas/fabm.yaml</span></span>
-<span id="cb1-9"><a href="#cb1-9" tabindex="-1"></a><span class="at">   </span><span class="fu">GLM-AED2</span><span class="kw">:</span><span class="at"> GLM-AED2/aed2.nml</span></span>
+<span id="cb1-9"><a href="#cb1-9" tabindex="-1"></a><span class="at">   </span><span class="fu">GLM-AED</span><span class="kw">:</span><span class="at"> GLM-AED/aed2.nml</span></span>
 <span id="cb1-10"><a href="#cb1-10" tabindex="-1"></a><span class="at">   </span><span class="fu">Simstrat-AED2</span><span class="kw">:</span><span class="at"> Simstrat-AED2/aed2.nml</span></span>
 <span id="cb1-11"><a href="#cb1-11" tabindex="-1"></a><span class="fu">run_settings</span><span class="kw">:</span></span>
 <span id="cb1-12"><a href="#cb1-12" tabindex="-1"></a><span class="at">   </span><span class="fu">bio-shading</span><span class="kw">:</span><span class="at"> </span><span class="ch">true</span></span>
@@ -187,7 +187,7 @@ GLM-AED2/GOTM-WET/GOTM-Selmaprotbas/ Simstrat-AED2 setup):</p>
 <tr class="odd">
 <td><code>models</code></td>
 <td>Which coupled models to set up/run. Supported values:
-<code>GLM-AED2</code>, <code>GOTM-WET</code>,
+<code>GLM-AED</code>, <code>GOTM-WET</code>,
 <code>GOTM-Selmaprotbas</code>, <code>Simstrat-AED2</code>
 (<code>MyLake</code>/<code>PCLake</code> are recognized but not
 supported).</td>
@@ -339,7 +339,7 @@ configuration file.</p>
 <span id="cb4-4"><a href="#cb4-4" tabindex="-1"></a><span class="at">  </span><span class="fu">metric_yaml_file</span><span class="kw">:</span><span class="at"> </span><span class="st">"Output.yaml"</span></span>
 <span id="cb4-5"><a href="#cb4-5" tabindex="-1"></a><span class="at">  </span><span class="fu">LER_config_file</span><span class="kw">:</span><span class="at"> </span><span class="st">"LakeEnsemblR.yaml"</span></span>
 <span id="cb4-6"><a href="#cb4-6" tabindex="-1"></a><span class="fu">model_folders</span><span class="kw">:</span></span>
-<span id="cb4-7"><a href="#cb4-7" tabindex="-1"></a><span class="at">  </span><span class="fu">GLM</span><span class="kw">:</span><span class="at"> </span><span class="st">"GLM-AED2/output"</span></span>
+<span id="cb4-7"><a href="#cb4-7" tabindex="-1"></a><span class="at">  </span><span class="fu">GLM</span><span class="kw">:</span><span class="at"> </span><span class="st">"GLM-AED/output"</span></span>
 <span id="cb4-8"><a href="#cb4-8" tabindex="-1"></a><span class="at">  </span><span class="fu">WET</span><span class="kw">:</span><span class="at"> </span><span class="st">"GOTM-WET/output"</span></span>
 <span id="cb4-9"><a href="#cb4-9" tabindex="-1"></a><span class="at">  </span><span class="fu">SELMAPROTBAS</span><span class="kw">:</span><span class="at"> </span><span class="st">"GOTM-Selmaprotbas/output"</span></span>
 <span id="cb4-10"><a href="#cb4-10" tabindex="-1"></a><span class="at">  </span><span class="fu">SIMSTRAT</span><span class="kw">:</span><span class="at"> </span><span class="st">"Simstrat-AED2/output"</span></span>
@@ -420,7 +420,7 @@ the metrics config lives without being told separately.</td>
 <tbody>
 <tr class="odd">
 <td><code>GLM</code></td>
-<td><code>GLM-AED2/output</code></td>
+<td><code>GLM-AED/output</code></td>
 </tr>
 <tr class="even">
 <td><code>WET</code></td>

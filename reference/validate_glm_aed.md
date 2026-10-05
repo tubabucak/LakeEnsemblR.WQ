@@ -10,7 +10,7 @@ not be found.
 ## Usage
 
 ``` r
-validate_glm_aed(sim_folder = ".", file = "glm3.nml", verbose = TRUE)
+validate_glm_aed(sim_folder = ".", file = NULL, verbose = TRUE)
 ```
 
 ## Arguments
@@ -23,7 +23,7 @@ validate_glm_aed(sim_folder = ".", file = "glm3.nml", verbose = TRUE)
 - file:
 
   Character. Name of the GLM namelist file inside `sim_folder`. Default
-  is `"glm3.nml"`.
+  `NULL` uses `"glm4.nml"` if present, otherwise `"glm3.nml"`.
 
 - verbose:
 

@@ -12,7 +12,7 @@ model-by-model, using either a combined `calib_setup` table (with
 
 ``` r
 cali_ensemble_wq(
-  models = c("GLM-AED2", "GOTM-WET", "GOTM-Selmaprotbas", "Simstrat-AED2"),
+  models = c("GLM-AED", "GOTM-WET", "GOTM-Selmaprotbas", "Simstrat-AED2"),
   calib_setup,
   yaml_file,
   folder = ".",
@@ -61,7 +61,7 @@ cali_ensemble_wq(
 - models:
 
   Character vector of models to calibrate. Supported values are
-  `"GLM-AED2"`, `"GOTM-WET"`, `"GOTM-Selmaprotbas"`, and
+  `"GLM-AED"`, `"GOTM-WET"`, `"GOTM-Selmaprotbas"`, and
   `"Simstrat-AED2"`. Matching is case-insensitive.
 
 - calib_setup:
@@ -180,7 +180,7 @@ cali_ensemble_wq(
 
 - force_parallel_glm_simstrat:
 
-  Logical. GLM-AED2 and Simstrat-AED2 edit their config files in-place
+  Logical. GLM-AED and Simstrat-AED2 edit their config files in-place
   during each LHC sample; by default (`FALSE`) their LHC phase always
   runs sequentially even when `parallel = TRUE`, to avoid file write
   collisions.

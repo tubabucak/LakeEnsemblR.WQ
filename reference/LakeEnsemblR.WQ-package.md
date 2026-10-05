@@ -2,7 +2,7 @@
 
 Extends the 'LakeEnsemblR' physical-model ensemble framework with water
 quality and biogeochemical simulation. Configures, runs, and calibrates
-coupled physical-biogeochemical 1D lake models – GLM-AED2,
+coupled physical-biogeochemical 1D lake models – GLM-AED,
 GOTM-Selmaprotbas, GOTM-WET, and Simstrat-AED2 – built on the same
 bathymetry, meteorology, and inflow setup that 'LakeEnsemblR' produces.
 Provides tools to build calibration parameter tables from a shared

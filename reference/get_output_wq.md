@@ -58,17 +58,17 @@ dataframe or list of output variables
 ## Examples
 
 ``` r
-if (FALSE) { # requireNamespace("GLM3r", quietly = TRUE) && requireNamespace("WETr", quietly = TRUE) && requireNamespace("SelmaprotbasR", quietly = TRUE) && requireNamespace("SimstratR", quietly = TRUE)
+if (FALSE) { # requireNamespace("GLMr", quietly = TRUE) && requireNamespace("WETr", quietly = TRUE) && requireNamespace("SelmaprotbasR", quietly = TRUE) && requireNamespace("SimstratR", quietly = TRUE)
 # \donttest{
 ex <- lerwq_example()
 library(LakeEnsemblR)  # export_config() needs LakeEnsemblR attached
 export_config("LakeEnsemblR.yaml", folder = ex,
               model = c("GLM", "GOTM", "Simstrat"))
 export_config_wq("LakeEnsemblR_WQ.yaml", folder = ex)
-run_ensemble_wq("LakeEnsemblR_WQ.yaml", models = "GLM-AED2", folder = ex,
+run_ensemble_wq("LakeEnsemblR_WQ.yaml", models = "GLM-AED", folder = ex,
                 verbose = FALSE)
 
-# GLM-AED2 oxygen (mmol O2/m3) at 1, 10 and 20 m, converted to g/m3
+# GLM-AED oxygen (mmol O2/m3) at 1, 10 and 20 m, converted to g/m3
 old <- setwd(ex)
 do <- get_output_wq(config_file = "Output.yaml", model = "GLM", vars = "OXY_oxy",
                     obs_depths = c(1, 10, 20), conversion_factor = 0.032)

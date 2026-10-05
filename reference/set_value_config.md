@@ -53,7 +53,7 @@ set_value_config(
 
 - model_coupled:
 
-  character; options one of "GLM-AED2", "GOTM-Selmaprotbas", "GOTM-WET",
+  character; options one of "GLM-AED", "GOTM-Selmaprotbas", "GOTM-WET",
   "Simstrat-AED2", "MyLake", "PCLake"
 
 - parameter:

@@ -16,7 +16,7 @@ run_sensitivity(
   yaml_file,
   model_dir,
   n_steps = 10,
-  model = "GLM-AED2",
+  model = "GLM-AED",
   model_filter = NULL,
   group_name = NULL,
   yaml_file_model = NULL,
@@ -66,10 +66,10 @@ run_sensitivity(
 
 - model:
 
-  Character. One of `"GLM-AED2"`, `"GOTM-WET"`, `"GOTM-Selmaprotbas"`,
-  or `"Simstrat-AED2"`. Determines both how `param_name` is written to
-  its target file and which model engine is run. Default `"GLM-AED2"`
-  for backwards compatibility.
+  Character. One of `"GLM-AED"`, `"GOTM-WET"`, `"GOTM-Selmaprotbas"`, or
+  `"Simstrat-AED2"`. Determines both how `param_name` is written to its
+  target file and which model engine is run. Default `"GLM-AED"` for
+  backwards compatibility.
 
 - model_filter:
 
@@ -109,7 +109,7 @@ run_sensitivity(
   [`cal_metrics()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/cal_metrics.md)
   uses it to expand phytoplankton/zooplankton group templates in the
   metrics dictionary and has no default of its own. For
-  GLM-AED2/Simstrat-AED2 it is also used (in either mode) to locate the
+  GLM-AED/Simstrat-AED2 it is also used (in either mode) to locate the
   AED2 namelist a parameter is written to; if `NULL`, the standard
   `aed2.nml`/`aed2_phyto_pars.nml`/`aed2_zoop_pars.nml` in `model_dir`
   are used.
@@ -133,7 +133,7 @@ run_sensitivity(
   Character vector. Required when `output_mode = "raw"` – the model
   output variable name(s) to extract at each step (as they appear in the
   model's native output, e.g. `"sO2W"` for GOTM-WET/GOTM-Selmaprotbas,
-  `"OXY_oxy"` for GLM-AED2/Simstrat-AED2). Passed through to
+  `"OXY_oxy"` for GLM-AED/Simstrat-AED2). Passed through to
   [`get_output_wq()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/get_output_wq.md)'s
   `vars` argument.
 
@@ -196,7 +196,7 @@ A list with one element per parameter value step. Each element contains:
 ## Details
 
 The function supports \`.nml\` and \`.csv\` parameter files (used by
-`"GLM-AED2"` and `"Simstrat-AED2"`), as well as FABM \`.yaml\`/\`.yml\`
+`"GLM-AED"` and `"Simstrat-AED2"`), as well as FABM \`.yaml\`/\`.yml\`
 parameter files (used by `"GOTM-WET"` and `"GOTM-Selmaprotbas"`, where
 \`calib_setup\$file\` holds the FABM instance/key path, e.g.
 \`"abiotic_water/parameters/hO2Nitr"\`, written into \`fabm.yaml\` via
@@ -212,7 +212,7 @@ row.
 ## Examples
 
 ``` r
-if (FALSE) { # requireNamespace("GLM3r", quietly = TRUE) && requireNamespace("WETr", quietly = TRUE) && requireNamespace("SelmaprotbasR", quietly = TRUE) && requireNamespace("SimstratR", quietly = TRUE)
+if (FALSE) { # requireNamespace("GLMr", quietly = TRUE) && requireNamespace("WETr", quietly = TRUE) && requireNamespace("SelmaprotbasR", quietly = TRUE) && requireNamespace("SimstratR", quietly = TRUE)
 # \donttest{
 ex <- lerwq_example()
 library(LakeEnsemblR)  # export_config() needs LakeEnsemblR attached
@@ -222,18 +222,18 @@ export_config_wq("LakeEnsemblR_WQ.yaml", folder = ex)
 
 cal_dir <- file.path(ex, "calibration")
 create_calibration_tables(folder = ex, config_file = "LakeEnsemblR_WQ.yaml",
-                          folder_out = cal_dir, models_coupled = "GLM-AED2")
+                          folder_out = cal_dir, models_coupled = "GLM-AED")
 tab <- read.csv(file.path(cal_dir, "calibration_oxygen.csv"))
 tab$include[tab$parameter == "Fsed_oxy"] <- TRUE
 write.csv(tab, file.path(cal_dir, "calibration_oxygen.csv"), row.names = FALSE)
-cs <- calib_setup_from_tables(folder_in = cal_dir, model_coupled = "GLM-AED2")
+cs <- calib_setup_from_tables(folder_in = cal_dir, model_coupled = "GLM-AED")
 
 # Vary the sediment oxygen flux across its bounds and keep the raw
-# GLM-AED2 oxygen output of each run
+# GLM-AED oxygen output of each run
 old <- setwd(ex)
 sens <- run_sensitivity(param_name = "Fsed_oxy", calib_setup = cs,
-                        yaml_file = "Output.yaml", model_dir = "GLM-AED2",
-                        n_steps = 3, model = "GLM-AED2",
+                        yaml_file = "Output.yaml", model_dir = "GLM-AED",
+                        n_steps = 3, model = "GLM-AED",
                         output_mode = "raw", vars = "OXY_oxy")
 plot_sensitivity(sens, depth = 20, ylab = "DO (mmol/m3)")
 setwd(old)

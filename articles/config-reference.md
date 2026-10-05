@@ -39,18 +39,18 @@ end-to-end against actual data.
 ## `LakeEnsemblR_WQ.yaml`
 
 A complete, real example (from a coupled
-GLM-AED2/GOTM-WET/GOTM-Selmaprotbas/ Simstrat-AED2 setup):
+GLM-AED/GOTM-WET/GOTM-Selmaprotbas/ Simstrat-AED2 setup):
 
 ``` yaml
 models:
    - GOTM-WET
    - GOTM-Selmaprotbas
-   - GLM-AED2
+   - GLM-AED
    - Simstrat-AED2
 config_files:
    GOTM-WET: GOTM-WET/fabm.yaml
    GOTM-Selmaprotbas: GOTM-Selmaprotbas/fabm.yaml
-   GLM-AED2: GLM-AED2/aed2.nml
+   GLM-AED: GLM-AED/aed2.nml
    Simstrat-AED2: Simstrat-AED2/aed2.nml
 run_settings:
    bio-shading: true
@@ -109,7 +109,7 @@ fish:
 
 | Key | Purpose |
 |----|----|
-| `models` | Which coupled models to set up/run. Supported values: `GLM-AED2`, `GOTM-WET`, `GOTM-Selmaprotbas`, `Simstrat-AED2` (`MyLake`/`PCLake` are recognized but not supported). |
+| `models` | Which coupled models to set up/run. Supported values: `GLM-AED`, `GOTM-WET`, `GOTM-Selmaprotbas`, `Simstrat-AED2` (`MyLake`/`PCLake` are recognized but not supported). |
 | `config_files` | One entry per model in `models`, pointing at that model’s own native biogeochemistry config file (`fabm.yaml` for GOTM-based models, `aed2.nml` for GLM/Simstrat). [`export_config_wq()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/export_config_wq.md) writes parameter values into these files. |
 | `run_settings` | Solver/numerics settings shared across models – see below. |
 | `input` | Currently just `inflows`: path to the nutrient-inflow CSV used by [`export_inputs()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/export_inputs.md). |
@@ -195,7 +195,7 @@ files:
   metric_yaml_file: "Output.yaml"
   LER_config_file: "LakeEnsemblR.yaml"
 model_folders:
-  GLM: "GLM-AED2/output"
+  GLM: "GLM-AED/output"
   WET: "GOTM-WET/output"
   SELMAPROTBAS: "GOTM-Selmaprotbas/output"
   SIMSTRAT: "Simstrat-AED2/output"
@@ -247,7 +247,7 @@ that model writes its NetCDF output:
 
 | Key            | Typical value              |
 |----------------|----------------------------|
-| `GLM`          | `GLM-AED2/output`          |
+| `GLM`          | `GLM-AED/output`           |
 | `WET`          | `GOTM-WET/output`          |
 | `SELMAPROTBAS` | `GOTM-Selmaprotbas/output` |
 | `SIMSTRAT`     | `Simstrat-AED2/output`     |

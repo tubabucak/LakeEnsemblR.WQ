@@ -56,7 +56,9 @@
 <span>  wq_config_file <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  compression <span class="op">=</span> <span class="fl">4</span>,</span>
 <span>  members <span class="op">=</span> <span class="fl">25</span>,</span>
-<span>  out_file <span class="op">=</span> <span class="st">"ensemble_output.nc"</span></span>
+<span>  out_file <span class="op">=</span> <span class="st">"ensemble_output.nc"</span>,</span>
+<span>  format <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"lerwq"</span>, <span class="st">"isimip"</span><span class="op">)</span>,</span>
+<span>  isimip <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -99,7 +101,12 @@ then `folder/LakeEnsemblR.yaml`.</p></dd>
 
 <dt id="arg-wq-config-file">wq_config_file<a class="anchor" aria-label="anchor" href="#arg-wq-config-file"></a></dt>
 <dd><p>character; optional path to LakeEnsemblR_WQ.yaml.
-Used only to discover `files$LER_config_file` if `ler_config_file` is NULL.</p></dd>
+Used to discover `files$LER_config_file` if `ler_config_file` is NULL, and
+for the phyto-/zooplankton group names: per-group metrics are written as
+one variable per group, `&lt;metric&gt;_&lt;group&gt;` (e.g.
+`Phyto_C_miligramsPerCubicMeter_diatoms`). Without it, the model's own
+variable name is used as suffix (e.g. `..._PHY_diatoms`), which differs
+between models.</p></dd>
 
 
 <dt id="arg-compression">compression<a class="anchor" aria-label="anchor" href="#arg-compression"></a></dt>
@@ -113,12 +120,56 @@ Used only to discover `files$LER_config_file` if `ler_config_file` is NULL.</p><
 <dt id="arg-out-file">out_file<a class="anchor" aria-label="anchor" href="#arg-out-file"></a></dt>
 <dd><p>character; output NetCDF filename.</p></dd>
 
+
+<dt id="arg-format">format<a class="anchor" aria-label="anchor" href="#arg-format"></a></dt>
+<dd><p>character; <code>"lerwq"</code> (default) writes one ensemble file
+with all metrics and models. <code>"isimip"</code> writes ISIMIP3 lake-sector
+files instead: one file per variable and model, daily, full profile,
+dimensions <code>(time, levlak, lat, lon)</code> with a <code>depth(levlak)</code>
+variable, units in mol m-3 (g m-3 for <code>chl</code>). Variables:
+<code>chl</code>, <code>phytobio</code> (total and one file per group, e.g.
+<code>phytobio-diatoms</code>), <code>zoobio</code>, <code>tp</code>, <code>pp</code>, <code>tpd</code>,
+<code>tn</code>, <code>pn</code>, <code>tdn</code>, <code>do</code>, <code>doc</code>, <code>si</code>.
+<code>tpd</code> = PO4 + DOP, <code>pp</code> = TP - tpd, <code>tdn</code> = NO3 + NH4 +
+DON, <code>pn</code> = TN - tdn. A variable is skipped (with a message) when a
+metric it needs is not in <code>output_lists</code>. <code>out_file</code>,
+<code>out_time</code> and <code>members</code> are not used.</p></dd>
+
+
+<dt id="arg-isimip">isimip<a class="anchor" aria-label="anchor" href="#arg-isimip"></a></dt>
+<dd><p>list; settings for <code>format = "isimip"</code>, all optional:
+<code>forcing</code> (default <code>"gswp3-w5e5"</code>), <code>bias_adjustment</code>
+(default <code>""</code>, left out of the file name), <code>climate_scenario</code>
+(<code>"obsclim"</code>), <code>soc_scenario</code> (<code>"histsoc"</code>),
+<code>sens_scenario</code> (<code>"default"</code>), <code>lake</code> (default
+<code>location$name</code> from LakeEnsemblR.yaml), <code>model_names</code> (named
+vector overriding the ISIMIP model names, defaults <code>GLM = "glm-aed"</code>,
+<code>SIMSTRAT = "simstrat-aed2"</code>, <code>WET = "gotm-wet"</code>,
+<code>SELMAPROTBAS = "gotm-selmaprotbas"</code>), <code>time_ref</code>
+(<code>"1901-01-01"</code> for ISIMIP3a; use <code>"1601-01-01"</code> for ISIMIP3b),
+<code>contact</code>, <code>institution</code>, <code>comment</code> (global attributes;
+contact and institution are required by ISIMIP), <code>variables</code>
+(subset to write) and <code>out_dir</code> (default <code>folder/output/isimip</code>).
+File names follow
+<code>&lt;model&gt;_&lt;forcing&gt;[_&lt;bias&gt;]_&lt;climate&gt;_&lt;soc&gt;_&lt;sens&gt;_&lt;var&gt;_&lt;lake&gt;_daily_&lt;start&gt;_&lt;end&gt;.nc</code>.</p></dd>
+
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>Invisibly returns the output NetCDF file path.</p>
+    <p>Invisibly returns the output NetCDF file path (for
+  <code>format = "isimip"</code>, the paths of all files written).</p>
     </div>
 
+    <div class="section level2">
+    <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span> <span class="co"># \dontrun{</span></span></span>
+<span class="r-in"><span><span class="fu">create_netcdf_output</span><span class="op">(</span><span class="va">metric_out</span>, folder <span class="op">=</span> <span class="st">"."</span>, model <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"GLM"</span>, <span class="st">"SIMSTRAT"</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>                     wq_config_file <span class="op">=</span> <span class="st">"LakeEnsemblR_WQ.yaml"</span>,</span></span>
+<span class="r-in"><span>                     format <span class="op">=</span> <span class="st">"isimip"</span>,</span></span>
+<span class="r-in"><span>                     isimip <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>contact <span class="op">=</span> <span class="st">"name &lt;mail&gt;"</span>, institution <span class="op">=</span> <span class="st">"Aarhus University"</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="op">}</span> <span class="co"># }</span></span></span>
+</code></pre></div>
+    </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside></div>
 

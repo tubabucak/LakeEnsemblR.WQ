@@ -39,7 +39,7 @@ plot_model_vs_obs_wq(
 
 - model:
 
-  character vector; one or more models to extract, e.g. `"GLM-AED2"`,
+  character vector; one or more models to extract, e.g. `"GLM-AED"`,
   `"GOTM-WET"`, `"GOTM-Selmaprotbas"`, or `"Simstrat-AED2"` (also
   accepts the short forms `"GLM"`, `"WET"`, `"SELMAPROTBAS"`,
   `"SIMSTRAT"`). Passing more than one plots them together against the
@@ -153,17 +153,17 @@ A list with:
 ## Examples
 
 ``` r
-if (FALSE) { # requireNamespace("GLM3r", quietly = TRUE) && requireNamespace("WETr", quietly = TRUE) && requireNamespace("SelmaprotbasR", quietly = TRUE) && requireNamespace("SimstratR", quietly = TRUE)
+if (FALSE) { # requireNamespace("GLMr", quietly = TRUE) && requireNamespace("WETr", quietly = TRUE) && requireNamespace("SelmaprotbasR", quietly = TRUE) && requireNamespace("SimstratR", quietly = TRUE)
 # \donttest{
 ex <- lerwq_example()
 library(LakeEnsemblR)  # export_config() needs LakeEnsemblR attached
 export_config("LakeEnsemblR.yaml", folder = ex,
               model = c("GLM", "GOTM", "Simstrat"))
 export_config_wq("LakeEnsemblR_WQ.yaml", folder = ex)
-run_ensemble_wq("LakeEnsemblR_WQ.yaml", models = "GLM-AED2", folder = ex,
+run_ensemble_wq("LakeEnsemblR_WQ.yaml", models = "GLM-AED", folder = ex,
                 verbose = FALSE)
 
-# Simulated vs observed dissolved oxygen for GLM-AED2
+# Simulated vs observed dissolved oxygen for GLM-AED
 old <- setwd(ex)
 p <- plot_model_vs_obs_wq(config_file = "Output.yaml", model = "GLM",
                           obs_data = "standart_observed_data.csv",
