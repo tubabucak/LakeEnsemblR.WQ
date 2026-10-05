@@ -12,7 +12,7 @@ calib_setup_from_tables(folder_in, model_coupled, group_name = NULL)
 \code{\link{create_calibration_tables}}).}
 
 \item{model_coupled}{character; one coupled model name (e.g.
-\code{"GOTM-Selmaprotbas"}, \code{"GLM-AED2"}), or a character vector of
+\code{"GOTM-Selmaprotbas"}, \code{"GLM-AED"}), or a character vector of
 coupled model names. Only parameters for these models are included in the
 output.}
 
@@ -49,7 +49,7 @@ rows from different model couplings remain distinguishable.
 ex <- lerwq_example()
 cal_dir <- file.path(ex, "calibration")
 create_calibration_tables(folder = ex, config_file = "LakeEnsemblR_WQ.yaml",
-                          folder_out = cal_dir, models_coupled = "GLM-AED2")
+                          folder_out = cal_dir, models_coupled = "GLM-AED")
 
 # Normally done by hand in a spreadsheet editor: mark two sediment oxygen
 # parameters for calibration
@@ -58,7 +58,7 @@ tab$include[tab$parameter \%in\% c("Fsed_oxy", "Ksed_oxy")] <- TRUE
 write.csv(tab, file.path(cal_dir, "calibration_oxygen.csv"), row.names = FALSE)
 
 calib_setup <- calib_setup_from_tables(folder_in = cal_dir,
-                                       model_coupled = "GLM-AED2")
+                                       model_coupled = "GLM-AED")
 calib_setup[, c("pars", "lb", "ub", "x0", "file")]
 
 }

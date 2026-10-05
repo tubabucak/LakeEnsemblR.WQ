@@ -11,7 +11,7 @@ run_multi_param_sensitivity(
   yaml_file,
   model_dir,
   n_steps = 10,
-  model = "GLM-AED2",
+  model = "GLM-AED",
   model_filter = NULL,
   yaml_file_model = NULL,
   par_file = NULL,
@@ -49,9 +49,9 @@ model-folder resolution by \code{get_output_wq()} (output.yaml).}
 
 \item{n_steps}{Number of LHS iterations (i.e., model realizations).}
 
-\item{model}{Character. One of \code{"GLM-AED2"}, \code{"GOTM-WET"},
+\item{model}{Character. One of \code{"GLM-AED"}, \code{"GOTM-WET"},
 \code{"GOTM-Selmaprotbas"}, or \code{"Simstrat-AED2"}. Determines both how each parameter is
-written to its target file and which model engine is run. Default \code{"GLM-AED2"} for
+written to its target file and which model engine is run. Default \code{"GLM-AED"} for
 backwards compatibility.}
 
 \item{model_filter}{Character or \code{NULL}. Model identifier used by \code{cal_metrics()}/
@@ -66,7 +66,7 @@ back to \code{"gotm.yaml"}.}
 
 \item{wq_config_file}{Character or \code{NULL}. Path to the LakeEnsemblR_WQ config file, passed
 through to \code{cal_metrics()}. Required when \code{output_mode = "metrics"}. For
-GLM-AED2/Simstrat-AED2 it is also used (in either mode) to locate the AED2 namelist a
+GLM-AED/Simstrat-AED2 it is also used (in either mode) to locate the AED2 namelist a
 parameter is written to; if \code{NULL}, the standard AED2 namelists in \code{model_dir}
 are used.}
 

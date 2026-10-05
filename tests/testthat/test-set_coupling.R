@@ -3,12 +3,12 @@ test_that("set_coupling() warns and skips a model with a missing config_files en
   dir.create(dir)
   # config_files has no entry at all for the one coupled model.
   yaml::write_yaml(
-    list(models = list("GLM-AED2"), config_files = list()),
+    list(models = list("GLM-AED"), config_files = list()),
     file.path(dir, "LakeEnsemblR_WQ.yaml")
   )
 
   expect_warning(
     set_coupling(config_file = "LakeEnsemblR_WQ.yaml", folder = dir),
-    "Skipping coupling for model 'GLM-AED2'.*missing or NA"
+    "Skipping coupling for model 'GLM-AED'.*missing or NA"
   )
 })

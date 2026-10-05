@@ -22,7 +22,7 @@ plot_model_vs_obs_wq(
 \code{load_config()}/\code{get_output_wq()}).}
 
 \item{model}{character vector; one or more models to extract, e.g.
-\code{"GLM-AED2"}, \code{"GOTM-WET"}, \code{"GOTM-Selmaprotbas"}, or
+\code{"GLM-AED"}, \code{"GOTM-WET"}, \code{"GOTM-Selmaprotbas"}, or
 \code{"Simstrat-AED2"} (also accepts the short forms \code{"GLM"},
 \code{"WET"}, \code{"SELMAPROTBAS"}, \code{"SIMSTRAT"}). Passing more
 than one plots them together against the same observations, one line
@@ -122,17 +122,17 @@ compare against a calibrated run, first write the winning parameters back
 (\code{run_ensemble_wq()}) before calling this.
 }
 \examples{
-\dontshow{if (requireNamespace("GLM3r", quietly = TRUE) && requireNamespace("WETr", quietly = TRUE) && requireNamespace("SelmaprotbasR", quietly = TRUE) && requireNamespace("SimstratR", quietly = TRUE)) withAutoprint(\{ # examplesIf}
+\dontshow{if (requireNamespace("GLMr", quietly = TRUE) && requireNamespace("WETr", quietly = TRUE) && requireNamespace("SelmaprotbasR", quietly = TRUE) && requireNamespace("SimstratR", quietly = TRUE)) withAutoprint(\{ # examplesIf}
 \donttest{
 ex <- lerwq_example()
 library(LakeEnsemblR)  # export_config() needs LakeEnsemblR attached
 export_config("LakeEnsemblR.yaml", folder = ex,
               model = c("GLM", "GOTM", "Simstrat"))
 export_config_wq("LakeEnsemblR_WQ.yaml", folder = ex)
-run_ensemble_wq("LakeEnsemblR_WQ.yaml", models = "GLM-AED2", folder = ex,
+run_ensemble_wq("LakeEnsemblR_WQ.yaml", models = "GLM-AED", folder = ex,
                 verbose = FALSE)
 
-# Simulated vs observed dissolved oxygen for GLM-AED2
+# Simulated vs observed dissolved oxygen for GLM-AED
 old <- setwd(ex)
 p <- plot_model_vs_obs_wq(config_file = "Output.yaml", model = "GLM",
                           obs_data = "standart_observed_data.csv",

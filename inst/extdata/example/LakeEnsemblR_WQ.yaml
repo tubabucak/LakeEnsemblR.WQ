@@ -1,12 +1,12 @@
 models:
    - GOTM-WET
    - GOTM-Selmaprotbas
-   - GLM-AED2
+   - GLM-AED
    - Simstrat-AED2
 config_files:
    GOTM-WET: GOTM-WET/fabm.yaml
    GOTM-Selmaprotbas: GOTM-Selmaprotbas/fabm.yaml
-   GLM-AED2: GLM-AED2/aed2.nml
+   GLM-AED: GLM-AED/aed2.nml
    Simstrat-AED2: Simstrat-AED2/aed2.nml
 run_settings:
    bio-shading: true

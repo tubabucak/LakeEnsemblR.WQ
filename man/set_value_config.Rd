@@ -34,7 +34,7 @@ set_value_config(
 
 \item{subprocess}{character;}
 
-\item{model_coupled}{character; options one of "GLM-AED2", "GOTM-Selmaprotbas", "GOTM-WET",
+\item{model_coupled}{character; options one of "GLM-AED", "GOTM-Selmaprotbas", "GOTM-WET",
 "Simstrat-AED2", "MyLake", "PCLake"}
 
 \item{parameter}{character;}

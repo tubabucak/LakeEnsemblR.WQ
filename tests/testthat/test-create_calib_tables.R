@@ -11,7 +11,7 @@
   modules <- list(...)
   lines <- c(
     "models:",
-    "  - GLM-AED2",
+    "  - GLM-AED",
     "  - GOTM-WET"
   )
   for (nm in names(modules)) {
@@ -36,7 +36,7 @@ test_that("create_calibration_tables() sets include = FALSE and computes bounds 
 
   calib_table <- create_calibration_tables(
     folder = dir, config_file = basename(cfg), folder_out = out_dir,
-    models_coupled = c("GLM-AED2", "GOTM-WET"), bounds_factor = 0.2
+    models_coupled = c("GLM-AED", "GOTM-WET"), bounds_factor = 0.2
   )
 
   expect_true(nrow(calib_table) > 0)
@@ -51,7 +51,7 @@ test_that("create_calibration_tables() sets include = FALSE and computes bounds 
 
 test_that("create_calibration_tables() skips integer-typed parameters", {
   # co2_piston_model / ch4_piston_model are real dictionary entries, model =
-  # "aed2" (-> GLM-AED2), module = "carbon", unit = "(integer)". These are
+  # "aed2" (-> GLM-AED), module = "carbon", unit = "(integer)". These are
   # mode selectors (note: "1: ; 2: ...") -- a percentage-based bounds_factor
   # produces a meaningless fractional range for them, and nothing downstream
   # rounds a sampled value back before writing it into the namelist.
@@ -62,7 +62,7 @@ test_that("create_calibration_tables() skips integer-typed parameters", {
 
   calib_table <- create_calibration_tables(
     folder = dir, config_file = basename(cfg), folder_out = out_dir,
-    models_coupled = c("GLM-AED2", "GOTM-WET")
+    models_coupled = c("GLM-AED", "GOTM-WET")
   )
 
   expect_false("co2_piston_model" %in% calib_table$parameter)
@@ -84,7 +84,7 @@ test_that("create_calibration_tables() skips boolean-typed parameters", {
 
   calib_table <- create_calibration_tables(
     folder = dir, config_file = basename(cfg), folder_out = out_dir,
-    models_coupled = c("GLM-AED2", "GOTM-WET")
+    models_coupled = c("GLM-AED", "GOTM-WET")
   )
 
   expect_false("lNfix" %in% calib_table$parameter)
@@ -102,7 +102,7 @@ test_that("create_calibration_tables() drops a zero-default parameter with no di
 
   calib_table <- create_calibration_tables(
     folder = dir, config_file = basename(cfg), folder_out = out_dir,
-    models_coupled = c("GLM-AED2", "GOTM-WET")
+    models_coupled = c("GLM-AED", "GOTM-WET")
   )
 
   expect_false("tDDepoIM" %in% calib_table$parameter)
@@ -149,10 +149,10 @@ test_that("create_calibration_tables() only includes the requested models_couple
 
   calib_table <- create_calibration_tables(
     folder = dir, config_file = basename(cfg), folder_out = out_dir,
-    models_coupled = c("GLM-AED2", "GOTM-WET")
+    models_coupled = c("GLM-AED", "GOTM-WET")
   )
 
-  expect_true(all(calib_table$model_coupled %in% c("GLM-AED2", "GOTM-WET")))
+  expect_true(all(calib_table$model_coupled %in% c("GLM-AED", "GOTM-WET")))
 })
 
 test_that("create_calibration_tables() honors bounds_factor as a fraction of default", {
@@ -163,7 +163,7 @@ test_that("create_calibration_tables() honors bounds_factor as a fraction of def
 
   calib_table <- create_calibration_tables(
     folder = dir, config_file = basename(cfg), folder_out = out_dir,
-    models_coupled = c("GLM-AED2", "GOTM-WET"), bounds_factor = 0.05
+    models_coupled = c("GLM-AED", "GOTM-WET"), bounds_factor = 0.05
   )
 
   expect_equal(calib_table$lower, pmin(calib_table$default * 0.95, calib_table$default * 1.05))
@@ -178,7 +178,7 @@ test_that("create_calibration_tables() writes the master file and only per-modul
 
   create_calibration_tables(
     folder = dir, config_file = basename(cfg), folder_out = out_dir,
-    models_coupled = c("GLM-AED2", "GOTM-WET")
+    models_coupled = c("GLM-AED", "GOTM-WET")
   )
 
   expect_true(file.exists(file.path(out_dir, "calibration_master.csv")))
@@ -196,7 +196,7 @@ test_that("create_calibration_tables() writes one identical-content file per phy
 
   create_calibration_tables(
     folder = dir, config_file = basename(cfg), folder_out = out_dir,
-    models_coupled = c("GLM-AED2", "GOTM-WET")
+    models_coupled = c("GLM-AED", "GOTM-WET")
   )
 
   diatoms_file <- file.path(out_dir, "calibration_diatoms.csv")
@@ -212,4 +212,23 @@ test_that("create_calibration_tables() writes one identical-content file per phy
   expect_equal(nrow(diatoms), nrow(cyano))
   expect_setequal(diatoms$parameter, cyano$parameter)
   expect_true(all(diatoms$module == "phytoplankton"))
+})
+
+test_that("create_calibration_tables() writes AED 3 paths for GLM-AED, AED2 for Simstrat-AED2", {
+  dir <- tempfile("lerwq_ct_")
+  dir.create(dir)
+  cfg <- .write_wq_config(dir, nitrogen = list(use = TRUE), oxygen = list(use = TRUE))
+
+  calib_table <- suppressMessages(create_calibration_tables(
+    folder = dir, config_file = basename(cfg), folder_out = file.path(dir, "calibration"),
+    models_coupled = c("GLM-AED", "Simstrat-AED2")
+  ))
+
+  glm <- calib_table[calib_table$model_coupled == "GLM-AED", ]
+  sim <- calib_table[calib_table$model_coupled == "Simstrat-AED2", ]
+  expect_true(nrow(glm) > 0 && nrow(sim) > 0)
+  expect_false(any(grepl("^aed2_", glm$path)))
+  expect_false(any(grepl("^aed_", sim$path)))
+  expect_equal(glm$path[glm$parameter == "Ranammox"], "aed_nitrogen/kanammox")
+  expect_equal(sim$path[sim$parameter == "Ranammox"], "aed2_nitrogen/Ranammox")
 })

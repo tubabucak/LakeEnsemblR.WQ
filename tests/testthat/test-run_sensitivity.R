@@ -1,5 +1,5 @@
 # run_sensitivity() does a substantial amount of upfront validation before it
-# ever writes a parameter value or runs a model engine (GLM3r/WETr/etc.) --
+# ever writes a parameter value or runs a model engine (GLMr/WETr/etc.) --
 # everything up to and including building `param_values` happens first. These
 # tests exercise exactly that validation chain, without needing any real
 # model binary installed. In particular, the "Parameter not found in
@@ -35,7 +35,7 @@ test_that("run_sensitivity() requires wq_config_file when output_mode = 'metrics
 
   expect_error(
     run_sensitivity(param_name = "kc", calib_setup = cs, yaml_file = "Output.yaml",
-                    model_dir = ".", model = "GLM-AED2", output_mode = "metrics"),
+                    model_dir = ".", model = "GLM-AED", output_mode = "metrics"),
     regexp = "wq_config_file"
   )
 })
@@ -45,7 +45,7 @@ test_that("run_sensitivity() requires vars when output_mode = 'raw'", {
 
   expect_error(
     run_sensitivity(param_name = "kc", calib_setup = cs, yaml_file = "Output.yaml",
-                    model_dir = ".", model = "GLM-AED2", output_mode = "raw"),
+                    model_dir = ".", model = "GLM-AED", output_mode = "raw"),
     regexp = "'vars' is required"
   )
 })
@@ -55,7 +55,7 @@ test_that("run_sensitivity() rejects an invalid output_mode", {
 
   expect_error(
     run_sensitivity(param_name = "kc", calib_setup = cs, yaml_file = "Output.yaml",
-                    model_dir = ".", model = "GLM-AED2", output_mode = "not_a_mode",
+                    model_dir = ".", model = "GLM-AED", output_mode = "not_a_mode",
                     vars = "OXY_oxy"),
     regexp = "should be one of"
   )
@@ -100,7 +100,7 @@ test_that("run_sensitivity() reports a missing parameter by name (the kc/r0 fail
 
   expect_error(
     run_sensitivity(param_name = "kc", calib_setup = cs, yaml_file = "Output.yaml",
-                    model_dir = ".", model = "GLM-AED2", output_mode = "raw", vars = "OXY_oxy"),
+                    model_dir = ".", model = "GLM-AED", output_mode = "raw", vars = "OXY_oxy"),
     regexp = "Parameter not found in calib_setup dataframe: kc"
   )
 })
@@ -118,7 +118,7 @@ test_that("run_sensitivity() reports a group_name that doesn't match any row for
 
   expect_error(
     run_sensitivity(param_name = "r0", calib_setup = cs, yaml_file = "Output.yaml",
-                    model_dir = ".", model = "GLM-AED2", output_mode = "raw", vars = "OXY_oxy",
+                    model_dir = ".", model = "GLM-AED", output_mode = "raw", vars = "OXY_oxy",
                     group_name = "not_a_real_group"),
     regexp = "No matching entry for param 'r0' with group_name 'not_a_real_group'"
   )

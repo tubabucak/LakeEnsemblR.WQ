@@ -44,11 +44,11 @@ test_that("calib_setup_from_tables() includes only include == TRUE rows for the 
   .write_calib_csv(dir, "carbon", data.frame(
     include       = c(TRUE, FALSE),
     module        = "carbon",
-    model_coupled = "GLM-AED2",
+    model_coupled = "GLM-AED",
     parameter     = c("Rgrowth", "Kc")
   ))
 
-  cs <- calib_setup_from_tables(folder_in = dir, model_coupled = "GLM-AED2")
+  cs <- calib_setup_from_tables(folder_in = dir, model_coupled = "GLM-AED")
 
   expect_equal(nrow(cs), 1)
   expect_equal(cs$pars, "Rgrowth")
@@ -61,7 +61,7 @@ test_that("calib_setup_from_tables() filters by model_coupled", {
   .write_calib_csv(dir, "carbon", data.frame(
     include       = TRUE,
     module        = "carbon",
-    model_coupled = c("GLM-AED2", "GOTM-Selmaprotbas"),
+    model_coupled = c("GLM-AED", "GOTM-Selmaprotbas"),
     parameter     = c("Rgrowth", "kc")
   ))
 
@@ -81,12 +81,12 @@ test_that("calib_setup_from_tables() errors with a clear message when nothing is
   .write_calib_csv(dir, "carbon", data.frame(
     include       = FALSE,
     module        = "carbon",
-    model_coupled = "GLM-AED2",
+    model_coupled = "GLM-AED",
     parameter     = "Rgrowth"
   ))
 
   expect_error(
-    calib_setup_from_tables(folder_in = dir, model_coupled = "GLM-AED2"),
+    calib_setup_from_tables(folder_in = dir, model_coupled = "GLM-AED"),
     regexp = "include = TRUE"
   )
 })
@@ -96,7 +96,7 @@ test_that("calib_setup_from_tables() errors when no calibration_<module>.csv fil
   dir.create(dir)
 
   expect_error(
-    calib_setup_from_tables(folder_in = dir, model_coupled = "GLM-AED2"),
+    calib_setup_from_tables(folder_in = dir, model_coupled = "GLM-AED"),
     regexp = "create_calibration_tables"
   )
 })
@@ -110,12 +110,12 @@ test_that("calib_setup_from_tables() ignores calibration_master.csv", {
   .write_calib_csv(dir, "master", data.frame(
     include       = TRUE,
     module        = "carbon",
-    model_coupled = "GLM-AED2",
+    model_coupled = "GLM-AED",
     parameter     = "from_master"
   ))
 
   expect_error(
-    calib_setup_from_tables(folder_in = dir, model_coupled = "GLM-AED2"),
+    calib_setup_from_tables(folder_in = dir, model_coupled = "GLM-AED"),
     regexp = "create_calibration_tables"
   )
 })
@@ -151,11 +151,11 @@ test_that("calib_setup_from_tables() leaves group_name NA for non-group modules"
   .write_calib_csv(dir, "carbon", data.frame(
     include       = TRUE,
     module        = "carbon",
-    model_coupled = "GLM-AED2",
+    model_coupled = "GLM-AED",
     parameter     = "Rgrowth"
   ))
 
-  cs <- calib_setup_from_tables(folder_in = dir, model_coupled = "GLM-AED2")
+  cs <- calib_setup_from_tables(folder_in = dir, model_coupled = "GLM-AED")
 
   expect_true(is.na(cs$group_name))
 })
@@ -184,14 +184,14 @@ test_that("calib_setup_from_tables() warns when lower >= upper", {
   .write_calib_csv(dir, "carbon", data.frame(
     include       = TRUE,
     module        = "carbon",
-    model_coupled = "GLM-AED2",
+    model_coupled = "GLM-AED",
     parameter     = "Rgrowth",
     lower         = 2,
     upper         = 1
   ))
 
   expect_warning(
-    calib_setup_from_tables(folder_in = dir, model_coupled = "GLM-AED2"),
+    calib_setup_from_tables(folder_in = dir, model_coupled = "GLM-AED"),
     regexp = "lower >= upper"
   )
 })
@@ -203,13 +203,13 @@ test_that("calib_setup_from_tables() warns (not errors) when only some requested
   .write_calib_csv(dir, "carbon", data.frame(
     include       = TRUE,
     module        = "carbon",
-    model_coupled = "GLM-AED2",
+    model_coupled = "GLM-AED",
     parameter     = "Rgrowth"
   ))
 
   expect_warning(
     cs <- calib_setup_from_tables(folder_in = dir,
-                                  model_coupled = c("GLM-AED2", "GOTM-Selmaprotbas")),
+                                  model_coupled = c("GLM-AED", "GOTM-Selmaprotbas")),
     regexp = "GOTM-Selmaprotbas"
   )
   expect_equal(nrow(cs), 1)

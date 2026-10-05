@@ -29,7 +29,7 @@ test_that("cali_ensemble_wq canonicalizes model name variants and skips models w
   )
 
   expect_s3_class(result, "cali_ensemble_wq_result")
-  expect_equal(result$summary$model, c("GLM-AED2", "GOTM-WET", "GOTM-Selmaprotbas"))
+  expect_equal(result$summary$model, c("GLM-AED", "GOTM-WET", "GOTM-Selmaprotbas"))
   expect_false(any(result$summary$success))
   expect_true(all(grepl("No calib_setup rows", result$summary$message)))
   expect_true(all(vapply(result$results, is.null, logical(1))))
@@ -40,7 +40,7 @@ test_that("cali_ensemble_wq stops immediately on the first failure when on_error
 
   expect_error(
     cali_ensemble_wq(
-      models = "GLM-AED2",
+      models = "GLM-AED",
       calib_setup = cs,
       yaml_file = "Output.yaml",
       on_error = "stop",
@@ -53,7 +53,7 @@ test_that("cali_ensemble_wq stops immediately on the first failure when on_error
 test_that("cali_ensemble_wq splits a combined calib_setup by model_coupled", {
   cs <- data.frame(
     pars          = c("p1", "p2"),
-    model_coupled = c("GLM-AED2", "GOTM-WET"),
+    model_coupled = c("GLM-AED", "GOTM-WET"),
     lb            = c(0, 0),
     ub            = c(1, 1),
     file          = c("a.nml", "b.yaml"),
@@ -65,7 +65,7 @@ test_that("cali_ensemble_wq splits a combined calib_setup by model_coupled", {
   # test here: it should reach calib_wq() (and fail *there*, e.g. on a
   # missing model_dir), not bail out early with "No parameter names".
   result <- cali_ensemble_wq(
-    models = c("GLM-AED2", "GOTM-WET"),
+    models = c("GLM-AED", "GOTM-WET"),
     calib_setup = cs,
     yaml_file = "Output.yaml",
     folder = tempdir(),

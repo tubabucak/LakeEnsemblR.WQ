@@ -3,7 +3,7 @@ test_that("plot_model_vs_obs_wq() validates obs_data columns", {
 
   expect_error(
     plot_model_vs_obs_wq(
-      config_file = "unused.yaml", model = "GLM-AED2", obs_data = bad_obs,
+      config_file = "unused.yaml", model = "GLM-AED", obs_data = bad_obs,
       variable_global_name = "DO_gramsPerCubicMeter"
     ),
     "missing required column"
@@ -18,7 +18,7 @@ test_that("plot_model_vs_obs_wq() errors when variable_global_name has no rows",
 
   expect_error(
     plot_model_vs_obs_wq(
-      config_file = "unused.yaml", model = "GLM-AED2", obs_data = obs,
+      config_file = "unused.yaml", model = "GLM-AED", obs_data = obs,
       variable_global_name = "DO_gramsPerCubicMeter"
     ),
     "No rows in 'obs_data' match variable_global_name"
@@ -33,7 +33,7 @@ test_that("plot_model_vs_obs_wq() errors when no usable depths remain", {
 
   expect_error(
     plot_model_vs_obs_wq(
-      config_file = "unused.yaml", model = "GLM-AED2", obs_data = obs,
+      config_file = "unused.yaml", model = "GLM-AED", obs_data = obs,
       variable_global_name = "DO_gramsPerCubicMeter"
     ),
     "No usable \\(non-NA\\) depths found"

@@ -12,7 +12,7 @@ make_fixture <- function() {
 
   par_df <- data.frame(
     parameter     = "p1",
-    model_coupled = "GLM-AED2",
+    model_coupled = "GLM-AED",
     domain        = "d",
     process       = "pr",
     subprocess    = "sp",
@@ -25,7 +25,7 @@ make_fixture <- function() {
 
   calib_setup <- data.frame(
     pars          = "p1",
-    model_coupled = "GLM-AED2",
+    model_coupled = "GLM-AED",
     domain        = "d",
     process       = "pr",
     subprocess    = "sp",

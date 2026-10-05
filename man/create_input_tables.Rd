@@ -9,7 +9,7 @@ create_input_tables(
   config_file,
   folder_out = folder,
   input = NULL,
-  models_coupled = c("GLM-AED2", "GOTM-Selmaprotbas", "GOTM-WET", "Simstrat-AED2",
+  models_coupled = c("GLM-AED", "GOTM-Selmaprotbas", "GOTM-WET", "Simstrat-AED2",
     "MyLake", "PCLake")
 )
 }

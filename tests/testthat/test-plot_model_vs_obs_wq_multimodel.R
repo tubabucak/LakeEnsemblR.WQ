@@ -32,7 +32,7 @@ test_that("plot_model_vs_obs_wq() combines multiple models into one plot/stats t
 
   out <- plot_model_vs_obs_wq(
     config_file           = "unused.yaml",
-    model                 = c("GLM-AED2", "Simstrat-AED2"),
+    model                 = c("GLM-AED", "Simstrat-AED2"),
     vars                  = "temp",
     obs_data              = obs,
     variable_global_name  = "Temp_degreeCelsius",
@@ -70,7 +70,7 @@ test_that("plot_model_vs_obs_wq() with a single model still returns per-depth KG
 
   out <- plot_model_vs_obs_wq(
     config_file           = "unused.yaml",
-    model                 = "GLM-AED2",
+    model                 = "GLM-AED",
     vars                  = "temp",
     obs_data              = obs,
     variable_global_name  = "Temp_degreeCelsius",

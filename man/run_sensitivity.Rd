@@ -10,7 +10,7 @@ run_sensitivity(
   yaml_file,
   model_dir,
   n_steps = 10,
-  model = "GLM-AED2",
+  model = "GLM-AED",
   model_filter = NULL,
   group_name = NULL,
   yaml_file_model = NULL,
@@ -39,10 +39,10 @@ parameters. This is the same table produced by \code{\link{calib_setup_from_tabl
 
 \item{n_steps}{Integer. Number of steps (iterations) in the parameter value sequence (default = 10).}
 
-\item{model}{Character. One of \code{"GLM-AED2"}, \code{"GOTM-WET"},
+\item{model}{Character. One of \code{"GLM-AED"}, \code{"GOTM-WET"},
 \code{"GOTM-Selmaprotbas"}, or \code{"Simstrat-AED2"}. Determines both how
 \code{param_name} is written to its target file and which model engine is run.
-Default \code{"GLM-AED2"} for backwards compatibility.}
+Default \code{"GLM-AED"} for backwards compatibility.}
 
 \item{model_filter}{Character or \code{NULL}. Model identifier used by `cal_metrics()` to
 filter the results. If \code{NULL} (default), auto-derived from \code{model} (e.g.
@@ -67,7 +67,7 @@ only used/required when \code{model} is \code{"GOTM-WET"} or \code{"GOTM-Selmapr
 (e.g. \code{"LakeEnsemblR_WQ.yaml"}), passed through to \code{cal_metrics()}. Required
 when \code{output_mode = "metrics"} -- \code{cal_metrics()} uses it to expand
 phytoplankton/zooplankton group templates in the metrics dictionary and has no default
-of its own. For GLM-AED2/Simstrat-AED2 it is also used (in either mode) to locate
+of its own. For GLM-AED/Simstrat-AED2 it is also used (in either mode) to locate
 the AED2 namelist a parameter is written to; if \code{NULL}, the standard
 \code{aed2.nml}/\code{aed2_phyto_pars.nml}/\code{aed2_zoop_pars.nml} in
 \code{model_dir} are used.}
@@ -83,7 +83,7 @@ entry for it.}
 
 \item{vars}{Character vector. Required when \code{output_mode = "raw"} -- the model output
 variable name(s) to extract at each step (as they appear in the model's native output,
-e.g. \code{"sO2W"} for GOTM-WET/GOTM-Selmaprotbas, \code{"OXY_oxy"} for GLM-AED2/Simstrat-AED2).
+e.g. \code{"sO2W"} for GOTM-WET/GOTM-Selmaprotbas, \code{"OXY_oxy"} for GLM-AED/Simstrat-AED2).
 Passed through to \code{get_output_wq()}'s \code{vars} argument.}
 
 \item{obs_depths}{Numeric vector or \code{NULL}. Only used when \code{output_mode = "raw"}.
@@ -125,7 +125,7 @@ changed across a defined range, the model is run, and the selected metrics are
 calculated at each step.
 }
 \details{
-The function supports `.nml` and `.csv` parameter files (used by \code{"GLM-AED2"} and
+The function supports `.nml` and `.csv` parameter files (used by \code{"GLM-AED"} and
 \code{"Simstrat-AED2"}), as well as FABM `.yaml`/`.yml` parameter files (used by
 \code{"GOTM-WET"} and \code{"GOTM-Selmaprotbas"}, where `calib_setup$file` holds the FABM
 instance/key path, e.g. `"abiotic_water/parameters/hO2Nitr"`, written into `fabm.yaml`
@@ -136,7 +136,7 @@ it into the `\{group_name\}` placeholder of the `path` (`.yaml`/`.yml`). Otherwi
 (from column 2 onward, `.csv`) are updated for the matching parameter row.
 }
 \examples{
-\dontshow{if (requireNamespace("GLM3r", quietly = TRUE) && requireNamespace("WETr", quietly = TRUE) && requireNamespace("SelmaprotbasR", quietly = TRUE) && requireNamespace("SimstratR", quietly = TRUE)) withAutoprint(\{ # examplesIf}
+\dontshow{if (requireNamespace("GLMr", quietly = TRUE) && requireNamespace("WETr", quietly = TRUE) && requireNamespace("SelmaprotbasR", quietly = TRUE) && requireNamespace("SimstratR", quietly = TRUE)) withAutoprint(\{ # examplesIf}
 \donttest{
 ex <- lerwq_example()
 library(LakeEnsemblR)  # export_config() needs LakeEnsemblR attached
@@ -146,18 +146,18 @@ export_config_wq("LakeEnsemblR_WQ.yaml", folder = ex)
 
 cal_dir <- file.path(ex, "calibration")
 create_calibration_tables(folder = ex, config_file = "LakeEnsemblR_WQ.yaml",
-                          folder_out = cal_dir, models_coupled = "GLM-AED2")
+                          folder_out = cal_dir, models_coupled = "GLM-AED")
 tab <- read.csv(file.path(cal_dir, "calibration_oxygen.csv"))
 tab$include[tab$parameter == "Fsed_oxy"] <- TRUE
 write.csv(tab, file.path(cal_dir, "calibration_oxygen.csv"), row.names = FALSE)
-cs <- calib_setup_from_tables(folder_in = cal_dir, model_coupled = "GLM-AED2")
+cs <- calib_setup_from_tables(folder_in = cal_dir, model_coupled = "GLM-AED")
 
 # Vary the sediment oxygen flux across its bounds and keep the raw
-# GLM-AED2 oxygen output of each run
+# GLM-AED oxygen output of each run
 old <- setwd(ex)
 sens <- run_sensitivity(param_name = "Fsed_oxy", calib_setup = cs,
-                        yaml_file = "Output.yaml", model_dir = "GLM-AED2",
-                        n_steps = 3, model = "GLM-AED2",
+                        yaml_file = "Output.yaml", model_dir = "GLM-AED",
+                        n_steps = 3, model = "GLM-AED",
                         output_mode = "raw", vars = "OXY_oxy")
 plot_sensitivity(sens, depth = 20, ylab = "DO (mmol/m3)")
 setwd(old)

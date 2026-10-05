@@ -4,12 +4,12 @@
 \alias{validate_glm_aed}
 \title{Validate a GLM-AED model simulation folder}
 \usage{
-validate_glm_aed(sim_folder = ".", file = "glm3.nml", verbose = TRUE)
+validate_glm_aed(sim_folder = ".", file = NULL, verbose = TRUE)
 }
 \arguments{
 \item{sim_folder}{Character. Path to the GLM simulation folder containing the namelist and input files.}
 
-\item{file}{Character. Name of the GLM namelist file inside \code{sim_folder}. Default is \code{"glm3.nml"}.}
+\item{file}{Character. Name of the GLM namelist file inside \code{sim_folder}. Default \code{NULL} uses \code{"glm4.nml"} if present, otherwise \code{"glm3.nml"}.}
 
 \item{verbose}{Logical. If \code{TRUE}, progress messages are printed using \code{message()}. Default is \code{TRUE}.}
 }

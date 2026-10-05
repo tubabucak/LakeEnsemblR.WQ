@@ -15,7 +15,9 @@ create_netcdf_output(
   wq_config_file = NULL,
   compression = 4,
   members = 25,
-  out_file = "ensemble_output.nc"
+  out_file = "ensemble_output.nc",
+  format = c("lerwq", "isimip"),
+  isimip = list()
 )
 }
 \arguments{
@@ -39,17 +41,60 @@ If NULL, the function tries `files$LER_config_file` from `wq_config_file`,
 then `folder/LakeEnsemblR.yaml`.}
 
 \item{wq_config_file}{character; optional path to LakeEnsemblR_WQ.yaml.
-Used only to discover `files$LER_config_file` if `ler_config_file` is NULL.}
+Used to discover `files$LER_config_file` if `ler_config_file` is NULL, and
+for the phyto-/zooplankton group names: per-group metrics are written as
+one variable per group, `<metric>_<group>` (e.g.
+`Phyto_C_miligramsPerCubicMeter_diatoms`). Without it, the model's own
+variable name is used as suffix (e.g. `..._PHY_diatoms`), which differs
+between models.}
 
 \item{compression}{integer; compression level from 1 (least) to 9 (most).}
 
 \item{members}{integer; number of ensemble members in output NetCDF.}
 
 \item{out_file}{character; output NetCDF filename.}
+
+\item{format}{character; \code{"lerwq"} (default) writes one ensemble file
+with all metrics and models. \code{"isimip"} writes ISIMIP3 lake-sector
+files instead: one file per variable and model, daily, full profile,
+dimensions \code{(time, levlak, lat, lon)} with a \code{depth(levlak)}
+variable, units in mol m-3 (g m-3 for \code{chl}). Variables:
+\code{chl}, \code{phytobio} (total and one file per group, e.g.
+\code{phytobio-diatoms}), \code{zoobio}, \code{tp}, \code{pp}, \code{tpd},
+\code{tn}, \code{pn}, \code{tdn}, \code{do}, \code{doc}, \code{si}.
+\code{tpd} = PO4 + DOP, \code{pp} = TP - tpd, \code{tdn} = NO3 + NH4 +
+DON, \code{pn} = TN - tdn. A variable is skipped (with a message) when a
+metric it needs is not in \code{output_lists}. \code{out_file},
+\code{out_time} and \code{members} are not used.}
+
+\item{isimip}{list; settings for \code{format = "isimip"}, all optional:
+\code{forcing} (default \code{"gswp3-w5e5"}), \code{bias_adjustment}
+(default \code{""}, left out of the file name), \code{climate_scenario}
+(\code{"obsclim"}), \code{soc_scenario} (\code{"histsoc"}),
+\code{sens_scenario} (\code{"default"}), \code{lake} (default
+\code{location$name} from LakeEnsemblR.yaml), \code{model_names} (named
+vector overriding the ISIMIP model names, defaults \code{GLM = "glm-aed"},
+\code{SIMSTRAT = "simstrat-aed2"}, \code{WET = "gotm-wet"},
+\code{SELMAPROTBAS = "gotm-selmaprotbas"}), \code{time_ref}
+(\code{"1901-01-01"} for ISIMIP3a; use \code{"1601-01-01"} for ISIMIP3b),
+\code{contact}, \code{institution}, \code{comment} (global attributes;
+contact and institution are required by ISIMIP), \code{variables}
+(subset to write) and \code{out_dir} (default \code{folder/output/isimip}).
+File names follow
+\code{<model>_<forcing>[_<bias>]_<climate>_<soc>_<sens>_<var>_<lake>_daily_<start>_<end>.nc}.}
 }
 \value{
-Invisibly returns the output NetCDF file path.
+Invisibly returns the output NetCDF file path (for
+  \code{format = "isimip"}, the paths of all files written).
 }
 \description{
 Create a NetCDF file from model output lists (e.g., temperature, ice thickness).
+}
+\examples{
+\dontrun{
+create_netcdf_output(metric_out, folder = ".", model = c("GLM", "SIMSTRAT"),
+                     wq_config_file = "LakeEnsemblR_WQ.yaml",
+                     format = "isimip",
+                     isimip = list(contact = "name <mail>", institution = "Aarhus University"))
+}
 }

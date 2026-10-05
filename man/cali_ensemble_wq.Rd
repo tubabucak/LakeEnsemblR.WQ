@@ -5,7 +5,7 @@
 \title{Calibrate an ensemble of LakeEnsemblR.WQ models}
 \usage{
 cali_ensemble_wq(
-  models = c("GLM-AED2", "GOTM-WET", "GOTM-Selmaprotbas", "Simstrat-AED2"),
+  models = c("GLM-AED", "GOTM-WET", "GOTM-Selmaprotbas", "Simstrat-AED2"),
   calib_setup,
   yaml_file,
   folder = ".",
@@ -50,7 +50,7 @@ cali_ensemble_wq(
 }
 \arguments{
 \item{models}{Character vector of models to calibrate. Supported values are
-\code{"GLM-AED2"}, \code{"GOTM-WET"}, \code{"GOTM-Selmaprotbas"}, and
+\code{"GLM-AED"}, \code{"GOTM-WET"}, \code{"GOTM-Selmaprotbas"}, and
 \code{"Simstrat-AED2"}. Matching is case-insensitive.}
 
 \item{calib_setup}{Either a data frame in \code{calib_setup} format or a
@@ -116,7 +116,7 @@ of averaging across every observed variable. \code{NULL} (default) uses all.}
 \item{parallel}{Logical. Passed to \code{calib_wq()} (parallelizes LHC
 samples \emph{within} a single model's run).}
 
-\item{force_parallel_glm_simstrat}{Logical. GLM-AED2 and Simstrat-AED2 edit
+\item{force_parallel_glm_simstrat}{Logical. GLM-AED and Simstrat-AED2 edit
 their config files in-place during each LHC sample; by default (\code{FALSE})
 their LHC phase always runs sequentially even when \code{parallel = TRUE},
 to avoid file write collisions. \code{calib_wq_parallel()} isolates each

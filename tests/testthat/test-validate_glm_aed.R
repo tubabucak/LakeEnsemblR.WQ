@@ -57,3 +57,12 @@ test_that("validate_glm_aed() succeeds when nml references no files at all", {
 
   expect_true(isTRUE(validate_glm_aed(sim_folder = dir, verbose = FALSE)))
 })
+
+test_that("validate_glm_aed() rejects a wq_lib that GLM 4 can't run", {
+  dir <- tempfile("lerwq_glm_")
+  dir.create(dir)
+  writeLines(c("&wq_setup", "   wq_lib = 'aed2'", "/"), file.path(dir, "glm3.nml"))
+
+  expect_error(validate_glm_aed(sim_folder = dir, verbose = FALSE),
+               regexp = "wq_lib = 'api'")
+})

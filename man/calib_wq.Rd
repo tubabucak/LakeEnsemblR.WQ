@@ -44,7 +44,7 @@ calib_wq(
 )
 }
 \arguments{
-\item{model}{Character. One of \code{"GLM-AED2"}, \code{"GOTM-WET"},
+\item{model}{Character. One of \code{"GLM-AED"}, \code{"GOTM-WET"},
 \code{"GOTM-Selmaprotbas"}, or \code{"Simstrat-AED2"}.}
 
 \item{param_names}{Character vector. Parameter names to vary.}
@@ -209,7 +209,7 @@ for coupled water-quality model setups and evaluates each sampled run using
 either \code{cal_metrics()} outputs or observed-data statistics.
 }
 \examples{
-\dontshow{if (requireNamespace("GLM3r", quietly = TRUE) && requireNamespace("WETr", quietly = TRUE) && requireNamespace("SelmaprotbasR", quietly = TRUE) && requireNamespace("SimstratR", quietly = TRUE)) withAutoprint(\{ # examplesIf}
+\dontshow{if (requireNamespace("GLMr", quietly = TRUE) && requireNamespace("WETr", quietly = TRUE) && requireNamespace("SelmaprotbasR", quietly = TRUE) && requireNamespace("SimstratR", quietly = TRUE)) withAutoprint(\{ # examplesIf}
 \donttest{
 ex <- lerwq_example()
 library(LakeEnsemblR)  # export_config() needs LakeEnsemblR attached
@@ -217,24 +217,24 @@ export_config("LakeEnsemblR.yaml", folder = ex,
               model = c("GLM", "GOTM", "Simstrat"))
 export_config_wq("LakeEnsemblR_WQ.yaml", folder = ex)
 
-# Select two GLM-AED2 sediment oxygen parameters to calibrate
+# Select two GLM-AED sediment oxygen parameters to calibrate
 cal_dir <- file.path(ex, "calibration")
 create_calibration_tables(folder = ex, config_file = "LakeEnsemblR_WQ.yaml",
-                          folder_out = cal_dir, models_coupled = "GLM-AED2")
+                          folder_out = cal_dir, models_coupled = "GLM-AED")
 tab <- read.csv(file.path(cal_dir, "calibration_oxygen.csv"))
 tab$include[tab$parameter \%in\% c("Fsed_oxy", "Ksed_oxy")] <- TRUE
 write.csv(tab, file.path(cal_dir, "calibration_oxygen.csv"), row.names = FALSE)
-cs <- calib_setup_from_tables(folder_in = cal_dir, model_coupled = "GLM-AED2")
+cs <- calib_setup_from_tables(folder_in = cal_dir, model_coupled = "GLM-AED")
 
 # Latin hypercube calibration against observed oxygen (use far more
 # samples in practice)
 old <- setwd(ex)
 res <- calib_wq(
-  model            = "GLM-AED2",
+  model            = "GLM-AED",
   param_names      = cs$pars,
   calib_setup      = cs,
   yaml_file        = "Output.yaml",
-  model_dir        = "GLM-AED2",
+  model_dir        = "GLM-AED",
   n_samples        = 3,
   wq_config_file   = "LakeEnsemblR_WQ.yaml",
   obs_file         = "standart_observed_data.csv",

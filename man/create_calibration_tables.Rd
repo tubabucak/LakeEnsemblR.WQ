@@ -8,7 +8,7 @@ create_calibration_tables(
   folder = ".",
   config_file,
   folder_out = folder,
-  models_coupled = c("GLM-AED2", "GOTM-Selmaprotbas", "GOTM-WET", "Simstrat-AED2"),
+  models_coupled = c("GLM-AED", "GOTM-Selmaprotbas", "GOTM-WET", "Simstrat-AED2"),
   bounds_factor = 0.2
 )
 }
@@ -60,7 +60,7 @@ create_calibration_tables(
   folder         = ex,
   config_file    = "LakeEnsemblR_WQ.yaml",
   folder_out     = file.path(ex, "calibration"),
-  models_coupled = c("GOTM-Selmaprotbas", "GLM-AED2"),
+  models_coupled = c("GOTM-Selmaprotbas", "GLM-AED"),
   bounds_factor  = 0.2
 )
 list.files(file.path(ex, "calibration"))

@@ -5,7 +5,7 @@ files:
   metric_yaml_file: "Output.yaml"
   LER_config_file: "LakeEnsemblR.yaml"
 model_folders:
-  GLM: "GLM-AED2/output"
+  GLM: "GLM-AED/output"
   WET: "GOTM-WET/output"
   SELMAPROTBAS: "GOTM-Selmaprotbas/output"
   SIMSTRAT: "Simstrat-AED2/output"
