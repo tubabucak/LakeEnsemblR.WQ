@@ -557,6 +557,8 @@ Create and manage NetCDF outputs.
   : Create NetCDF output from model-specific runs
 - [`create_netcdf_wq()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/create_netcdf_wq.md)
   : Backward-compatible alias for create_netcdf_output
+- [`create_isimip_global()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/create_isimip_global.md)
+  : Write ISIMIP3 global lake-sector NetCDF files for many lakes
 
 ## Helpers
 
