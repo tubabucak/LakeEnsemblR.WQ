@@ -108,10 +108,10 @@ get_phyto_names <- function(phyto_pars_file, sanitize = TRUE) {
   safe
 }
 
-#' Extract zooplankton group name from \code{aed2_zoop_pars.nml}
+#' Extract zooplankton group names from \code{aed2_zoop_pars.nml}
 #'
 #' This helper reads the AED2 zooplankton parameter file and extracts the
-#' zooplankton name from the \code{zoop_param\%zoop_name} line.
+#' zooplankton names (one per group) from the \code{zoop_param\%zoop_name} line.
 #'
 #' @param zoop_pars_file Character string; path to \code{aed2_zoop_pars.nml}.
 #' @param sanitize Logical; if \code{TRUE}, return file-name-safe names.
@@ -129,8 +129,10 @@ get_zoop_names <- function(zoop_pars_file, sanitize = TRUE) {
   rhs <- sub(".*=", "", line)
   rhs <- sub("/.*$", "", rhs)
   rhs <- gsub("'", "", rhs)
-  name <- trimws(rhs)
-  
+  # One name per group, comma-separated (as for pd%p_name)
+  name <- trimws(strsplit(rhs, ",")[[1]])
+  name <- name[name != ""]
+
   if (!sanitize) return(name)
   safe <- tolower(name)
   safe <- gsub("[^0-9A-Za-z]+", "_", safe)
