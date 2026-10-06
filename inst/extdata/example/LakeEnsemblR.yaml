@@ -63,15 +63,12 @@ scaling_factors:                                # scaling factors to apply to me
       swr: 1.0
       inflow:      # scaling factor for discharge in inflow, for example to correct for the percentage of catchment area drained by the inflow. If there are more than one inflow in the inflow file, this must be a list with one value per inflow (see outflow scaling)
       - 1.0
-    #  - 1.0
       outflow:
       - 1.0
-    #  - 1.0
    Simstrat:
       wind_speed: 1.0
       outflow:
       - 1.0
-    #  - 1.0
 model_parameters:
    FLake:                                       # FLake specific parameters
       fetch_lk: 2000.0                          # typical wind fetch [m]
