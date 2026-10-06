@@ -831,27 +831,20 @@ if(j == "humus"){
         num_prey_per_group <- vapply(group_prey, length, integer(1))
         max_prey <- max(num_prey_per_group)
 
-        # write_nml auto-quotes a scalar character value but not a vector, so
-        # vector entries need to be pre-quoted here to stay valid Fortran
-        # namelist syntax once there's more than one group. NA stays unquoted,
-        # and single-group values are left alone so write_nml's own quoting
-        # still applies (pre-quoting a scalar would double-quote it).
-        quote_nml <- function(x) {
-          if (length(x) <= 1L) return(x)
-          ifelse(is.na(x), NA_character_, sprintf("'%s'", x))
-        }
-
-        zoop_config[["zoop_params"]][["zoop_param%zoop_name"]] <- quote_nml(zoo_groups)
+        # Text arrays (more than one group) are pre-quoted, see .quote_nml_text()
+        zoop_config[["zoop_params"]][["zoop_param%zoop_name"]] <- .quote_nml_text(zoo_groups)
         zoop_config[["zoop_params"]][["zoop_param%num_prey"]] <- num_prey_per_group
 
-        # Groups with fewer prey items than max_prey are padded with NA for
-        # the extra prey(p) slots, mirroring how phyto pads pd% params.
+        # Groups with fewer prey items than max_prey get an empty name ('') in
+        # the extra prey(p) slots: AED only reads the first num_prey entries
+        # of each group, but the slot must still be valid namelist syntax (an
+        # unquoted NA makes AED stop with "Error reading namelist zoop_params")
         for(p in seq_len(max_prey)){
           prey_p <- vapply(zoo_groups, function(g) {
             prey_g <- group_prey[[g]]
-            if(p <= length(prey_g)) prey_g[p] else NA_character_
+            if(p <= length(prey_g)) prey_g[p] else ""
           }, character(1))
-          zoop_config[["zoop_params"]][[paste0("zoop_param%prey(", p, ")%zoop_prey")]] <- quote_nml(prey_p)
+          zoop_config[["zoop_params"]][[paste0("zoop_param%prey(", p, ")%zoop_prey")]] <- .quote_nml_text(prey_p)
         }
 
         write_nml(zoop_config, zoop_file)

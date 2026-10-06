@@ -51,6 +51,17 @@ test_that("get_zoop_names() extracts and sanitizes the zooplankton name", {
   expect_equal(get_zoop_names(f, sanitize = FALSE), "Daphnia sp.")
 })
 
+test_that("get_zoop_names() returns one name per zooplankton group", {
+  f <- tempfile(fileext = ".nml")
+  .write_lines(f,
+    "&zoop_params",
+    "   zoop_param%zoop_name = 'daphnia', 'cyclops'",
+    "/"
+  )
+
+  expect_equal(get_zoop_names(f), c("daphnia", "cyclops"))
+})
+
 # ---- generate_simstrat_aed2_inflows() -------------------------------------
 
 .make_simstrat_fixture <- function(active_modules) {

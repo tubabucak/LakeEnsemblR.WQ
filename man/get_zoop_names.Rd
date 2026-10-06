@@ -2,7 +2,7 @@
 % Please edit documentation in R/gen_simstrat_input.r
 \name{get_zoop_names}
 \alias{get_zoop_names}
-\title{Extract zooplankton group name from \code{aed2_zoop_pars.nml}}
+\title{Extract zooplankton group names from \code{aed2_zoop_pars.nml}}
 \usage{
 get_zoop_names(zoop_pars_file, sanitize = TRUE)
 }
@@ -16,6 +16,6 @@ A character vector of zooplankton names.
 }
 \description{
 This helper reads the AED2 zooplankton parameter file and extracts the
-zooplankton name from the \code{zoop_param\%zoop_name} line.
+zooplankton names (one per group) from the \code{zoop_param\%zoop_name} line.
 }
 \keyword{internal}
