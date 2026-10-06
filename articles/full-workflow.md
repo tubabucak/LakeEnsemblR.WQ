@@ -517,7 +517,7 @@ metric_out <- cal_metrics(
 cmp <- compare_models_metric(
   metric_out = metric_out,
   metric     = "DO_gramsPerCubicMeter",
-  depth      = 1
+  depth      = 20
 )
 cmp$plot
 ```
@@ -580,8 +580,8 @@ model per year.
 
 ``` r
 
-plot_anoxic_metrics("output/ensemble_output.nc")
-plot_ice_metrics("output/ensemble_output.nc", metric_name = "Ice_Thickness_meter")
+anox_met <- plot_anoxic_metrics("output/ensemble_output.nc")
+ice_met <- plot_ice_metrics("output/ensemble_output.nc", metric_name = "Ice_Thickness_meter")
 ```
 
 ### 6.5 Simulated vs observed, all models together
