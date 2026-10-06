@@ -368,7 +368,7 @@ result_parts <- parallel::parLapply(cl, seq_len(n_workers), function(worker_idx)
     # the initial directory copy just keeps getting rescored every time.
     worker_yaml_path <- file.path(worker_dir, "__lhc_worker_output_config.yaml")
     file.copy(yaml_file_path, worker_yaml_path, overwrite = TRUE)
-    yaml_content <- yaml::read_yaml(worker_yaml_path)
+    yaml_content <- yaml::read_yaml(worker_yaml_path, readLines.warn = FALSE)
 
     model_upper_w <- toupper(model)
     model_short_w <- if (grepl("GLM", model_upper_w)) {

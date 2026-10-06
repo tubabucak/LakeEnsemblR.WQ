@@ -48,7 +48,7 @@ load_config <- function(config_path, required_models = NULL) {
     stop("Config file not found at: ", config_path)
   }
   
-  config <- yaml::read_yaml(config_path)
+  config <- yaml::read_yaml(config_path, readLines.warn = FALSE)
   
   # Ensure required top-level fields
   required_fields <- c("files", "model_folders")

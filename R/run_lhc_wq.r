@@ -1022,7 +1022,7 @@ calib_wq <- function(model,
       file.copy(yaml_file_src, sandbox_yaml_path, overwrite = TRUE)
     }
     if (file.exists(sandbox_yaml_path)) {
-      yaml_content <- yaml::read_yaml(sandbox_yaml_path)
+      yaml_content <- yaml::read_yaml(sandbox_yaml_path, readLines.warn = FALSE)
       # If 'folder' is blank, load_config() would otherwise default to this
       # sandbox copy's own directory (eval_dir). But eval_dir only holds a
       # copy of model_dir's contents plus the root *.yaml files -- sibling

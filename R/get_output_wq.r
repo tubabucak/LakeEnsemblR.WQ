@@ -57,6 +57,14 @@ get_output_wq <- function(config_file,
 
   ##------------------------- GLM ---------------------------------------
   if ("GLM" %in% model_upper) {
+    # glmtools derives a time zone from the session's local one and builds an
+    # invalid "Etc/GMT--1" for zones east of UTC (warning on every read), so
+    # read GLM output in UTC -- as the rest of the package does -- and restore
+    # the session's time zone afterwards
+    old_tz <- Sys.getenv("TZ", unset = NA)
+    Sys.setenv(TZ = "UTC")
+    on.exit(if (is.na(old_tz)) Sys.unsetenv("TZ") else Sys.setenv(TZ = old_tz), add = TRUE)
+
     glm_out <- list()
     
     if (depth_01 == 1) {

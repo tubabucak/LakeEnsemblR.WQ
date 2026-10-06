@@ -115,7 +115,7 @@ check_the_metrics <- function(metric_yaml_file, dict_file = NULL) {
   
   # Load the YAML file
   config <- tryCatch({
-    yaml::yaml.load_file(yaml_path)
+    yaml::yaml.load_file(yaml_path, readLines.warn = FALSE)
   }, error = function(e) {
     stop("Error reading YAML file: ", e$message)
   })
