@@ -174,11 +174,22 @@ get_runner <- function(model) {
 
       res <- SimstratR::run_simstrat(sim_folder = sim_folder, par_file = par_file, verbose = verbose, ...)
 
-      # Simstrat writes one <variable>_out.dat file per variable, not NetCDF
+      # Simstrat writes one <variable>_out.dat file per variable, not NetCDF.
+      # Some of those exist even when Simstrat stops early, so also require
+      # a zero exit status: run_simstrat() returns it as attr(, "status") of
+      # the captured output (verbose = TRUE) or as the value (verbose = FALSE)
+      status <- attr(res, "status")
+      if (is.null(status) && is.numeric(res) && length(res) == 1L) status <- res
+      exit_ok <- is.null(status) || isTRUE(status == 0)
+      if (!exit_ok) {
+        warning("Simstrat-AED2 stopped with exit status ", status,
+                ". Run SimstratR::run_simstrat(sim_folder, verbose = TRUE) to see its message.",
+                call. = FALSE)
+      }
       nc_path <- .find_latest_netcdf(sim_folder)
       dat_files <- list.files(file.path(sim_folder, "output"), pattern = "_out\\.dat$")
       list(model = "SIMSTRAT-AED2", sim_folder = sim_folder, nc_path = nc_path,
-           ok = length(dat_files) > 0 || (!is.na(nc_path) && file.exists(nc_path)),
+           ok = exit_ok && (length(dat_files) > 0 || (!is.na(nc_path) && file.exists(nc_path))),
            runner_return = res, par_file = par_file)
     }
   )
@@ -280,7 +291,7 @@ if (!isTRUE(res$ok)) {
   if (runner_ok) {
     msg("OK: Finished ", m, " (NetCDF: ", nc, ")")
   } else {
-    msg("WARNING: Finished ", m, " but no valid NetCDF detected (nc_path: ", nc, ")")
+    msg("WARNING: ", m, " failed or produced no output (see warnings; nc_path: ", nc, ")")
     if (on_error == "stop") stop("Run did not produce expected outputs for ", m, call. = FALSE)
   }
 }
