@@ -888,6 +888,19 @@ expand_templates <- function(sel_metric, wq_config_file) {
   dplyr::bind_rows(out)
 }
 
+#' @title Quote a text array for glmtools::write_nml()
+#'
+#' @description write_nml() quotes a single text value but not an array, so
+#'   e.g. two group names would be written as \code{NAME,NAME}, which
+#'   read_nml() then tries to read as numbers ("NAs introduced by coercion").
+#'   Arrays of text are quoted here; single values and numbers are returned
+#'   unchanged (write_nml() quotes a single value itself).
+#'
+#' @noRd
+.quote_nml_text <- function(x) {
+  if (is.character(x) && length(x) > 1L) sprintf("'%s'", x) else x
+}
+
 #' @title Ratio of two metric tables, with NA where undefined
 #'
 #' @description Divides \code{num} by \code{den} (data frames, or vectors for

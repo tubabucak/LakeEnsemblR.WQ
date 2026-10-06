@@ -359,7 +359,8 @@ for (l in seq_len(nrow(dict_biology))) {
           for(k in seq_len(length(groups))){
             values[k] <- coerce_default(dict_phyto[j, "default"])
           }
-          lst_phyto[[path[1]]][[path[2]]] <- values
+          if(path[2] == "pd%p_name") values <- groups
+          lst_phyto[[path[1]]][[path[2]]] <- .quote_nml_text(values)
         }
         
         filename <- file.path(dirname(lst_config[["config_files"]][[models_coupled[i]]]),
@@ -393,7 +394,8 @@ for (l in seq_len(nrow(dict_biology))) {
           for(k in seq_len(length(groups))){
             values[k] <- coerce_default(dict_zoop[j, "default"])
           }
-          lst_zoop[[path[1]]][[path[2]]] <- values
+          if(path[2] == "zoop_param%zoop_name") values <- groups
+          lst_zoop[[path[1]]][[path[2]]] <- .quote_nml_text(values)
         }
         
         filename <- file.path(dirname(lst_config[["config_files"]][[models_coupled[i]]]),
