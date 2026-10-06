@@ -76,9 +76,20 @@ validate_glm_aed <- function(sim_folder = ".", file = NULL, verbose = TRUE) {
     invisible(TRUE)
   }
   
+  get_number <- function(key) {
+    matches <- txt[grepl(paste0("^\\s*", key, "\\s*="), txt)]
+    if (length(matches) == 0) return(NA_integer_)
+    suppressWarnings(as.integer(sub("^[^=]*=\\s*([0-9]+).*$", "\\1", matches[1])))
+  }
+
   meteo <- get_quoted_vec("meteo_fl")
+  # only the first num_inflows / num_outlet files are read by GLM
   inflow <- get_quoted_vec("inflow_fl")
   outflow <- get_quoted_vec("outflow_fl")
+  n_inflows <- get_number("num_inflows")
+  n_outlet <- get_number("num_outlet")
+  if (!is.na(n_inflows)) inflow <- utils::head(inflow, n_inflows)
+  if (!is.na(n_outlet)) outflow <- utils::head(outflow, n_outlet)
   wq <- get_quoted_vec("wq_nml_file")
   out_dir <- get_quoted_vec("out_dir")
   

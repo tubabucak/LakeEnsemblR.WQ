@@ -48,8 +48,11 @@ validate_gotm_wet <- function(sim_folder = ".", file = "gotm.yaml", verbose = TR
     files <- character()
 
     if (is.list(x)) {
-      # If this node has a "file" entry, collect it
-      if (!is.null(x[["file"]])) {
+      # If this node has a "file" entry, collect it -- unless a sibling
+      # "method" says the value is not read from file (GOTM: 2 = from file)
+      from_file <- is.null(x[["method"]]) || !is.numeric(x[["method"]]) ||
+        x[["method"]] == 2
+      if (!is.null(x[["file"]]) && from_file) {
         f <- x[["file"]]
         # sometimes file is NULL, "", or a scalar
         if (is.character(f) && length(f) == 1 && nzchar(f)) {
