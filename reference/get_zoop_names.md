@@ -1,7 +1,7 @@
-# Extract zooplankton group name from `aed2_zoop_pars.nml`
+# Extract zooplankton group names from `aed2_zoop_pars.nml`
 
 This helper reads the AED2 zooplankton parameter file and extracts the
-zooplankton name from the `zoop_param%zoop_name` line.
+zooplankton names (one per group) from the `zoop_param%zoop_name` line.
 
 ## Usage
 
