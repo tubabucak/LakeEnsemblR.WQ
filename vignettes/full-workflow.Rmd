@@ -527,7 +527,7 @@ input as `plot_strat_metrics()` (6.2) -- a `cal_metrics()` list or a NetCDF
 path -- and plot their respective derived metrics per model per year.
 
 ```{r eval = FALSE}
-anox_met <- plot_anoxic_metrics("output/ensemble_output.nc")
+anox_met<- plot_anoxic_metrics("output/ensemble_output.nc")
 ice_met <- plot_ice_metrics("output/ensemble_output.nc", metric_name = "Ice_Thickness_meter")
 ```
 
