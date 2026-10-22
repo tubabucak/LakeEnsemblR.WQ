@@ -328,11 +328,14 @@ for (l in seq_len(nrow(dict_biology))) {
         lst[[path[1]]][[path[2]]] <- coerce_default(dict_biogeochem[j, "default"])
       }
 
-      # GLM 4 (AED 3): simN2O = 2 switches on the advanced nitrogen redox
-      # scheme, which strips O2 within hours and destabilises the run with the
-      # dictionary defaults. Use the standard nitrification scheme instead;
-      # par_file overrides are applied after this, so users can still set it.
-      if(models_coupled[i] == "GLM-AED" && !is.null(lst[["aed2_nitrogen"]])){
+      # simN2O = 2 switches on the advanced nitrogen redox scheme, which
+      # destabilises the run with the dictionary defaults: in GLM 4 (AED 3) it
+      # strips O2 within hours, in Simstrat-AED2 it creates nitrate (and drives
+      # ammonium and nitrite negative). Use the standard nitrification scheme
+      # instead; par_file overrides are applied after this, so users can still
+      # set it.
+      if(models_coupled[i] %in% c("GLM-AED", "Simstrat-AED2") &&
+         !is.null(lst[["aed2_nitrogen"]])){
         lst[["aed2_nitrogen"]][["simN2O"]] <- 0L
       }
 
