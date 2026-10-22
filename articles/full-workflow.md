@@ -580,7 +580,7 @@ model per year.
 
 ``` r
 
-anox_met <- plot_anoxic_metrics("output/ensemble_output.nc")
+anox_met<- plot_anoxic_metrics("output/ensemble_output.nc")
 ice_met <- plot_ice_metrics("output/ensemble_output.nc", metric_name = "Ice_Thickness_meter")
 ```
 
