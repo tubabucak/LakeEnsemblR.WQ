@@ -41,7 +41,19 @@ set_value_config <- function(config_file, module, group_name = NULL, group_posit
   model_coupled_norm <- toupper(as.character(model_coupled))
   
   model <- .wq_model_key(model_coupled)
-  
+
+  # Prey-indexed zooplankton parameters (FABM models) are in the dictionary as
+  # e.g. "cClearPrey{prey_num}". "cClearPrey2" sets prey 2 only; the
+  # dictionary name itself sets every prey of the group (see FABM branch).
+  prey_num <- NULL
+  if(!(parameter %in% LakeEnsemblR_WQ_dictionary$parameter) && grepl("[0-9]+$", parameter)){
+    templ <- sub("[0-9]+$", "{prey_num}", parameter)
+    if(templ %in% LakeEnsemblR_WQ_dictionary$parameter){
+      prey_num <- as.integer(sub("^.*?([0-9]+)$", "\\1", parameter))
+      parameter <- templ
+    }
+  }
+
   # Check if arguments are allowed
   chck_args <- sapply(c("module", "domain", "process", "subprocess", "model", "parameter"),
                      function(x) get(x) %in% LakeEnsemblR_WQ_dictionary[[x]])
@@ -142,14 +154,27 @@ set_value_config <- function(config_file, module, group_name = NULL, group_posit
   }else if(model_coupled_norm %in% c("GOTM-SELMAPROTBAS", "GOTM-WET")){
     path_parts <- strsplit(as.character(row_dict[1, "path"]), "/")[[1]]
     path_parts[path_parts == "{group_name}"] <- group_name
-    names(path_parts) <- paste0("key", 1:length(path_parts))
-    
-    path_parts <- c(path_parts,
-                    "value" = (value),#as.numeric(value),
-                    "file" = file.path(folder, model_config),
-                    "verbose" = verbose)
-    arglist <- split(path_parts, names(path_parts)) # Turn into named list
-    do.call(input_yaml_multiple, args = arglist)
+
+    # Prey-indexed parameter: one entry per prey (cClearPrey1, cClearPrey2, ...)
+    prey_ids <- NA
+    if(any(grepl("{prey_num}", path_parts, fixed = TRUE))){
+      prey_ids <- prey_num
+      if(is.null(prey_ids)){
+        n_prey <- length(lst_config[["zooplankton"]][["groups"]][[group_name]][["prey"]])
+        prey_ids <- seq_len(max(1L, n_prey))
+      }
+    }
+
+    for(pid in prey_ids){
+      keys <- if(is.na(pid)) path_parts else gsub("{prey_num}", pid, path_parts, fixed = TRUE)
+      names(keys) <- paste0("key", seq_along(keys))
+      keys <- c(keys,
+                "value" = (value),#as.numeric(value),
+                "file" = file.path(folder, model_config),
+                "verbose" = verbose)
+      arglist <- split(keys, names(keys)) # Turn into named list
+      do.call(input_yaml_multiple, args = arglist)
+    }
     return(invisible(TRUE))
   }else if(model_coupled_norm == "MYLAKE"){
     if(!is.null(group_name)){
