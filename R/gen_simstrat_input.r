@@ -386,8 +386,12 @@ generate_simstrat_aed2_inflows <- function(aed2_file,
     var_unit    <- if (identical(varname, "CAR_pH_inflow")) "pH" else unit
     # ---------------------------------------
     
-    # Do not overwrite if file exists 
-    if (!overwrite && file.exists(out_file)) next
+    # Do not overwrite if file exists, unless it is an InflowMode 0 placeholder
+    # (single "1" column line) while inflows are now on -- Simstrat rejects it
+    if (!overwrite && file.exists(out_file)) {
+      off_format <- identical(trimws(readLines(out_file, n = 2L)[2]), "1")
+      if (!(off_format && get_json_value(sim_par, "ModelConfig", "InflowMode") != 0L)) next
+    }
     lines <- format_aed_inflow_simstrat(
       varname       = varname,
       levels        = levels,
