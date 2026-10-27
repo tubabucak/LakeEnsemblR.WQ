@@ -534,20 +534,21 @@ wq_config <- add_selma_prey_to_scaffold(wq_config, lst_config, zoo_instance = "z
 
  if(j == "DOM"){
 
+    # DOM mineralises DW and C out of the system: with lTransDWtarget = false
+    # om_pool has no DW/C targets. Coupling them to DOM itself (the default
+    # lTransDWtarget = true) returns them to DOM, so DOM-DW never decays and
+    # its light extinction grows without limit.
+    wq_config[["instances"]][[j]][["parameters"]][["lTransDWtarget"]] <- FALSE
     coupling <- list(
       oxygen_pool_water  = "abiotic_water/sO2W",
       NO3_pool_water     = "abiotic_water/sNO3W",
       bot_pel_conv       = "bot_pel_interface/bot_pel_conv",
       # DOM transformation
-      DW_transformation_water      = "DOM/sDW",
       N_transformation_water       = "abiotic_water/sNH4W",
       P_transformation_water       = "abiotic_water/sPO4W",
-      C_transformation_water       = "DOM/sCW",
 
-      DW_transformation_sediment   = "DOM/sDS",
       N_transformation_sediment    = "abiotic_sediment/sNH4S",
-      P_transformation_sediment    = "abiotic_sediment/sPO4S",
-      C_transformation_sediment    = "DOM/sCS"
+      P_transformation_sediment    = "abiotic_sediment/sPO4S"
     )
 }
 if(j == "humus"){
