@@ -42,6 +42,13 @@ set_value_config <- function(config_file, module, group_name = NULL, group_posit
   
   model <- .wq_model_key(model_coupled)
 
+  # A par_file mixing switches and numbers is read as all-character; restore
+  # the type so AED doesn't write numbers as quoted strings ('1.5') and FABM
+  # gets yaml booleans.
+  if(is.character(value)){
+    value <- utils::type.convert(trimws(value), as.is = TRUE)
+  }
+
   # Prey-indexed zooplankton parameters (FABM models) are in the dictionary as
   # e.g. "cClearPrey{prey_num}". "cClearPrey2" sets prey 2 only; the
   # dictionary name itself sets every prey of the group (see FABM branch).
@@ -76,7 +83,10 @@ set_value_config <- function(config_file, module, group_name = NULL, group_posit
   if(nrow(row_dict) == 0){
     stop("The parameter was not found in the dictionary for this combination of arguments.")
   }
-  
+  # Some dictionary paths carry a trailing space (e.g. "zoop_param%num_prey "),
+  # which would add a second, overriding key to the nml instead of updating it
+  row_dict$path <- trimws(row_dict$path)
+
   lst_config <- read.config(file.path(folder, config_file))
   model_config <- lst_config[["config_files"]][[model_coupled]]
   if (is.null(model_config) || !nzchar(model_config)) {
@@ -154,6 +164,7 @@ set_value_config <- function(config_file, module, group_name = NULL, group_posit
   }else if(model_coupled_norm %in% c("GOTM-SELMAPROTBAS", "GOTM-WET")){
     path_parts <- strsplit(as.character(row_dict[1, "path"]), "/")[[1]]
     path_parts[path_parts == "{group_name}"] <- group_name
+    if(is.logical(value)) value <- tolower(value)
 
     # Prey-indexed parameter: one entry per prey (cClearPrey1, cClearPrey2, ...)
     prey_ids <- NA
