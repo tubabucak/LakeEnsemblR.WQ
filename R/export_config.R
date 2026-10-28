@@ -142,7 +142,8 @@ export_config_wq <- function(config_file, folder = ".", verbose = FALSE,
                            parameter = input_file[x, "parameter"],
                            value = input_file[x, "value"],
                            folder = folder,
-                           verbose = verbose)
+                           verbose = verbose,
+                           path = if("path" %in% names(input_file)) input_file[x, "path"] else NULL)
         }
         
       }
