@@ -77,10 +77,10 @@ create_par_files <- function(folder = ".",
   # num_prey is set by set_coupling() from the prey listed in the config file
   par_table <- par_table[trimws(par_table$parameter) != "num_prey", ]
 
-  # set_value_config() resolves a row by these columns and uses the first
-  # dictionary match, so rows that only differ in path would all set the
-  # same entry -- keep one.
-  key_cols <- c("module", "domain", "process", "subprocess", "model_coupled", "parameter")
+  # Rows that only differ in path (e.g. WET kNMinS of DOM and humus) are kept:
+  # export_config_wq() passes the path column to set_value_config(), which
+  # uses it to pick the right dictionary row.
+  key_cols <- c("module", "domain", "process", "subprocess", "model_coupled", "parameter", "path")
   par_table <- par_table[!duplicated(par_table[, key_cols]), ]
 
   out_cols <- c("domain", "process", "subprocess", "model_coupled", "parameter",
