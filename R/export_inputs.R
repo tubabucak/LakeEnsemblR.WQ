@@ -156,6 +156,20 @@ export_inputs <- function(config_file, folder = ".",
                                                                   column = j - 1L)
       }
       
+      # Pelagic state variables without an input would enter at the in-lake
+      # concentration (GOTM default), i.e. never be diluted by the inflow;
+      # give them a concentration of 0 instead (see helpers.R)
+      fabm_cfg <- read.config(file.path(folder, lst_config[["config_files"]][[i]]))
+      inflow_names <- names(gotmyaml[["streams"]])[seq_len(num_inflows)]
+      for(var_name in gotm_inflow_state_vars(fabm_cfg)){
+        for(inflow_name in inflow_names){
+          if(is.null(gotmyaml[["streams"]][[inflow_name]][[var_name]])){
+            gotmyaml[["streams"]][[inflow_name]][[var_name]] <- list(method = 0L,
+                                                                     constant_value = 0.0)
+          }
+        }
+      }
+      
       # Writing gotm.yaml file, see helpers.R
       lerwq_write_yaml_file(gotmyaml, file.path(folder, i, "gotm.yaml"),
                             is_gotm_yaml = TRUE)

@@ -212,6 +212,32 @@
   basename(path_val)
 }
 
+#' @title Light extinction coefficient from the LakeEnsemblR config
+#'
+#' @description Returns input/light/Kw from the LakeEnsemblR config [m-1].
+#'  If Kw is a csv file (time-varying), the mean over the file is returned,
+#'  as e.g. Simstrat's AED2 BackgroundExtinction is a single value.
+#'
+#' @param lst_config_ler list; the LakeEnsemblR config, as read by
+#'  configr::read.config()
+#' @param folder path; folder that the Kw file is relative to
+#' @param default numeric; returned (with a warning) if Kw is missing
+#'
+#' @noRd
+ler_light_extinction <- function(lst_config_ler, folder = ".", default = 0.2){
+  k_w <- lst_config_ler[["input"]][["light"]][["Kw"]]
+  if(is.null(k_w) || length(k_w) == 0 || identical(k_w, "") || identical(k_w, "NULL")){
+    warning("No input/light/Kw in the LakeEnsemblR config; using ", default,
+            " m-1 as background light extinction.", call. = FALSE)
+    return(default)
+  }
+  # configr can return a number as character (e.g. "0.383")
+  k_w_num <- suppressWarnings(as.numeric(k_w))
+  if(!is.na(k_w_num)) return(k_w_num)
+  k_w_file <- read.csv(file.path(folder, k_w))
+  mean(k_w_file[[setdiff(names(k_w_file), "datetime")[1]]], na.rm = TRUE)
+}
+
 #' @title Adds an AED2 section to the Simstrat config file
 #'
 #' @description Checks for existence of and then adds a AED2Config section
@@ -222,14 +248,19 @@
 #' @param simstrat_par character; name of the Simstrat config file
 #' @param verbose logical; whether to show messages
 #' @param settings_section list; corresponding section from LER.WQ config
-#' 
+#' @param background_extinction numeric; AED2 BackgroundExtinction [m-1],
+#'   normally the lake's Kw from the LakeEnsemblR config (see
+#'   ler_light_extinction()), so that Simstrat-AED2 uses the same background
+#'   light extinction as the other models
+#'
 #' @importFrom LakeEnsemblR get_yaml_multiple input_json
-#' 
+#'
 #' @noRd
 add_aed2_section_simstrat <- function(folder = ".",
                                       simstrat_par = "simstrat.par",
                                       verbose = TRUE,
-                                      settings_section = NULL){
+                                      settings_section = NULL,
+                                      background_extinction = 0.2){
   # This function will interpret a commented-out AED2Config as present
   # and not create a new section. 
   
@@ -242,7 +273,11 @@ add_aed2_section_simstrat <- function(folder = ".",
     stop("settings_section must be provided to add aed2 section to Simstrat")
   }
   shading <- ifelse(settings_section[["bio-shading"]], 1, 0)
-  benthic <- ifelse(settings_section[["bottom_everywhere"]], 1, 0)
+  # Benthic fluxes only from the deepest layer (BenthicMode 0), as in GLM-AED
+  # without a &sediment section (benthic_mode 0). AED2's static Fsed fluxes
+  # applied on all flanks (BenthicMode 1) are far larger and drain nitrate.
+  # bottom_everywhere still applies to GOTM (dynamic WET/Selma sediments).
+  benthic <- 0
   
   aed_section_present <- any(grepl("AED2Config", sim_par))
   if(aed_section_present){
@@ -250,6 +285,10 @@ add_aed2_section_simstrat <- function(folder = ".",
                key = "BioshadeFeedback", value = shading)
     input_json(file.path(folder, simstrat_par), label = "AED2Config",
                key = "BenthicMode", value = benthic)
+    if(any(grepl("BackgroundExtinction", sim_par))){
+      input_json(file.path(folder, simstrat_par), label = "AED2Config",
+                 key = "BackgroundExtinction", value = background_extinction)
+    }
     if(any(grepl("OutputDiagnosticVars", sim_par))){
       input_json(file.path(folder, simstrat_par), label = "AED2Config",
                  key = "OutputDiagnosticVars", value = "true")
@@ -295,7 +334,7 @@ add_aed2_section_simstrat <- function(folder = ".",
                   paste0(s2, "\"PathAED2inflow\" :  \"./\","),
                   paste0(s2, "\"ParticleMobility\" : 1,"),
                   paste0(s2, "\"BioshadeFeedback\" : ", shading, ","),
-                  paste0(s2, "\"BackgroundExtinction\" : 0.2,"),
+                  paste0(s2, "\"BackgroundExtinction\" : ", background_extinction, ","),
                   paste0(s2, "\"BenthicMode\" : ", benthic,","),
                   paste0(s2, "\"OutputDiagnosticVars\" : true,"),
                   paste0(s1, "},"))
@@ -587,6 +626,40 @@ chk_names_nutr_flow <- function(headers){
          headers[!chck_flow], "! They should be one of:\n",
          paste(allowed_names, collapse = "\n"))
   }
+}
+
+#'Pelagic state variables that GOTM inflows must carry explicitly
+#'@description
+#'GOTM gives inflowing water the in-lake concentration for every FABM state
+#'variable that is not listed in the stream, so these variables are never
+#'diluted by the inflow. This returns the pelagic state variables of the
+#'FABM instances (as instance_variable) that should get an explicit
+#'inflow concentration. Oxygen, sediment/benthic variables and fish are left
+#'out (they keep the in-lake concentration).
+#'
+#' @name gotm_inflow_state_vars
+#' @param fabm_cfg list; fabm.yaml as read by configr
+#' @noRd
+gotm_inflow_state_vars <- function(fabm_cfg){
+  pelagic_vars <- list(
+    "wet/abiotic_water" = c("sDIMW", "sSiPaW", "sPO4W", "sPAIMW", "sNH4W",
+                            "sNO3W", "sSiO2W"),
+    "wet/om_pool" = c("sDW", "sNW", "sPW", "sCW"),
+    "wet/phytoplankton" = c("sDW", "sNW", "sPW", "sCW"),
+    "wet/zooplankton" = c("sD", "sN", "sP", "sC"),
+    "selmaprotbas/selmaprotbas" = c("aa", "nn", "po", "si", "pw",
+                                    "dd_c", "dd_n", "dd_p", "dd_si"),
+    "selmaprotbas/phytoplankton" = "c",
+    "selmaprotbas/zooplankton" = "c",
+    "selmaprotbas/dom" = c("dom_a", "dom_b"))
+  
+  vars <- c()
+  for(j in names(fabm_cfg[["instances"]])){
+    fabm_model <- fabm_cfg[["instances"]][[j]][["model"]]
+    if(is.null(fabm_model) || is.null(pelagic_vars[[fabm_model]])) next
+    vars <- c(vars, paste0(j, "_", pelagic_vars[[fabm_model]]))
+  }
+  vars
 }
 
 #'write yaml file in list-format
