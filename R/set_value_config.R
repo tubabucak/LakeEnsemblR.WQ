@@ -13,8 +13,13 @@
 #'                                       "Simstrat-AED2", "MyLake", "PCLake"
 #'@param parameter character;
 #'@param value character or numeric; what value to enter 
-#'@param folder path; relative to what folder 
+#'@param folder path; relative to what folder
 #'@param verbose boolean; print output to console
+#'@param path character; optional dictionary path (e.g.
+#'  "humus/parameters/kNMinS"), the \code{path} column of a par_file. Used to
+#'  pick the right row when several dictionary rows share module, domain,
+#'  process, subprocess, model and parameter (e.g. WET kNMinS of DOM and
+#'  humus); without it, or if it matches none of them, the first row is used.
 #'
 #'@importFrom configr read.config
 #'@importFrom LakeEnsemblR input_yaml_multiple
@@ -37,7 +42,7 @@
 
 set_value_config <- function(config_file, module, group_name = NULL, group_position = NULL,
                              domain, process, subprocess, model_coupled, parameter, value,
-                             folder, verbose = FALSE){
+                             folder, verbose = FALSE, path = NULL){
   model_coupled_norm <- toupper(as.character(model_coupled))
   
   model <- .wq_model_key(model_coupled)
@@ -58,6 +63,11 @@ set_value_config <- function(config_file, module, group_name = NULL, group_posit
     if(templ %in% LakeEnsemblR_WQ_dictionary$parameter){
       prey_num <- as.integer(sub("^.*?([0-9]+)$", "\\1", parameter))
       parameter <- templ
+    }else if(sub("[0-9]+$", "", parameter) == "Pzoo_prey"){
+      # AED: "Pzoo_prey2" sets zoop_param%prey(2)%Pzoo_prey (see AED branch);
+      # "Pzoo_prey" itself sets prey(1), the first dictionary row
+      prey_num <- as.integer(sub("^.*?([0-9]+)$", "\\1", parameter))
+      parameter <- "Pzoo_prey"
     }
   }
 
@@ -82,6 +92,12 @@ set_value_config <- function(config_file, module, group_name = NULL, group_posit
   # Second argument check; see if all combinations are possible
   if(nrow(row_dict) == 0){
     stop("The parameter was not found in the dictionary for this combination of arguments.")
+  }
+  # Several rows can share all of the above (e.g. WET DOM/POM/humus pools);
+  # pick the one whose path the par_file names
+  if(nrow(row_dict) > 1 && !is.null(path) && !is.na(path) && nzchar(trimws(path))){
+    path_match <- trimws(row_dict$path) == trimws(path)
+    if(any(path_match)) row_dict <- row_dict[path_match, , drop = FALSE]
   }
   # Some dictionary paths carry a trailing space (e.g. "zoop_param%num_prey "),
   # which would add a second, overriding key to the nml instead of updating it
@@ -118,6 +134,9 @@ set_value_config <- function(config_file, module, group_name = NULL, group_posit
     aed_config <- read_nml(aed_config_path)
     
     path_parts <- strsplit(as.character(row_dict[1, "path"]), "/")[[1]]
+    if(!is.null(prey_num)){
+      path_parts <- sub("prey\\([0-9]+\\)", paste0("prey(", prey_num, ")"), path_parts)
+    }
     if(length(path_parts) != 2L){
       stop("Path for AED2 parameter does not consist of two parts; needs ",
            "to be section/par_name")
