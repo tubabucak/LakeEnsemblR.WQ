@@ -49,6 +49,8 @@ library(LakeEnsemblR.WQ)
 
 ex <- lerwq_example()   # copies the example to a temporary folder
 setwd(ex)
+
+devtools::install("C:/Users/au721619/OneDrive - Aarhus universitet/Documents/GitHub/LakeEnsemblR")
 ```
 
 ## 1) Export WQ configuration and inputs
@@ -484,6 +486,14 @@ cmp <- compare_models_metric(
   depth      = 20
 )
 cmp$plot
+
+cmp <- compare_models_metric(
+  metric_out = metric_out,
+  metric     = "TP_gramsPerCubicMeter",
+  depth      = 20
+)
+cmp$plot
+
 ```
 
 ### 6.2 Stratification metrics across models and years
