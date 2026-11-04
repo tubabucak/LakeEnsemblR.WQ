@@ -132,7 +132,9 @@ convert_ler_to_lerwq <- function(ler_config_file = "LakeEnsemblR.yaml",
                                   simstrat_par = file.path(lerwq_folder,
                                                            filename),
                                   verbose = verbose,
-                                  settings_section = settings_section)
+                                  settings_section = settings_section,
+                                  background_extinction =
+                                    ler_light_extinction(lst_config_ler, folder))
       }else if(toupper(phys_model) == "GLM"){
         filename <- basename(lst_config_ler[["config_files"]][[ler_model_key]])
         
