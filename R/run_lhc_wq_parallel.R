@@ -312,7 +312,24 @@ result_parts <- parallel::parLapply(cl, seq_len(n_workers), function(worker_idx)
   # anything outside model_dir itself.
   copy_config_support <- function(config_path) {
     if (is.null(config_path) || !nzchar(config_path) || !file.exists(config_path)) return()
-    cfg <- tryCatch(load_config(config_path), error = function(e) NULL)
+    # Only require the output folder of the model being calibrated: a config
+    # listing other coupled models whose output folders are absent (e.g. a
+    # single-model setup) would otherwise fail load_config(), and the
+    # tryCatch() below would silently skip copying the support files --
+    # every sample then fails cal_metrics() with "File not found".
+    model_key_cfg <- if (grepl("GLM", toupper(model))) {
+      "GLM"
+    } else if (grepl("SIMSTRAT", toupper(model))) {
+      "SIMSTRAT"
+    } else if (grepl("SELMA", toupper(model))) {
+      "SELMAPROTBAS"
+    } else if (grepl("WET", toupper(model))) {
+      "WET"
+    } else {
+      NULL
+    }
+    cfg <- tryCatch(load_config(config_path, required_models = model_key_cfg),
+                    error = function(e) NULL)
     if (is.null(cfg)) return()
     config_root <- dirname(config_path)
     copy_one <- function(src) {
