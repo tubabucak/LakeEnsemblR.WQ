@@ -39,6 +39,7 @@ reference:
     desc: Create calibration tables and run calibration/sensitivity analyses.
     contents:
       - create_calibration_tables
+      - create_par_files
       - calib_setup_from_tables
       - calib_wq
       - run_sensitivity
