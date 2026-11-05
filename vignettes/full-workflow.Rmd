@@ -50,7 +50,6 @@ library(LakeEnsemblR.WQ)
 ex <- lerwq_example()   # copies the example to a temporary folder
 setwd(ex)
 
-devtools::install("C:/Users/au721619/OneDrive - Aarhus universitet/Documents/GitHub/LakeEnsemblR")
 ```
 
 ## 1) Export WQ configuration and inputs
@@ -324,7 +323,7 @@ res_glm <- calib_wq(
 # working files are not left mutated at the last-tried parameter set.
 
 head(res_glm)
-attr(res_glm, "best_parameter_set")   # winning parameter set for this model
+attr(res_glm, "best_parameter_set")   # best parameter set for this model
 ```
 
 
