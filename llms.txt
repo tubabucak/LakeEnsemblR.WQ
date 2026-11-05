@@ -472,6 +472,8 @@ Create calibration tables and run calibration/sensitivity analyses.
 
 - [`create_calibration_tables()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/create_calibration_tables.md)
   : Create calibration tables
+- [`create_par_files()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/create_par_files.md)
+  : Create parameter files from the dictionary
 - [`calib_setup_from_tables()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/calib_setup_from_tables.md)
   : Build calib_setup from edited calibration CSVs
 - [`calib_wq()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/calib_wq.md)

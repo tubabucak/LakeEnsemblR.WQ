@@ -38,7 +38,9 @@ create_isimip_global(
   [`cal_metrics()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/cal_metrics.md)
   result, used instead of running
   [`cal_metrics()`](https://tubabucak.github.io/LakeEnsemblR.WQ/reference/cal_metrics.md)).
-  An optional `id` column is used in messages.
+  A result saved with `cal_metrics(layers = "epi_hypo")` is written as
+  it is (much smaller files for many lakes). An optional `id` column is
+  used in messages.
 
 - model:
 

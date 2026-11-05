@@ -355,7 +355,7 @@ res_glm <- calib_wq(
 # working files are not left mutated at the last-tried parameter set.
 
 head(res_glm)
-attr(res_glm, "best_parameter_set")   # winning parameter set for this model
+attr(res_glm, "best_parameter_set")   # best parameter set for this model
 ```
 
 ### 5.5 Optional: refine with Differential Evolution (DE)
@@ -517,6 +517,13 @@ metric_out <- cal_metrics(
 cmp <- compare_models_metric(
   metric_out = metric_out,
   metric     = "DO_gramsPerCubicMeter",
+  depth      = 20
+)
+cmp$plot
+
+cmp <- compare_models_metric(
+  metric_out = metric_out,
+  metric     = "TP_gramsPerCubicMeter",
   depth      = 20
 )
 cmp$plot

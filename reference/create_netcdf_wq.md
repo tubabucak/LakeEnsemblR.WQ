@@ -86,12 +86,13 @@ create_netcdf_wq(
   metrics and models. `"isimip"` writes ISIMIP3 lake-sector files
   instead: one file per variable and model, daily, full profile,
   dimensions `(time, levlak, lat, lon)` with a `depth(levlak)` variable,
-  units in mol m-3 (g m-3 for `chl`). Variables: `chl`, `phytobio`
-  (total and one file per group, e.g. `phytobio-diatoms`), `zoobio`,
-  `tp`, `pp`, `tpd`, `tn`, `pn`, `tdn`, `do`, `doc`, `si`. `tpd` = PO4 +
-  DOP, `pp` = TP - tpd, `tdn` = NO3 + NH4 + DON, `pn` = TN - tdn. A
-  variable is skipped (with a message) when a metric it needs is not in
-  `output_lists`. `out_file`, `out_time` and `members` are not used.
+  units in mol m-3 (g m-3 for `chl`, K for `watertemp`). Variables:
+  `watertemp`, `chl`, `phytobio` (total and one file per group, e.g.
+  `phytobio-diatoms`), `zoobio`, `tp`, `pp`, `tpd`, `tn`, `pn`, `tdn`,
+  `do`, `doc`, `si`. `tpd` = PO4 + DOP, `pp` = TP - tpd, `tdn` = NO3 +
+  NH4 + DON, `pn` = TN - tdn. A variable is skipped (with a message)
+  when a metric it needs is not in `output_lists`. `out_file`,
+  `out_time` and `members` are not used.
 
 - isimip:
 

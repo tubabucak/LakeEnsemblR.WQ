@@ -408,7 +408,7 @@ variable) with NSE/RMSE/NRMSE/PBIAS/KGE; otherwise it is
 <span><span class="co"># working files are not left mutated at the last-tried parameter set.</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">res_glm</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/attr.html" class="external-link">attr</a></span><span class="op">(</span><span class="va">res_glm</span>, <span class="st">"best_parameter_set"</span><span class="op">)</span>   <span class="co"># winning parameter set for this model</span></span></code></pre></div>
+<span><span class="fu"><a href="https://rdrr.io/r/base/attr.html" class="external-link">attr</a></span><span class="op">(</span><span class="va">res_glm</span>, <span class="st">"best_parameter_set"</span><span class="op">)</span>   <span class="co"># best parameter set for this model</span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="optional-refine-with-differential-evolution-de">5.5 Optional: refine with Differential Evolution (DE)<a class="anchor" aria-label="anchor" href="#optional-refine-with-differential-evolution-de"></a>
@@ -559,6 +559,13 @@ structure).</p>
 <span><span class="va">cmp</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/compare_models_metric.html">compare_models_metric</a></span><span class="op">(</span></span>
 <span>  metric_out <span class="op">=</span> <span class="va">metric_out</span>,</span>
 <span>  metric     <span class="op">=</span> <span class="st">"DO_gramsPerCubicMeter"</span>,</span>
+<span>  depth      <span class="op">=</span> <span class="fl">20</span></span>
+<span><span class="op">)</span></span>
+<span><span class="va">cmp</span><span class="op">$</span><span class="va">plot</span></span>
+<span></span>
+<span><span class="va">cmp</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/compare_models_metric.html">compare_models_metric</a></span><span class="op">(</span></span>
+<span>  metric_out <span class="op">=</span> <span class="va">metric_out</span>,</span>
+<span>  metric     <span class="op">=</span> <span class="st">"TP_gramsPerCubicMeter"</span>,</span>
 <span>  depth      <span class="op">=</span> <span class="fl">20</span></span>
 <span><span class="op">)</span></span>
 <span><span class="va">cmp</span><span class="op">$</span><span class="va">plot</span></span></code></pre></div>
