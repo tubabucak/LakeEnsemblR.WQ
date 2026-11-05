@@ -28,8 +28,8 @@
 #'   with all metrics and models. \code{"isimip"} writes ISIMIP3 lake-sector
 #'   files instead: one file per variable and model, daily, full profile,
 #'   dimensions \code{(time, levlak, lat, lon)} with a \code{depth(levlak)}
-#'   variable, units in mol m-3 (g m-3 for \code{chl}). Variables:
-#'   \code{chl}, \code{phytobio} (total and one file per group, e.g.
+#'   variable, units in mol m-3 (g m-3 for \code{chl}, K for
+#'   \code{watertemp}). Variables: \code{watertemp}, \code{chl}, \code{phytobio} (total and one file per group, e.g.
 #'   \code{phytobio-diatoms}), \code{zoobio}, \code{tp}, \code{pp}, \code{tpd},
 #'   \code{tn}, \code{pn}, \code{tdn}, \code{do}, \code{doc}, \code{si}.
 #'   \code{tpd} = PO4 + DOP, \code{pp} = TP - tpd, \code{tdn} = NO3 + NH4 +

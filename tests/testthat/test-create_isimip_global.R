@@ -55,7 +55,10 @@ test_that("create_isimip_global() writes each lake into its grid cell", {
   files <- suppressMessages(create_isimip_global(
     lakes, model = "GLM", start_year = 2022, end_year = 2022, out_dir = dir,
     isimip = list(contact = "c", institution = "i"), verbose = FALSE))
-  expect_equal(basename(files), "glm-aed_gswp3-w5e5_obsclim_histsoc_default_do_global_daily_2022_2022.nc")
+  expect_setequal(basename(files),
+                  paste0("glm-aed_gswp3-w5e5_obsclim_histsoc_default_", c("watertemp", "do"),
+                         "_global_daily_2022_2022.nc"))
+  files <- files[grepl("_do_", basename(files))]
 
   nc <- ncdf4::nc_open(files)
   on.exit(ncdf4::nc_close(nc))
@@ -69,6 +72,49 @@ test_that("create_isimip_global() writes each lake into its grid cell", {
   expect_equal(as.numeric(x[663, 247, , t1]), expected, tolerance = 1e-6)  # second lake, lat -33.25, lon 151.25
   expect_true(all(is.na(x[380, 68, , 1])))                                 # no data in January
   expect_equal(sum(apply(!is.na(x), c(1, 2), any)), 2)
+})
+
+test_that("cal_metrics(layers = \"epi_hypo\") results give the same ISIMIP files", {
+  skip_if_not_installed("RNetCDF")
+  dir <- tempfile("lerwq_isimip_epihypo_")
+  dir.create(dir)
+
+  days <- seq(as.POSIXct("2022-07-01", tz = "UTC"), by = "day", length.out = 3)
+  prof <- function(v) {
+    df <- data.frame(datetime = days, matrix(rep(v, each = 3), nrow = 3))
+    names(df)[-1] <- paste0("Depth_", 0:5)
+    df
+  }
+  m <- list(Temp_degreeCelcius = list(GLM = list(Temp_degreeCelcius = prof(c(22, 22, 21, 10, 6, 6)))),
+            DO_gramsPerCubicMeter = list(GLM = list(DO_gramsPerCubicMeter = prof(c(10, 10, 10, 2, 2, 2)))),
+            Number_Of_Anoxic_Day = list(GLM = data.frame(year = 2022, days = 0)))
+  eh <- LakeEnsemblR.WQ:::.metrics_epi_hypo(m)
+  expect_named(eh$DO_gramsPerCubicMeter$GLM$DO_gramsPerCubicMeter, c("datetime", "epi", "hypo"))
+  expect_identical(eh$Number_Of_Anoxic_Day, m$Number_Of_Anoxic_Day)   # no depth columns: kept
+
+  write <- function(x, sub) {
+    rds <- file.path(dir, paste0(sub, ".rds"))
+    saveRDS(x, rds)
+    files <- suppressMessages(create_isimip_global(
+      data.frame(id = "a", lat = 56.1, lon = 9.81, rds = rds), model = "GLM",
+      start_year = 2022, end_year = 2022, out_dir = file.path(dir, sub),
+      isimip = list(contact = "c", institution = "i", variables = c("watertemp", "do")),
+      verbose = FALSE))
+    stats::setNames(lapply(files, function(f) {
+      nc <- ncdf4::nc_open(f)
+      on.exit(ncdf4::nc_close(nc))
+      ncdf4::ncvar_get(nc, names(nc$var)[1])[380, 68, , ]
+    }), sub("^.*default_(.*)_global.*$", "\\1", basename(files)))
+  }
+  full <- write(m, "profile")
+  red <- write(eh, "epi_hypo")
+  expect_setequal(names(red), c("watertemp", "do"))
+  expect_equal(red, full)
+  t1 <- as.numeric(as.Date("2022-07-01") - as.Date("2022-01-01")) + 1
+  th <- rLakeAnalyzer::thermo.depth(c(22, 22, 21, 10, 6, 6), 0:5)
+  temp <- c(22, 22, 21, 10, 6, 6)
+  expect_equal(as.numeric(red$watertemp[, t1]),
+               c(mean(temp[0:5 <= th]), mean(temp[0:5 > th])) + 273.15, tolerance = 1e-5)
 })
 
 test_that("create_isimip_global() refuses two lakes in one grid cell", {

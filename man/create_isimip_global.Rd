@@ -23,8 +23,9 @@ create_isimip_global(
 fall in -- one lake per cell) and \code{folder} (the lake's
 LakeEnsemblR.WQ project folder; \code{cal_metrics()} is run there) and/or
 \code{rds} (path to a saved \code{cal_metrics()} result, used instead of
-running \code{cal_metrics()}). An optional \code{id} column is used in
-messages.}
+running \code{cal_metrics()}). A result saved with
+\code{cal_metrics(layers = "epi_hypo")} is written as it is (much smaller
+files for many lakes). An optional \code{id} column is used in messages.}
 
 \item{model}{character; models to write, e.g. \code{c("GLM", "SIMSTRAT")}.}
 

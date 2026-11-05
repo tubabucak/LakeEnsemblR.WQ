@@ -4,7 +4,12 @@
 \alias{cal_metrics}
 \title{Calculate the Metrics}
 \usage{
-cal_metrics(metric_yaml_file, model_filter = "all", wq_config_file)
+cal_metrics(
+  metric_yaml_file,
+  model_filter = "all",
+  wq_config_file,
+  layers = c("profile", "epi_hypo")
+)
 }
 \arguments{
 \item{metric_yaml_file}{Character: Name of the YAML file containing the list of metrics.}
@@ -12,6 +17,15 @@ cal_metrics(metric_yaml_file, model_filter = "all", wq_config_file)
 \item{model_filter}{character: name of the model to be extracted (GLM, SELMAPROTBAS, WET). If all model outputs, it should be set to model= "all"}
 
 \item{wq_config_file}{character: path to the LakeEnsemblR_WQ config file (e.g. "LakeEnsemblR_WQ.yaml"), used to expand phytoplankton/zooplankton group templates in the metrics dictionary.}
+
+\item{layers}{character: \code{"profile"} (default) keeps the depth profiles
+(\code{Depth_<z>} columns). \code{"epi_hypo"} reduces every depth profile to
+daily means of the epilimnion and hypolimnion (columns \code{epi} and
+\code{hypo}), split at the daily thermocline of the model's
+\code{Temp_degreeCelcius} profile (\code{rLakeAnalyzer::thermo.depth()});
+when the lake is mixed both hold the whole-column mean. Needs
+\code{Temp_degreeCelcius} in the metrics file. Metrics without depth columns
+are kept as they are.}
 }
 \value{
 A list of extractedf variables for each model and for each metric defined in output.yaml

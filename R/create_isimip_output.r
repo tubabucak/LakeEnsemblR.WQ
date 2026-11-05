@@ -4,10 +4,13 @@
 #' built from: \code{add} metrics are summed, \code{sub} metrics subtracted
 #' (e.g. tpd = PO4 + DOP, pp = TP - PO4 - DOP). Values are divided by
 #' \code{to_si} to go from the metric unit to the ISIMIP unit (molar mass in
-#' g/mol for g/m3 -> mol/m3; mg/m3 needs a further 1000).
+#' g/mol for g/m3 -> mol/m3; mg/m3 needs a further 1000), then
+#' \code{offset} is added (degC -> K).
 #'
 #' @noRd
 .isimip_vars <- list(
+  watertemp = list(long_name = "Temperature of Lake Water", units = "K",
+                   add = "Temp_degreeCelcius", to_si = 1, offset = 273.15),
   chl      = list(long_name = "Chlorophyll Concentration", units = "g m-3",
                   add = "Total_Chla_miligramsPerCubicMeter", to_si = 1000),
   phytobio = list(long_name = "Phytoplankton Functional Group Biomass", units = "mol m-3",
@@ -46,11 +49,42 @@
 .isimip_model_names <- c(GLM = "glm-aed", SIMSTRAT = "simstrat-aed2",
                          WET = "gotm-wet", SELMAPROTBAS = "gotm-selmaprotbas")
 
+#' @title Daily-mean matrix of one cal_metrics() data.frame
+#'
+#' @description Rows = days, columns = depths (\code{Depth_<z>} columns;
+#'   attribute \code{depth}) or the two layers of
+#'   \code{cal_metrics(layers = "epi_hypo")} (\code{epi}, \code{hypo};
+#'   attribute \code{layers = TRUE}). \code{NULL} for other data.frames.
+#' @noRd
+.daily_profile <- function(df) {
+  if (!is.data.frame(df) || ncol(df) < 2 || !"datetime" %in% names(df)) return(NULL)
+  vals <- df[, setdiff(names(df), "datetime"), drop = FALSE]
+  layers <- identical(names(vals), c("epi", "hypo"))
+  depths <- suppressWarnings(as.numeric(sub("^Depth_", "", names(vals))))
+  if (!layers && anyNA(depths)) return(NULL)
+  mat <- vapply(vals, function(x) suppressWarnings(as.numeric(x)), numeric(nrow(vals)))
+  if (!is.matrix(mat)) mat <- matrix(mat, nrow = nrow(vals))
+  day <- as.Date(as.POSIXct(df$datetime, tz = "UTC"), tz = "UTC")
+  # daily means (ISIMIP daily output), keeping NA where a day has no data
+  agg <- rowsum(ifelse(is.na(mat), 0, mat), format(day), reorder = TRUE)
+  n <- rowsum(1 * !is.na(mat), format(day), reorder = TRUE)
+  agg[n == 0] <- NA
+  agg <- agg / pmax(n, 1)
+  if (layers) {
+    colnames(agg) <- c("epi", "hypo")
+    attr(agg, "layers") <- TRUE
+  } else {
+    colnames(agg) <- as.character(depths)
+    attr(agg, "depth") <- depths
+  }
+  agg
+}
+
 #' @title One model's daily profile for a metric
 #'
 #' @description Collects the data.frames of \code{metric} for \code{model}
 #'   from a cal_metrics() output (\code{metric -> MODEL -> instance -> df}),
-#'   as a named list of daily-mean matrices (rows = days, cols = depths),
+#'   as a named list of daily-mean matrices (see \code{.daily_profile()}),
 #'   named by instance. Returns \code{NULL} if the metric/model is absent.
 #'
 #' @noRd
@@ -61,27 +95,14 @@
 
   out <- list()
   for (inst in names(entry)) {
-    df <- entry[[inst]]
-    if (!is.data.frame(df) || ncol(df) < 2 || !"datetime" %in% names(df)) next
-    vals <- df[, setdiff(names(df), "datetime"), drop = FALSE]
-    depths <- suppressWarnings(as.numeric(sub("^Depth_", "", names(vals))))
-    if (anyNA(depths)) next
-    mat <- vapply(vals, function(x) suppressWarnings(as.numeric(x)), numeric(nrow(vals)))
-    if (!is.matrix(mat)) mat <- matrix(mat, nrow = nrow(vals))
-    day <- as.Date(as.POSIXct(df$datetime, tz = "UTC"), tz = "UTC")
-    # daily means (ISIMIP daily output), keeping NA where a day has no data
-    agg <- rowsum(ifelse(is.na(mat), 0, mat), format(day), reorder = TRUE)
-    n <- rowsum(1 * !is.na(mat), format(day), reorder = TRUE)
-    agg[n == 0] <- NA
-    agg <- agg / pmax(n, 1)
-    colnames(agg) <- as.character(depths)
-    attr(agg, "depth") <- depths
-    out[[inst]] <- agg
+    agg <- .daily_profile(entry[[inst]])
+    if (!is.null(agg)) out[[inst]] <- agg
   }
   if (length(out) == 0) NULL else out
 }
 
 #' @title Add/subtract profile matrices on their common days and depths
+#' @description Also works on epi/hypo matrices (the means are linear).
 #' @noRd
 .isimip_combine <- function(add, sub = list()) {
   mats <- c(add, sub)
@@ -91,8 +112,50 @@
   pick <- function(m) m[days, deps, drop = FALSE]
   res <- Reduce(`+`, lapply(add, pick))
   for (m in sub) res <- res - pick(m)
-  attr(res, "depth") <- as.numeric(deps)
+  if (all(vapply(mats, function(m) isTRUE(attr(m, "layers")), logical(1)))) {
+    attr(res, "layers") <- TRUE
+  } else {
+    attr(res, "depth") <- as.numeric(deps)
+  }
   res
+}
+
+#' @title Reduce the depth profiles of a cal_metrics() result to epi/hypo
+#'
+#' @description For each model, the daily thermocline comes from its
+#'   Temp_degreeCelcius profile (\code{.isimip_thermocline()}); every
+#'   depth-profile data.frame of that model becomes daily \code{epi} and
+#'   \code{hypo} means (\code{.isimip_epi_hypo()}). Other data.frames (no
+#'   depth columns) are kept as they are.
+#' @noRd
+.metrics_epi_hypo <- function(metric_out) {
+  if (is.null(metric_out[["Temp_degreeCelcius"]])) {
+    stop("layers = \"epi_hypo\" needs Temp_degreeCelcius in the metrics file ",
+         "(the thermocline separates epilimnion and hypolimnion).", call. = FALSE)
+  }
+  to_epi_hypo <- function(df, thermo) {
+    prof <- .daily_profile(df)
+    if (is.null(prof) || isTRUE(attr(prof, "layers"))) return(df)
+    eh <- .isimip_epi_hypo(prof, thermo)
+    data.frame(datetime = as.POSIXct(rownames(eh), tz = "UTC"),
+               epi = unname(eh[, "epi"]), hypo = unname(eh[, "hypo"]))
+  }
+  for (model in names(metric_out[["Temp_degreeCelcius"]])) {
+    temp <- .isimip_profiles(metric_out, "Temp_degreeCelcius", model)
+    if (is.null(temp) || isTRUE(attr(temp[[1]], "layers"))) next
+    thermo <- .isimip_thermocline(temp[[1]])
+    for (metric in names(metric_out)) {
+      entry <- metric_out[[metric]][[model]]
+      if (is.data.frame(entry)) {
+        metric_out[[metric]][[model]] <- to_epi_hypo(entry, thermo)
+      } else if (is.list(entry)) {
+        for (inst in names(entry)) {
+          metric_out[[metric]][[model]][[inst]] <- to_epi_hypo(entry[[inst]], thermo)
+        }
+      }
+    }
+  }
+  metric_out
 }
 
 #' @title Write one ISIMIP lake-sector NetCDF file
@@ -272,7 +335,8 @@
   }
 
   empty <- names(out)[vapply(out, is.null, logical(1))]
-  out <- lapply(out[!names(out) %in% empty], function(x) x / divisor)
+  offset <- if (is.null(info$offset)) 0 else info$offset
+  out <- lapply(out[!names(out) %in% empty], function(x) x / divisor + offset)
   list(matrices = out,
        skipped = if (length(empty) > 0) sprintf("%s/%s (no common days/depths)", m, empty) else character())
 }

@@ -33,8 +33,9 @@
 #'   fall in -- one lake per cell) and \code{folder} (the lake's
 #'   LakeEnsemblR.WQ project folder; \code{cal_metrics()} is run there) and/or
 #'   \code{rds} (path to a saved \code{cal_metrics()} result, used instead of
-#'   running \code{cal_metrics()}). An optional \code{id} column is used in
-#'   messages.
+#'   running \code{cal_metrics()}). A result saved with
+#'   \code{cal_metrics(layers = "epi_hypo")} is written as it is (much smaller
+#'   files for many lakes). An optional \code{id} column is used in messages.
 #' @param model character; models to write, e.g. \code{c("GLM", "SIMSTRAT")}.
 #' @param metric_yaml_file character; metrics file inside each lake folder.
 #'   It must enable \code{Temp_degreeCelcius} (for the thermocline) and the
@@ -179,13 +180,16 @@ create_isimip_global <- function(lakes,
                 "enable it in ", metric_yaml_file, ")", call. = FALSE)
         next
       }
-      thermo <- .isimip_thermocline(temp[[1]])
+      # cal_metrics(layers = "epi_hypo") results are already split
+      thermo <- if (isTRUE(attr(temp[[1]], "layers"))) NULL else .isimip_thermocline(temp[[1]])
 
       n_vars <- 0L
       for (v in unique(base_var)) {
         res <- .isimip_var_matrices(metrics, m, v, phyto_groups)
         for (vn in intersect(names(res$matrices), var_names)) {
-          eh <- .isimip_epi_hypo(res$matrices[[vn]], thermo)
+          mat <- res$matrices[[vn]]
+          if (!isTRUE(attr(mat, "layers")) && is.null(thermo)) next
+          eh <- if (isTRUE(attr(mat, "layers"))) mat else .isimip_epi_hypo(mat, thermo)
           for (p in seq_len(nrow(periods))) {
             f <- files[[paste(vn, p)]]
             vals <- matrix(NA_real_, nrow = 2, ncol = length(f$days))

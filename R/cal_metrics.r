@@ -7,6 +7,14 @@
 #' @param metric_yaml_file Character: Name of the YAML file containing the list of metrics.
 #' @param model_filter character: name of the model to be extracted (GLM, SELMAPROTBAS, WET). If all model outputs, it should be set to model= "all"
 #' @param wq_config_file character: path to the LakeEnsemblR_WQ config file (e.g. "LakeEnsemblR_WQ.yaml"), used to expand phytoplankton/zooplankton group templates in the metrics dictionary.
+#' @param layers character: \code{"profile"} (default) keeps the depth profiles
+#'   (\code{Depth_<z>} columns). \code{"epi_hypo"} reduces every depth profile to
+#'   daily means of the epilimnion and hypolimnion (columns \code{epi} and
+#'   \code{hypo}), split at the daily thermocline of the model's
+#'   \code{Temp_degreeCelcius} profile (\code{rLakeAnalyzer::thermo.depth()});
+#'   when the lake is mixed both hold the whole-column mean. Needs
+#'   \code{Temp_degreeCelcius} in the metrics file. Metrics without depth columns
+#'   are kept as they are.
 #'
 #' @return A list of extractedf variables for each model and for each metric defined in output.yaml
 #'
@@ -39,7 +47,9 @@
 #' 
 
 
-cal_metrics <- function(metric_yaml_file, model_filter = "all", wq_config_file) {
+cal_metrics <- function(metric_yaml_file, model_filter = "all", wq_config_file,
+                        layers = c("profile", "epi_hypo")) {
+layers <- match.arg(layers)
 if (!identical(model_filter, "all") && !is.character(model_filter)) {
     stop("model_filter must be either 'all' or a character vector of model names.")
   }
@@ -376,11 +386,13 @@ if ("TP_gramsPerCubicMeter" %in% names(metric_out) &
 
             # Store the ratio in the output list
             metric_out[["TN_TP_ratio"]][[model]] <- TN_TP_ratio
-            
-    
+
+
   }
-  
+
 }
+
+    if (layers == "epi_hypo") metric_out <- .metrics_epi_hypo(metric_out)
 
     return(metric_out)
 }
