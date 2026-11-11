@@ -348,7 +348,11 @@ for (l in seq_len(nrow(dict_biology))) {
         num_phyto_groups <- length(names(lst_config[["phytoplankton"]][["groups"]]))
         lst[["aed2_phytoplankton"]] <- list(num_phytos = length(seq_len(num_phyto_groups)),
                                             the_phytos = seq_len(num_phyto_groups))
-        
+        # Simstrat-AED2: microphytobenthos off (recommended setting)
+        if(models_coupled[i] == "Simstrat-AED2"){
+          lst[["aed2_phytoplankton"]][["do_mpb"]] <- 0L
+        }
+
         lst_phyto <- list()
         class(lst_phyto) <- "nml"
         

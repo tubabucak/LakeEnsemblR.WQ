@@ -278,13 +278,19 @@ add_aed2_section_simstrat <- function(folder = ".",
   # applied on all flanks (BenthicMode 1) are far larger and drain nitrate.
   # bottom_everywhere still applies to GOTM (dynamic WET/Selma sediments).
   benthic <- 0
-  
+  # ParticleMobility 0 (recommended setting for Simstrat-AED2)
+  particle_mobility <- 0
+
   aed_section_present <- any(grepl("AED2Config", sim_par))
   if(aed_section_present){
     input_json(file.path(folder, simstrat_par), label = "AED2Config",
                key = "BioshadeFeedback", value = shading)
     input_json(file.path(folder, simstrat_par), label = "AED2Config",
                key = "BenthicMode", value = benthic)
+    if(any(grepl("ParticleMobility", sim_par))){
+      input_json(file.path(folder, simstrat_par), label = "AED2Config",
+                 key = "ParticleMobility", value = particle_mobility)
+    }
     if(any(grepl("BackgroundExtinction", sim_par))){
       input_json(file.path(folder, simstrat_par), label = "AED2Config",
                  key = "BackgroundExtinction", value = background_extinction)
@@ -332,7 +338,7 @@ add_aed2_section_simstrat <- function(folder = ".",
                   paste0(s2, "\"AED2ConfigFile\" :  \"", aed_nml, "\","),
                   paste0(s2, "\"PathAED2initial\" :  \"","\","),
                   paste0(s2, "\"PathAED2inflow\" :  \"./\","),
-                  paste0(s2, "\"ParticleMobility\" : 1,"),
+                  paste0(s2, "\"ParticleMobility\" : ", particle_mobility, ","),
                   paste0(s2, "\"BioshadeFeedback\" : ", shading, ","),
                   paste0(s2, "\"BackgroundExtinction\" : ", background_extinction, ","),
                   paste0(s2, "\"BenthicMode\" : ", benthic,","),
