@@ -82,18 +82,24 @@ fails for Simstrat:
 remotes::install_github("tubabucak/LakeEnsemblR")
 ```
 
-`glmtools` is always required, no matter which model you run. It in turn
-needs `GLM3r` (only as its own dependency; GLM itself now runs through
-`GLMr`), but doesn’t say where to find it – so tools that resolve
-dependencies automatically (`pak`, and anything built on it, like
+GLM-AED is run with `GLMr` (GLM 4). `glmtools` (used to read and edit
+GLM namelists and read GLM output) is always required, no matter which
+model you run. It is not on CRAN; it is installed from GitHub
+(`USGS-R/glmtools@ggplot_overhaul`, listed in `Remotes:`). `glmtools`
+itself depends on `GLM3r` (GLM 3), so `GLM3r` has to be installed too,
+even though LakeEnsemblR.WQ never runs GLM through it. `glmtools`
+doesn’t say where to find `GLM3r`, so tools that resolve dependencies
+automatically (`pak`, and anything built on it, like
 `devtools::install_deps()`/`build_vignettes()`) can fail with
-`Can't find package called GLM3r`, even though `GLM3r` is listed in this
-package’s own `Remotes:`. If that happens, install `GLM3r` yourself
-first, then install this package as normal:
+`Can't find package called GLM3r`. To avoid that, install the GLM
+packages first, then this package:
 
 ``` r
 
-remotes::install_github("aemon-j/GLM3r@v3.3-lerwq")
+remotes::install_github("aemon-j/GLM3r@v3.3-lerwq")          # needed by glmtools
+remotes::install_github("USGS-R/glmtools", ref = "ggplot_overhaul")
+remotes::install_github("aemon-j/GLMr")                      # runs GLM-AED
+remotes::install_github("tubabucak/LakeEnsemblR")            # fork, see above
 remotes::install_github("tubabucak/LakeEnsemblR.WQ")
 ```
 
