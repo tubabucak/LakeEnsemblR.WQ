@@ -7,3 +7,4 @@ wq_NH4_gramsPerCubicMeter,inflow_nh4,N,gramsPerCubicMeter,NIT_amm,selmaprotbas_a
 wq_PON_gramsPerCubicMeter,inflow_pon,N,gramsPerCubicMeter,OGM_pon,selmaprotbas_dd_n,POM_sNW,-,"mNLoadOrgEpi/ReadNLoad,ReadNutFrac,InclTran"
 wq_DON_gramsPerCubicMeter,inflow_don,N,gramsPerCubicMeter,OGM_don,-,DOM_sNW,-,-
 wq_Silica_gramsPerCubicMeter,inflow_sio2,Si,gramsPerCubicMeter,SIL_rsi,selmaprotbas_si,abiotic_water_sSiO2W,-,mSiLoadSiO2Epi/ReadTranFrac
+wq_DO_gramsPerCubicMeter,inflow_do,O2,gramsPerCubicMeter,OXY_oxy,selmaprotbas_o2,abiotic_water_sO2W,-,-

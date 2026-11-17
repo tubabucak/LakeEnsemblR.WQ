@@ -108,8 +108,9 @@
 #'     nutrient inflow CSV (e.g. \code{"wq_NO3_gramsPerCubicMeter"}),
 #'     validated by \code{chk_names_nutr_flow()}.}
 #'   \item{short_name}{Short label for the variable.}
-#'   \item{nutrient}{Which nutrient element this variable represents
-#'     (\code{"N"}, \code{"P"}, or \code{"Si"}).}
+#'   \item{nutrient}{Which element this variable represents
+#'     (\code{"N"}, \code{"P"}, \code{"Si"}, or \code{"O2"} for dissolved
+#'     oxygen); used to look up the molar mass in \code{wq_conv}.}
 #'   \item{unit}{Unit of \code{standard_name}.}
 #'   \item{aed2, selmaprotbas, wet, mylake, pclake}{The equivalent
 #'     model-native variable name for each coupled model (\code{"-"} if not
