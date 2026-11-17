@@ -109,6 +109,13 @@ metric_out <- cal_metrics(
   model_filter = "all",
   wq_config_file = "LakeEnsemblR_WQ.yaml"
 )
+
+metric_out_layers <- cal_metrics(
+  metric_yaml_file = "Output.yaml",
+  model_filter = "all",
+  wq_config_file = "LakeEnsemblR_WQ.yaml",
+  layers = c("epi_hypo")
+)
 ```
 
 ## 5) Calibration workflow

@@ -69,13 +69,13 @@ create_par_files(
   folder_out     = file.path(ex, "par_files"),
   models_coupled = "GOTM-Selmaprotbas"
 )
-#> Created: /tmp/RtmpkESzga/lerwq_example/par_files/par_oxygen.csv
-#> Created: /tmp/RtmpkESzga/lerwq_example/par_files/par_carbon.csv
-#> Created: /tmp/RtmpkESzga/lerwq_example/par_files/par_nitrogen.csv
-#> Created: /tmp/RtmpkESzga/lerwq_example/par_files/par_phosphorus.csv
-#> Created: /tmp/RtmpkESzga/lerwq_example/par_files/par_diatoms.csv
-#> Created: /tmp/RtmpkESzga/lerwq_example/par_files/par_cyanobacteria.csv
-#> Created: /tmp/RtmpkESzga/lerwq_example/par_files/par_daphnia.csv
+#> Created: /tmp/RtmpV7YnCh/lerwq_example/par_files/par_oxygen.csv
+#> Created: /tmp/RtmpV7YnCh/lerwq_example/par_files/par_carbon.csv
+#> Created: /tmp/RtmpV7YnCh/lerwq_example/par_files/par_nitrogen.csv
+#> Created: /tmp/RtmpV7YnCh/lerwq_example/par_files/par_phosphorus.csv
+#> Created: /tmp/RtmpV7YnCh/lerwq_example/par_files/par_diatoms.csv
+#> Created: /tmp/RtmpV7YnCh/lerwq_example/par_files/par_cyanobacteria.csv
+#> Created: /tmp/RtmpV7YnCh/lerwq_example/par_files/par_daphnia.csv
 #> 
 #> Edit 'value' (and delete rows to keep at dictionary default), then set the par_file entries in LakeEnsemblR_WQ.yaml.
 list.files(file.path(ex, "par_files"))

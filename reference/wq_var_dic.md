@@ -28,8 +28,9 @@ A data frame with columns:
 
 - nutrient:
 
-  Which nutrient element this variable represents (`"N"`, `"P"`, or
-  `"Si"`).
+  Which element this variable represents (`"N"`, `"P"`, `"Si"`, or
+  `"O2"` for dissolved oxygen); used to look up the molar mass in
+  `wq_conv`.
 
 - unit:
 
