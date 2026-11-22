@@ -57,7 +57,8 @@
 <span>  <span class="va">parameter</span>,</span>
 <span>  <span class="va">value</span>,</span>
 <span>  <span class="va">folder</span>,</span>
-<span>  verbose <span class="op">=</span> <span class="cn">FALSE</span></span>
+<span>  verbose <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  path <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -112,6 +113,14 @@
 
 <dt id="arg-verbose">verbose<a class="anchor" aria-label="anchor" href="#arg-verbose"></a></dt>
 <dd><p>boolean; print output to console</p></dd>
+
+
+<dt id="arg-path">path<a class="anchor" aria-label="anchor" href="#arg-path"></a></dt>
+<dd><p>character; optional dictionary path (e.g.
+"humus/parameters/kNMinS"), the <code>path</code> column of a par_file. Used to
+pick the right row when several dictionary rows share module, domain,
+process, subprocess, model and parameter (e.g. WET kNMinS of DOM and
+humus); without it, or if it matches none of them, the first row is used.</p></dd>
 
 </dl></div>
 
