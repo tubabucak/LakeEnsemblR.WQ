@@ -16,7 +16,8 @@ set_value_config(
   parameter,
   value,
   folder,
-  verbose = FALSE
+  verbose = FALSE,
+  path = NULL
 )
 }
 \arguments{
@@ -44,6 +45,12 @@ set_value_config(
 \item{folder}{path; relative to what folder}
 
 \item{verbose}{boolean; print output to console}
+
+\item{path}{character; optional dictionary path (e.g.
+"humus/parameters/kNMinS"), the \code{path} column of a par_file. Used to
+pick the right row when several dictionary rows share module, domain,
+process, subprocess, model and parameter (e.g. WET kNMinS of DOM and
+humus); without it, or if it matches none of them, the first row is used.}
 }
 \description{
 Set value in model-specific config file based on dictionary path
